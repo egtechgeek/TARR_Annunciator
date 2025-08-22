@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TARR Annunciator Admin Interface</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+        textarea { width: 100%; height: 150px; font-family: monospace; }
+        .section { margin-bottom: 40px; }
+        .status-ok { color: green; }
+        .status-error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>TARR Annunciator Admin Interface</h1>
+            <div>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary me-2">🏠 Main Interface</a>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-danger">🚪 Logout</a>
+            </div>
+        </div>
+        
+        <!-- Status Section -->
+        <div class="alert alert-info">
+            <h5>System Status</h5>
+            <p><strong>Audio System:</strong> <span class="status-ok">Active (Pygame)</span></p>
+            <p><strong>Volume:</strong> <span id="current-volume">{{ (current_volume * 100)|int }}%</span></p>
+            <p><strong>Scheduler:</strong> <span class="status-ok">Running</span></p>
+            <p><strong>Web Interface:</strong> <a href="/" target="_blank">http://localhost:8080</a></p>
+        </div>
+
+        <!-- Audio Controls Section -->
+        <div class="section">
+            <h3>Audio Controls</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Volume Control</h5>
+                    <div class="mb-3">
+                        <label for="volume-slider" class="form-label">Volume: <span id="volume-display">{{ (current_volume * 100)|int }}%</span></label>
+                        <input type="range" class="form-range" id="volume-slider" min="0" max="100" value="{{ (current_volume * 100)|int }}">
+                    </div>
+                    <button type="button" class="btn btn-success btn-sm" id="test-audio-btn">🎵 Test Audio</button>
+                </div>
+                <div class="col-md-6">
+                    <h5>Audio Devices</h5>
+                    <div class="mb-3">
+                        <select class="form-select" id="audio-device-select">
+                            <option value="default">Loading devices...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Audio Settings</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <label for="frequency-select" class="form-label">Frequency</label>
+                                <select class="form-select form-select-sm" id="frequency-select">
+                                    <option value="22050" selected>22050 Hz</option>
+                                    <option value="44100">44100 Hz</option>
+                                    <option value="48000">48000 Hz</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label for="buffer-select" class="form-label">Buffer Size</label>
+                                <select class="form-select form-select-sm" id="buffer-select">
+                                    <option value="1024">1024</option>
+                                    <option value="2048">2048</option>
+                                    <option value="4096" selected>4096</option>
+                                    <option value="8192">8192</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-warning btn-sm" id="reinit-audio-btn">🔄 Reinitialize Audio</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Cron Schedule Editor -->
+        <div class="section">
+            <h3>Scheduled Announcements</h3>
+            <p>Edit the cron schedule below. Format: <code>minute hour day month day_of_week</code></p>
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="cron_json" class="form-label">Schedule Configuration (JSON)</label>
+                    <textarea name="cron_json" id="cron_json" class="form-control" rows="20" style="font-family: monospace;">{{ cron_data|tojson(indent=2) }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Schedule</button>
+            </form>
+        </div>
+
+        <!-- Quick Test Section -->
+        <div class="section">
+            <h3>Quick Tests</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Test Station Announcement</h5>
+                    <form id="test-station" class="d-inline">
+                        <div class="mb-2">
+                            <select name="train_number" class="form-select form-select-sm">
+                                {% for train in trains %}
+                                <option value="{{ train.id }}">{{ train.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <select name="direction" class="form-select form-select-sm">
+                                {% for direction in directions %}
+                                <option value="{{ direction.id }}">{{ direction.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <select name="destination" class="form-select form-select-sm">
+                                {% for destination in destinations %}
+                                <option value="{{ destination.id }}">{{ destination.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <select name="track_number" class="form-select form-select-sm">
+                                {% for track in tracks %}
+                                <option value="{{ track.id }}">{{ track.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm">Test Station</button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <h5>Test Safety Announcement</h5>
+                    <form id="test-safety" class="d-inline">
+                        <div class="mb-2">
+                            <select name="language" class="form-select form-select-sm">
+                                {% for language in safety_languages %}
+                                <option value="{{ language.id if language.id else language }}">{{ language.name if language.name else language.capitalize() }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-warning btn-sm">Test Safety</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Data -->
+        <div class="section">
+            <h3>Configuration Data</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Available Trains ({{ trains|length }})</h5>
+                    <pre style="max-height: 200px; overflow-y: auto;">{{ trains|tojson(indent=2) }}</pre>
+                </div>
+                <div class="col-md-6">
+                    <h5>Available Destinations ({{ destinations|length }})</h5>
+                    <pre style="max-height: 200px; overflow-y: auto;">{{ destinations|tojson(indent=2) }}</pre>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Available Directions ({{ directions|length }})</h5>
+                    <pre style="max-height: 200px; overflow-y: auto;">{{ directions|tojson(indent=2) }}</pre>
+                </div>
+                <div class="col-md-6">
+                    <h5>Available Tracks ({{ tracks|length }})</h5>
+                    <pre style="max-height: 200px; overflow-y: auto;">{{ tracks|tojson(indent=2) }}</pre>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Available Safety Languages ({{ safety_languages|length }})</h5>
+                    <pre style="max-height: 200px; overflow-y: auto;">{{ safety_languages|tojson(indent=2) }}</pre>
+                </div>
+                <div class="col-md-6">
+                    <h5>Available Promo Announcements ({{ promo_announcements|length }})</h5>
+                    <pre style="max-height: 200px; overflow-y: auto;">{{ promo_announcements|tojson(indent=2) }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Help -->
+        <div class="section">
+            <h3>Cron Schedule Help</h3>
+            <table class="table table-sm">
+                <thead>
+                    <tr><th>Format</th><th>Example</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>0 8 * * *</code></td><td>Daily at 8:00 AM</td><td>Every day at 8 AM</td></tr>
+                    <tr><td><code>0 12 * * 1-5</code></td><td>Weekdays at noon</td><td>Monday through Friday at 12 PM</td></tr>
+                    <tr><td><code>*/15 * * * *</code></td><td>Every 15 minutes</td><td>Every 15 minutes, all day</td></tr>
+                    <tr><td><code>0 9,17 * * *</code></td><td>9 AM and 5 PM daily</td><td>Twice daily</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Audio Controls JavaScript
+        
+        // Volume control
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeDisplay = document.getElementById('volume-display');
+        const currentVolumeSpan = document.getElementById('current-volume');
+        
+        volumeSlider.addEventListener('input', function() {
+            const volume = this.value;
+            volumeDisplay.textContent = volume + '%';
+            
+            // Send volume change to server
+            const formData = new FormData();
+            formData.append('volume', volume / 100); // Convert to 0.0-1.0 range
+            
+            fetch('/audio/volume', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentVolumeSpan.textContent = data.volume_percent + '%';
+                } else {
+                    alert('Error setting volume: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Volume control error:', error);
+            });
+        });
+        
+        // Test audio button
+        document.getElementById('test-audio-btn').addEventListener('click', function() {
+            this.disabled = true;
+            this.textContent = '🔊 Testing...';
+            
+            fetch('/audio/test', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✓ Audio test successful!');
+                } else {
+                    alert('✗ Audio test failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('✗ Audio test error: ' + error);
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = '🎵 Test Audio';
+            });
+        });
+        
+        // Reinitialize audio button
+        document.getElementById('reinit-audio-btn').addEventListener('click', function() {
+            const frequency = document.getElementById('frequency-select').value;
+            const bufferSize = document.getElementById('buffer-select').value;
+            
+            this.disabled = true;
+            this.textContent = '🔄 Reinitializing...';
+            
+            const formData = new FormData();
+            formData.append('frequency', frequency);
+            formData.append('buffer_size', bufferSize);
+            
+            fetch('/audio/reinitialize', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✓ ' + data.message);
+                    loadAudioDevices(); // Refresh device list
+                } else {
+                    alert('✗ Reinitialize failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('✗ Reinitialize error: ' + error);
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = '🔄 Reinitialize Audio';
+            });
+        });
+        
+        // Load audio devices
+        function loadAudioDevices() {
+            fetch('/audio/devices')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('audio-device-select');
+                    select.innerHTML = '';
+                    
+                    data.devices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.id;
+                        option.textContent = device.name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading audio devices:', error);
+                    const select = document.getElementById('audio-device-select');
+                    select.innerHTML = '<option value="default">Error loading devices</option>';
+                });
+        }
+        
+        // Load devices on page load
+        loadAudioDevices();
+        // Test station announcement
+        document.getElementById('test-station').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('/play_announcement', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.text())
+              .then(data => {
+                  alert('Station announcement test triggered: ' + data);
+              }).catch(error => {
+                  alert('Error: ' + error);
+              });
+        });
+
+        // Test safety announcement
+        document.getElementById('test-safety').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('/play_safety_announcement', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.text())
+              .then(data => {
+                  alert('Safety announcement test triggered: ' + data);
+              }).catch(error => {
+                  alert('Error: ' + error);
+              });
+        });
+
+        // Auto-refresh scheduler status
+        function updateStatus() {
+            fetch('/scheduler_status')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Scheduler status:', data);
+                })
+                .catch(error => console.error('Status check failed:', error));
+        }
+        
+        // Check status every 30 seconds
+        setInterval(updateStatus, 30000);
+    </script>
+</body>
+</html>

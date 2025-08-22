@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TARR Annunciator API Documentation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+        .api-section { margin-bottom: 3rem; }
+        .endpoint { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .method-get { border-left: 4px solid #28a745; }
+        .method-post { border-left: 4px solid #007bff; }
+        .code-block { background: #1e1e1e; color: #f8f8f2; padding: 1rem; border-radius: 5px; overflow-x: auto; }
+        .response-example { background: #f1f3f4; padding: 1rem; border-radius: 5px; }
+        h1, h2 { color: #333; }
+        .badge-method { font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚂 TARR Annunciator API Documentation</h1>
+        <p class="lead">REST API for triggering announcements and controlling the TARR Annunciator system externally.</p>
+        
+        <div class="alert alert-info">
+            <h5>🔑 Authentication</h5>
+            <p>Most API endpoints require authentication using an API key. Include the key in one of these ways:</p>
+            <ul>
+                <li><strong>Header:</strong> <code>X-API-Key: your-api-key</code></li>
+                <li><strong>Query parameter:</strong> <code>?api_key=your-api-key</code></li>
+                <li><strong>Form parameter:</strong> <code>api_key=your-api-key</code></li>
+            </ul>
+            <p><strong>Default API Key:</strong> <code>tarr-api-2025</code> (Change this in app.py!)</p>
+        </div>
+
+        <!-- System Status -->
+        <div class="api-section">
+            <h2>📊 System Status</h2>
+            
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/status</h4>
+                <p>Get current system status (no authentication required)</p>
+                
+                <h6>Example Request:</h6>
+                <div class="code-block">
+                    <code>curl http://localhost:8080/api/status</code>
+                </div>
+                
+                <h6>Example Response:</h6>
+                <div class="response-example">
+                    <pre>{
+  "status": "online",
+  "audio_available": true,
+  "audio_backend": "pygame",
+  "api_enabled": true,
+  "scheduler_running": true,
+  "volume": 70,
+  "timestamp": "2025-08-20T16:45:30.123456"
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="api-section">
+            <h2>📢 Announcements</h2>
+            
+            <!-- Station Announcement -->
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/announce/station</h4>
+                <p>Trigger a station announcement</p>
+                
+                <h6>Required Parameters:</h6>
+                <ul>
+                    <li><code>train_number</code> - Train identifier</li>
+                    <li><code>direction</code> - eastbound or westbound</li>
+                    <li><code>destination</code> - Destination name</li>
+                    <li><code>track_number</code> - Track identifier</li>
+                </ul>
+                
+                <h6>Example Request (JSON):</h6>
+                <div class="code-block">
+                    <code>curl -X POST http://localhost:8080/api/announce/station \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: tarr-api-2025" \
+  -d '{
+    "train_number": "1",
+    "direction": "westbound",
+    "destination": "goodwin_station",
+    "track_number": "1"
+  }'</code>
+                </div>
+                
+                <h6>Example Request (Form Data):</h6>
+                <div class="code-block">
+                    <code>curl -X POST http://localhost:8080/api/announce/station \
+  -H "X-API-Key: tarr-api-2025" \
+  -d "train_number=1" \
+  -d "direction=westbound" \
+  -d "destination=goodwin_station" \
+  -d "track_number=1"</code>
+                </div>
+            </div>
+
+            <!-- Safety Announcement -->
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/announce/safety</h4>
+                <p>Trigger a safety announcement</p>
+                
+                <h6>Required Parameters:</h6>
+                <ul>
+                    <li><code>language</code> - Language code (english, spanish, portuguese, russian)</li>
+                </ul>
+                
+                <h6>Example Request:</h6>
+                <div class="code-block">
+                    <code>curl -X POST http://localhost:8080/api/announce/safety \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: tarr-api-2025" \
+  -d '{"language": "english"}'</code>
+                </div>
+            </div>
+
+            <!-- Promo Announcement -->
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/announce/promo</h4>
+                <p>Trigger a promotional announcement</p>
+                
+                <h6>Required Parameters:</h6>
+                <ul>
+                    <li><code>file</code> - Promo file identifier (e.g., "promo_english")</li>
+                </ul>
+                
+                <h6>Example Request:</h6>
+                <div class="code-block">
+                    <code>curl -X POST http://localhost:8080/api/announce/promo \
+  -H "X-API-Key: tarr-api-2025" \
+  -d "file=promo_english"</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Control -->
+        <div class="api-section">
+            <h2>🔊 Audio Control</h2>
+            
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/audio/volume</h4>
+                <p>Get current volume level</p>
+                
+                <h6>Example Request:</h6>
+                <div class="code-block">
+                    <code>curl -H "X-API-Key: tarr-api-2025" http://localhost:8080/api/audio/volume</code>
+                </div>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/audio/volume</h4>
+                <p>Set volume level</p>
+                
+                <h6>Parameters:</h6>
+                <ul>
+                    <li><code>volume</code> - Volume level (0.0-1.0 or 0-100)</li>
+                </ul>
+                
+                <h6>Example Request:</h6>
+                <div class="code-block">
+                    <code>curl -X POST http://localhost:8080/api/audio/volume \
+  -H "X-API-Key: tarr-api-2025" \
+  -d "volume=75"</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="api-section">
+            <h2>⚙️ Configuration</h2>
+            
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/config</h4>
+                <p>Get available trains, destinations, directions, tracks, etc.</p>
+                
+                <h6>Example Request:</h6>
+                <div class="code-block">
+                    <code>curl -H "X-API-Key: tarr-api-2025" http://localhost:8080/api/config</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Management -->
+        <div class="api-section">
+            <h2>🕒 Schedule Management</h2>
+            
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/schedule</h4>
+                <p>Get current cron schedule</p>
+                
+                <h6>Example Request:</h6>
+                <div class="code-block">
+                    <code>curl -H "X-API-Key: tarr-api-2025" http://localhost:8080/api/schedule</code>
+                </div>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/schedule</h4>
+                <p>Update cron schedule</p>
+                
+                <h6>Example Request:</h6>
+                <div class="code-block">
+                    <code>curl -X POST http://localhost:8080/api/schedule \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: tarr-api-2025" \
+  -d '{"schedule": { ... }}'</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Response Formats -->
+        <div class="api-section">
+            <h2>📄 Response Formats</h2>
+            
+            <h4>Success Response:</h4>
+            <div class="response-example">
+                <pre>{
+  "success": true,
+  "message": "Station announcement triggered",
+  "announcement": {
+    "type": "station",
+    "train_number": "1",
+    "direction": "westbound",
+    "destination": "goodwin_station",
+    "track_number": "1"
+  },
+  "timestamp": "2025-08-20T16:45:30.123456"
+}</pre>
+            </div>
+
+            <h4>Error Response:</h4>
+            <div class="response-example">
+                <pre>{
+  "error": "Missing required fields: train_number, direction"
+}</pre>
+            </div>
+        </div>
+
+        <!-- Integration Examples -->
+        <div class="api-section">
+            <h2>🔗 Integration Examples</h2>
+            
+            <h4>Python Example:</h4>
+            <div class="code-block">
+                <pre>import requests
+
+# Trigger a station announcement
+response = requests.post('http://localhost:8080/api/announce/station', 
+    headers={'X-API-Key': 'tarr-api-2025'},
+    json={
+        'train_number': '1',
+        'direction': 'westbound', 
+        'destination': 'goodwin_station',
+        'track_number': '1'
+    }
+)
+
+if response.ok:
+    print("Announcement triggered successfully!")
+else:
+    print(f"Error: {response.json()['error']}")
+</pre>
+            </div>
+
+            <h4>PowerShell Example:</h4>
+            <div class="code-block">
+                <pre>$headers = @{'X-API-Key' = 'tarr-api-2025'}
+$body = @{
+    train_number = '1'
+    direction = 'westbound'
+    destination = 'goodwin_station'
+    track_number = '1'
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri 'http://localhost:8080/api/announce/station' `
+    -Method Post -Headers $headers -Body $body -ContentType 'application/json'
+</pre>
+            </div>
+        </div>
+
+        <div class="alert alert-warning">
+            <h5>🛡️ Security Notes</h5>
+            <ul>
+                <li>Change the default API key in production</li>
+                <li>Use HTTPS in production environments</li>
+                <li>Consider IP whitelisting for additional security</li>
+                <li>Monitor API usage and implement rate limiting if needed</li>
+            </ul>
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="/" class="btn btn-primary">🏠 Back to Main Interface</a>
+            <a href="/admin" class="btn btn-secondary">⚙️ Admin Panel</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

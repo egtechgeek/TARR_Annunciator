@@ -1,0 +1,20 @@
+{
+    "safety": [
+        {
+            "id": "english",
+            "name": "Safety English"
+        },
+        {
+            "id": "spanish",
+            "name": "Safety Spanish"
+        },
+		{
+			"id": "portuguese",
+			"name": "Safety Portuguese"
+		},
+		{
+			"id": "russian",
+			"name": "Safety Russian"
+		}
+    ]
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TARR Annunciator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            padding: 20px;
+        }
+        h1 { text-align: center; }
+        .section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 15px auto;
+            border-radius: 8px;
+            max-width: 600px;
+        }
+        label { display: block; margin: 10px 0 5px; }
+        select, button { width: 100%; padding: 10px; margin-bottom: 10px; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .status { text-align: center; margin-bottom: 20px; color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <h1>TARR Annunciator Control</h1>
+    
+    <div class="status">
+        <p>🎵 Audio System: Active | 🕒 Scheduler: Running | ⚙️ <a href="/admin" style="color: #4CAF50;">🔒 Admin Panel (Protected)</a> | 🔗 <a href="/api/docs" style="color: #4CAF50;">API Docs</a></p>
+    </div>
+
+    <!-- Station Announcement -->
+    <div class="section">
+        <h2>Station Announcement</h2>
+        <form id="stationForm">
+            <label for="train">Train Number:</label>
+            <select name="train_number" id="train">
+                {% for t in trains %}
+                    <option value="{{ t.id }}">{{ t.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="direction">Direction:</label>
+            <select name="direction" id="direction">
+                {% for d in directions %}
+                    <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="destination">Destination:</label>
+            <select name="destination" id="destination">
+                {% for dest in destinations %}
+                    <option value="{{ dest.id }}">{{ dest.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="track">Track Number:</label>
+            <select name="track_number" id="track">
+                {% for tr in tracks %}
+                    <option value="{{ tr.id }}">{{ tr.name }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Play Station Announcement</button>
+        </form>
+    </div>
+
+    <!-- Promo Announcement -->
+    <div class="section">
+        <h2>Promo Announcement</h2>
+        <form id="promoForm">
+            <label for="promo">Select Promo:</label>
+            <select name="file" id="promo">
+                {% for p in promo_announcements %}
+                    <option value="{{ p.id if p.id else p }}">{{ p.name if p.name else p }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Play Promo</button>
+        </form>
+    </div>
+
+    <!-- Safety Announcement -->
+    <div class="section">
+        <h2>Safety Announcement</h2>
+        <form id="safetyForm">
+            <label for="language">Select Language:</label>
+            <select name="language" id="language">
+                {% for lang in safety_languages %}
+                    <option value="{{ lang.id if lang.id else lang }}">{{ lang.name if lang.name else lang.capitalize() }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Play Safety Announcement</button>
+        </form>
+    </div>
+
+    <script>
+        async function postForm(formId, endpoint) {
+            const form = document.getElementById(formId);
+            const data = new FormData(form);
+            try {
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    body: data
+                });
+                const text = await resp.text();
+                alert(text);
+            } catch (err) {
+                alert("Error: " + err);
+            }
+        }
+
+        document.getElementById('stationForm').addEventListener('submit', e => {
+            e.preventDefault();
+            postForm('stationForm', '/play_announcement');
+        });
+
+        document.getElementById('promoForm').addEventListener('submit', e => {
+            e.preventDefault();
+            postForm('promoForm', '/play_promo');
+        });
+
+        document.getElementById('safetyForm').addEventListener('submit', e => {
+            e.preventDefault();
+            postForm('safetyForm', '/play_safety_announcement');
+        });
+    </script>
+</body>
+</html>

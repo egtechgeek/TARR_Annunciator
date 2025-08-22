@@ -1,4 +1,4 @@
-# TARR Annunciator
+# TARR Annunciator Legacy Version
 
 -Designed to be run on a Raspberry Pi 4b	<br>
 -ALWAYS review through shell scripts before running them!	<br>
@@ -9,4 +9,6 @@
 
 -Pi audio output set to 3.5mm	<br>
 -Pi advanced audio set to pulseaudio
+<br>
 
+# TARR Annunciator Enhanced Versions (win64 & deb-arm)

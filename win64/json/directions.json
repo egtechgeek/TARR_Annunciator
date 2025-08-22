@@ -1,0 +1,12 @@
+{
+    "directions": [
+        {
+            "id": "westbound",
+            "name": "Westbound"
+        },
+        {
+            "id": "eastbound",
+            "name": "Eastbound"
+        }
+    ]
+}
