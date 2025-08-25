@@ -99,44 +99,284 @@
                 <h6>🚨 Emergency Announcements</h6>
                 <div class="row align-items-end">
                     <div class="col-md-8">
-                        <label for="emergency-select" class="form-label">Select Emergency Type:</label>
+                        <label for="emergency-select" class="form-label">Emergency Type</label>
                         <select class="form-select" id="emergency-select">
-                            <option value="">-- Select Emergency Type --</option>
-                            <!-- DEBUG: Checking emergencies -->
+                            <option value="">Select emergency type...</option>
                             {{range .emergencies}}
                                 <option value="{{.ID}}" data-name="{{.Name}}" data-description="{{.Description}}" data-category="{{.Category}}">
-                                    [{{.Category}}] {{.Name}}
+                                    {{.Name}} ({{.Category}})
                                 </option>
-                            {{else}}
-                                <!-- DEBUG: No emergencies found -->
                             {{end}}
                         </select>
                     </div>
                     <div class="col-md-4">
                         <button type="button" class="btn btn-danger w-100" id="emergency-announce-btn" disabled>
-                            🚨 Trigger Emergency
+                            🚨 TRIGGER EMERGENCY
                         </button>
                     </div>
                 </div>
-                <small class="text-muted">Emergency announcements have the highest priority and will interrupt other announcements.</small>
             </div>
             
             <div id="queue-message" class="mt-2"></div>
         </div>
 
-        <!-- Schedule Configuration -->
+        <!-- Schedule Management -->
         <div class="section">
-            <h3>Scheduled Announcements Configuration</h3>
-            {{if .error}}
-                <div class="alert alert-danger">{{.error}}</div>
-            {{end}}
-            <form method="POST">
+            <h3>⏰ Schedule Management</h3>
+            <form method="post" action="/admin">
                 <div class="mb-3">
                     <label for="cron_json" class="form-label">Schedule Configuration (JSON):</label>
                     <textarea name="cron_json" class="form-control">{{printf "%s" .cron_data}}</textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">💾 Update Schedule</button>
             </form>
+        </div>
+
+        <!-- Multi-User & API Management Section -->
+        <div class="section">
+            <h3>🔐 User & API Management</h3>
+            
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-3" id="management-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-panel" type="button" role="tab">👥 Admin Users</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="apikeys-tab" data-bs-toggle="tab" data-bs-target="#apikeys-panel" type="button" role="tab">🔑 API Keys</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-panel" type="button" role="tab">⚙️ Settings</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="management-tab-content">
+                <!-- Admin Users Panel -->
+                <div class="tab-pane fade show active" id="users-panel" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Admin Users</h5>
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#userModal">➕ Add User</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Last Login</th>
+                                    <th>Permissions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <tr><td colspan="7" class="text-center">Loading users...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- API Keys Panel -->
+                <div class="tab-pane fade" id="apikeys-panel" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>API Keys</h5>
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#apiKeyModal">➕ Add API Key</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="apikeys-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Key Preview</th>
+                                    <th>Status</th>
+                                    <th>Type</th>
+                                    <th>Created</th>
+                                    <th>Last Used</th>
+                                    <th>Permissions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="apikeys-table-body">
+                                <tr><td colspan="8" class="text-center">Loading API keys...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Settings Panel -->
+                <div class="tab-pane fade" id="settings-panel" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Security Settings</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="session-timeout" class="form-label">Session Timeout (minutes)</label>
+                                        <input type="number" class="form-control" id="session-timeout" min="5" max="1440" placeholder="60">
+                                    </div>
+                                    <button type="button" class="btn btn-primary" id="update-settings-btn">💾 Save Settings</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">System Status</h6>
+                                </div>
+                                <div class="card-body" id="system-status">
+                                    <p><strong>Total Users:</strong> <span id="total-users">-</span></p>
+                                    <p><strong>Active API Keys:</strong> <span id="active-api-keys">-</span></p>
+                                    <p><strong>Last Modified:</strong> <span id="last-modified">Loading...</span></p>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="refresh-status-btn">🔄 Refresh</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="management-message" class="mt-2"></div>
+        </div>
+
+        <!-- User Modal -->
+        <div class="modal fade" id="userModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add/Edit User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="userForm">
+                            <input type="hidden" id="user-id" name="id">
+                            <div class="mb-3">
+                                <label for="user-username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="user-username" name="username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="user-password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="user-password" name="password">
+                                <small class="text-muted">Leave blank to keep current password (for editing)</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="user-role" class="form-label">Role</label>
+                                <select class="form-select" id="user-role" name="role">
+                                    <option value="admin">Administrator</option>
+                                    <option value="operator">Operator</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Permissions</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="perm-system-config" value="system_config">
+                                    <label class="form-check-label" for="perm-system-config">System Configuration</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="perm-user-management" value="user_management">
+                                    <label class="form-check-label" for="perm-user-management">User Management</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="perm-api-management" value="api_management">
+                                    <label class="form-check-label" for="perm-api-management">API Management</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="perm-audio-control" value="audio_control">
+                                    <label class="form-check-label" for="perm-audio-control">Audio Control</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="perm-announcements" value="announcements">
+                                    <label class="form-check-label" for="perm-announcements">Announcements</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="user-enabled" name="enabled" checked>
+                                    <label class="form-check-label" for="user-enabled">User Enabled</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="save-user-btn">Save User</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Key Modal -->
+        <div class="modal fade" id="apiKeyModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add/Edit API Key</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="apiKeyForm">
+                            <input type="hidden" id="apikey-id" name="id">
+                            <div class="mb-3">
+                                <label for="apikey-name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="apikey-name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="apikey-key" class="form-label">API Key</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="apikey-key" name="key" required>
+                                    <button type="button" class="btn btn-outline-secondary" id="generate-key-btn">🎲 Generate</button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Permissions</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="api-perm-announce" value="announce">
+                                    <label class="form-check-label" for="api-perm-announce">Announcements</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="api-perm-status" value="status">
+                                    <label class="form-check-label" for="api-perm-status">Status</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="api-perm-config" value="config">
+                                    <label class="form-check-label" for="api-perm-config">Configuration</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="api-perm-queue" value="queue">
+                                    <label class="form-check-label" for="api-perm-queue">Queue Management</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="apikey-permanent" name="permanent">
+                                    <label class="form-check-label" for="apikey-permanent">Permanent Key (Never Expires)</label>
+                                </div>
+                            </div>
+                            <div class="mb-3" id="expiry-section">
+                                <label for="apikey-expires" class="form-label">Expires At (optional)</label>
+                                <input type="datetime-local" class="form-control" id="apikey-expires" name="expires_at">
+                            </div>
+                            <div class="mb-3">
+                                <label for="apikey-rate-limit" class="form-label">Rate Limit (requests per hour)</label>
+                                <input type="number" class="form-control" id="apikey-rate-limit" name="rate_limit" min="1" max="10000" value="1000">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="apikey-enabled" name="enabled" checked>
+                                    <label class="form-check-label" for="apikey-enabled">API Key Enabled</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="save-apikey-btn">Save API Key</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Reference -->
@@ -160,9 +400,9 @@
                     </ul>
                 </div>
                 <div class="col-md-4">
-                    <h5>Safety Languages</h5>
+                    <h5>Tracks</h5>
                     <ul class="list-unstyled">
-                        {{range .safety_languages}}
+                        {{range .tracks}}
                             <li>{{.ID}} - {{.Name}}</li>
                         {{end}}
                     </ul>
@@ -173,95 +413,86 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Volume control
+        // Platform info
+        fetch('/api/platform')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('platform-info').textContent = `${data.os}/${data.arch}`;
+        })
+        .catch(error => {
+            document.getElementById('platform-info').textContent = 'Unknown';
+        });
+
+        // Audio controls
         const volumeSlider = document.getElementById('volume-slider');
         const volumeDisplay = document.getElementById('volume-display');
-        const currentVolumeSpan = document.getElementById('current-volume');
 
         volumeSlider.addEventListener('input', function() {
-            const volume = this.value;
-            volumeDisplay.textContent = volume + '%';
+            volumeDisplay.textContent = this.value + '%';
+        });
+
+        volumeSlider.addEventListener('change', function() {
+            const volume = this.value / 100;
             
-            // Send volume update
             fetch('/audio/volume', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: `volume=${volume / 100}`
+                body: `volume=${volume}`
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    currentVolumeSpan.textContent = data.volume_percent + '%';
+                    showAudioMessage('Volume updated successfully', 'success');
+                    document.getElementById('current-volume').textContent = data.volume_percent + '%';
                 } else {
-                    showMessage('Error setting volume: ' + (data.error || 'Unknown error'), 'danger');
+                    showAudioMessage('Failed to update volume', 'danger');
                 }
-            })
-            .catch(error => {
-                showMessage('Network error setting volume', 'danger');
             });
         });
 
         // Audio device selection
-        const deviceSelect = document.getElementById('audio-device-select');
-        deviceSelect.addEventListener('change', function() {
-            const deviceId = this.value;
+        document.getElementById('audio-device-select').addEventListener('change', function() {
+            const deviceID = this.value;
             
             fetch('/audio/devices', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: `device_id=${deviceId}`
+                body: `device_id=${deviceID}`
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showMessage('Audio device changed to: ' + data.device.name, 'success');
+                    showAudioMessage(`Audio device set to: ${data.device.Name}`, 'success');
+                    document.getElementById('selected-device-info').textContent = data.device.Name;
                 } else {
-                    showMessage('Error changing audio device: ' + (data.error || 'Unknown error'), 'danger');
-                    // Revert selection
-                    location.reload();
+                    showAudioMessage(`Failed to set audio device: ${data.error}`, 'danger');
                 }
-            })
-            .catch(error => {
-                showMessage('Network error changing audio device', 'danger');
-                location.reload();
             });
         });
 
-        // Audio test button
-        const testAudioBtn = document.getElementById('test-audio-btn');
-        testAudioBtn.addEventListener('click', function() {
-            this.disabled = true;
-            this.textContent = '🔄 Testing...';
-            
+        // Test audio
+        document.getElementById('test-audio-btn').addEventListener('click', function() {
             fetch('/audio/test', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showMessage('Audio test played successfully', 'success');
+                    showAudioMessage('Audio test played successfully', 'success');
                 } else {
-                    showMessage('Audio test failed: ' + (data.error || 'Unknown error'), 'danger');
+                    showAudioMessage(`Audio test failed: ${data.error}`, 'danger');
                 }
-            })
-            .catch(error => {
-                showMessage('Network error during audio test', 'danger');
-            })
-            .finally(() => {
-                this.disabled = false;
-                this.textContent = '🔊 Test Audio';
             });
         });
 
-        // Utility function to show messages
-        function showMessage(message, type) {
+        function showAudioMessage(message, type) {
             const messageDiv = document.getElementById('audio-message');
             messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
                 ${message}
@@ -269,176 +500,88 @@
             </div>`;
         }
 
-        // Load platform information
-        function loadPlatformInfo() {
-            fetch('/api/platform')
-                .then(response => response.json())
-                .then(data => {
-                    const platformInfo = data.platform_info;
-                    const devices = data.audio_devices;
-                    
-                    let platformText = `${platformInfo.platform}/${platformInfo.arch}`;
-                    
-                    // Add platform-specific info
-                    if (platformInfo.platform === 'linux') {
-                        const audioSystems = [];
-                        if (platformInfo.pulse_available) audioSystems.push('PulseAudio');
-                        if (platformInfo.alsa_available) audioSystems.push('ALSA');
-                        if (audioSystems.length > 0) {
-                            platformText += ` (${audioSystems.join(', ')})`;
-                        }
-                    } else if (platformInfo.platform === 'windows') {
-                        if (platformInfo.audiocmdlets_available) {
-                            platformText += ' (AudioDeviceCmdlets available)';
-                        } else {
-                            platformText += ' (WMI fallback)';
-                        }
-                    }
-                    
-                    document.getElementById('platform-info').textContent = platformText;
-                    document.getElementById('selected-device-info').textContent = 
-                        data.current_device + ` (${devices.length} devices available)`;
-                })
-                .catch(error => {
-                    document.getElementById('platform-info').textContent = 'Error loading platform info';
-                });
-        }
-
-        // Load platform info on page load
-        document.addEventListener('DOMContentLoaded', loadPlatformInfo);
-
-        // Queue Management Functions
+        // Queue management functions
         function loadQueueStatus() {
             fetch('/api/queue/status', {
-                headers: {
-                    'X-API-Key': 'tarr-api-2025'
-                }
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {
-                const statusDiv = document.getElementById('queue-status-content');
-                
-                let statusHTML = `
-                    <p><strong>Queue Length:</strong> ${data.queue_length}</p>
-                    <p><strong>Currently Playing:</strong> ${data.currently_playing ? 
-                        `${data.currently_playing.type} (${data.currently_playing.id})` : 
-                        'None'}</p>
-                    <p><strong>Manager Status:</strong> ${data.is_running ? 'Running' : 'Stopped'}</p>
-                `;
-                
-                if (data.queue_length > 0) {
-                    statusHTML += '<h6>Queued Items:</h6><ul class="list-unstyled">';
-                    data.queue_items.forEach(item => {
-                        const priorityBadge = getPriorityBadge(item.priority);
-                        statusHTML += `
-                            <li class="mb-1">
-                                ${priorityBadge} ${item.type} - ${item.id} 
-                                <small class="text-muted">(${new Date(item.scheduled_at).toLocaleTimeString()})</small>
-                                <button class="btn btn-sm btn-outline-danger ms-2" onclick="cancelAnnouncement('${item.id}')">Cancel</button>
-                            </li>
+                const content = document.getElementById('queue-status-content');
+                if (data.error) {
+                    content.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+                    return;
+                }
+
+                if (data.queue && data.queue.length > 0) {
+                    let html = '<div class="list-group">';
+                    data.queue.forEach(item => {
+                        const priorityBadge = item.priority === 1 ? 'danger' : item.priority === 2 ? 'warning' : 'primary';
+                        const priorityText = item.priority === 1 ? 'EMERGENCY' : item.priority === 2 ? 'High' : item.priority === 3 ? 'Normal' : 'Low';
+                        
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${item.name || item.type}</h6>
+                                        <small class="text-muted">ID: ${item.id}</small>
+                                    </div>
+                                    <span class="badge bg-${priorityBadge}">${priorityText}</span>
+                                </div>
+                                <p class="mb-1"><small>Status: ${item.status}</small></p>
+                                <small class="text-muted">Scheduled: ${new Date(item.scheduled_time).toLocaleString()}</small>
+                            </div>
                         `;
                     });
-                    statusHTML += '</ul>';
+                    html += '</div>';
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = '<p class="text-muted">Queue is empty</p>';
                 }
-                
-                statusDiv.innerHTML = statusHTML;
             })
             .catch(error => {
-                document.getElementById('queue-status-content').innerHTML = 
-                    '<div class="alert alert-danger">Failed to load queue status</div>';
+                document.getElementById('queue-status-content').innerHTML = '<p class="text-danger">Failed to load queue status</p>';
             });
         }
 
         function loadQueueHistory() {
             fetch('/api/queue/history?limit=10', {
-                headers: {
-                    'X-API-Key': 'tarr-api-2025'
-                }
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {
-                const historyDiv = document.getElementById('queue-history-content');
-                
-                if (data.history.length === 0) {
-                    historyDiv.innerHTML = '<p class="text-muted">No recent announcements</p>';
+                const content = document.getElementById('queue-history-content');
+                if (data.error) {
+                    content.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
                     return;
                 }
-                
-                let historyHTML = '<ul class="list-unstyled">';
-                data.history.forEach(item => {
-                    const statusBadge = getStatusBadge(item.status);
-                    const startTime = item.started_at ? 
-                        new Date(item.started_at).toLocaleTimeString() : 
-                        'Not started';
-                    
-                    historyHTML += `
-                        <li class="mb-2">
-                            ${statusBadge} <strong>${item.type}</strong> - ${item.id}
-                            <br><small class="text-muted">Started: ${startTime}</small>
-                            ${item.duration ? 
-                                `<br><small class="text-muted">Duration: ${Math.round(item.duration / 1000000)}ms</small>` : 
-                                ''}
-                            ${item.error ? 
-                                `<br><small class="text-danger">Error: ${item.error}</small>` : 
-                                ''}
-                        </li>
-                    `;
-                });
-                historyHTML += '</ul>';
-                
-                historyDiv.innerHTML = historyHTML;
-            })
-            .catch(error => {
-                document.getElementById('queue-history-content').innerHTML = 
-                    '<div class="alert alert-danger">Failed to load history</div>';
-            });
-        }
 
-        function getPriorityBadge(priority) {
-            const badges = {
-                1: '<span class="badge bg-secondary">Low</span>',
-                2: '<span class="badge bg-primary">Normal</span>',
-                3: '<span class="badge bg-warning">High</span>',
-                4: '<span class="badge bg-danger">Critical</span>',
-                5: '<span class="badge bg-dark">Emergency</span>'
-            };
-            return badges[priority] || '<span class="badge bg-secondary">Normal</span>';
-        }
-
-        function getStatusBadge(status) {
-            const badges = {
-                'queued': '<span class="badge bg-secondary">Queued</span>',
-                'playing': '<span class="badge bg-primary">Playing</span>',
-                'completed': '<span class="badge bg-success">Completed</span>',
-                'cancelled': '<span class="badge bg-warning">Cancelled</span>',
-                'failed': '<span class="badge bg-danger">Failed</span>'
-            };
-            return badges[status] || '<span class="badge bg-secondary">Unknown</span>';
-        }
-
-        function cancelAnnouncement(announcementId) {
-            if (!confirm(`Cancel announcement ${announcementId}?`)) return;
-            
-            fetch('/api/queue/cancel', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-API-Key': 'tarr-api-2025'
-                },
-                body: `id=${announcementId}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showQueueMessage('Announcement cancelled successfully', 'success');
-                    loadQueueStatus();
-                    loadQueueHistory();
+                if (data.history && data.history.length > 0) {
+                    let html = '<div class="list-group">';
+                    data.history.forEach(item => {
+                        const statusBadge = item.status === 'completed' ? 'success' : item.status === 'failed' ? 'danger' : 'secondary';
+                        
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${item.name || item.type}</h6>
+                                        <small class="text-muted">ID: ${item.id}</small>
+                                    </div>
+                                    <span class="badge bg-${statusBadge}">${item.status}</span>
+                                </div>
+                                <small class="text-muted">Completed: ${new Date(item.completed_at || item.scheduled_time).toLocaleString()}</small>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    content.innerHTML = html;
                 } else {
-                    showQueueMessage(`Failed to cancel: ${data.error}`, 'danger');
+                    content.innerHTML = '<p class="text-muted">No recent history</p>';
                 }
             })
             .catch(error => {
-                showQueueMessage('Error cancelling announcement', 'danger');
+                document.getElementById('queue-history-content').innerHTML = '<p class="text-danger">Failed to load queue history</p>';
             });
         }
 
@@ -447,7 +590,7 @@
             const selectedValue = emergencySelect.value;
             
             if (!selectedValue) {
-                showQueueMessage('Please select an emergency type first', 'warning');
+                showQueueMessage('Please select an emergency type', 'warning');
                 return;
             }
             
@@ -510,10 +653,361 @@
 
         document.getElementById('emergency-announce-btn').addEventListener('click', triggerEmergencyAnnouncement);
 
+        // Multi-user management functions
+        let currentUsers = [];
+        let currentAPIKeys = [];
+
+        function loadManagementData() {
+            fetch('/admin/credentials', {
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Management data received:', data);
+                if (data.error) {
+                    showManagementMessage('Failed to load management data: ' + data.error, 'danger');
+                    return;
+                }
+                
+                currentUsers = data.admin_users || [];
+                currentAPIKeys = data.api_keys || [];
+                
+                loadUsersTable();
+                loadAPIKeysTable();
+                updateSystemStatus(data);
+                
+                // Update settings
+                document.getElementById('session-timeout').value = data.session_timeout || 60;
+            })
+            .catch(error => {
+                console.error('Error loading management data:', error);
+                showManagementMessage('Error loading management data: ' + error.message, 'danger');
+            });
+        }
+
+        function loadUsersTable() {
+            const tbody = document.getElementById('users-table-body');
+            if (currentUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No users found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = currentUsers.map(user => `
+                <tr>
+                    <td><strong>${user.username || 'Unknown'}</strong></td>
+                    <td><span class="badge bg-${user.role === 'admin' ? 'primary' : 'secondary'}">${user.role || 'user'}</span></td>
+                    <td><span class="badge bg-${user.enabled ? 'success' : 'danger'}">${user.enabled ? 'Active' : 'Disabled'}</span></td>
+                    <td>${formatDate(user.created_at)}</td>
+                    <td>${user.last_login ? formatDate(user.last_login) : 'Never'}</td>
+                    <td><small>${(user.permissions || []).join(', ')}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editUser('${user.id}')">✏️ Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${user.id}')" ${currentUsers.length <= 1 ? 'disabled' : ''}>🗑️ Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function loadAPIKeysTable() {
+            const tbody = document.getElementById('apikeys-table-body');
+            if (currentAPIKeys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">No API keys found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = currentAPIKeys.map(key => `
+                <tr>
+                    <td><strong>${key.name || 'Unknown'}</strong></td>
+                    <td><code>${key.key ? key.key.substring(0, 8) + '•'.repeat(8) : '••••••••••••••••'}</code></td>
+                    <td><span class="badge bg-${key.enabled ? 'success' : 'danger'}">${key.enabled ? 'Active' : 'Disabled'}</span></td>
+                    <td><span class="badge bg-${key.permanent ? 'warning' : 'info'}">${key.permanent ? 'Permanent' : 'Temporary'}</span></td>
+                    <td>${formatDate(key.created_at)}</td>
+                    <td>${key.last_used ? formatDate(key.last_used) : 'Never'}</td>
+                    <td><small>${(key.permissions || []).join(', ')}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editAPIKey('${key.id}')">✏️ Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteAPIKey('${key.id}')" ${key.permanent ? 'disabled title="Cannot delete permanent key"' : ''}>🗑️ Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateSystemStatus(data) {
+            document.getElementById('total-users').textContent = currentUsers.length;
+            document.getElementById('active-api-keys').textContent = currentAPIKeys.filter(k => k.enabled).length;
+            document.getElementById('last-modified').textContent = formatDate(data.last_modified) || 'Unknown';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString();
+        }
+
+        function editUser(userId) {
+            const user = currentUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            // Populate modal
+            document.getElementById('user-id').value = user.id;
+            document.getElementById('user-username').value = user.username;
+            document.getElementById('user-password').value = '';
+            document.getElementById('user-role').value = user.role;
+            document.getElementById('user-enabled').checked = user.enabled;
+
+            // Set permissions
+            const permissionCheckboxes = document.querySelectorAll('#userForm input[type="checkbox"][value]');
+            permissionCheckboxes.forEach(cb => {
+                cb.checked = user.permissions.includes(cb.value);
+            });
+
+            // Show modal
+            document.querySelector('#userModal .modal-title').textContent = 'Edit User';
+            new bootstrap.Modal(document.getElementById('userModal')).show();
+        }
+
+        function editAPIKey(keyId) {
+            const apiKey = currentAPIKeys.find(k => k.id === keyId);
+            if (!apiKey) return;
+
+            // Populate modal
+            document.getElementById('apikey-id').value = apiKey.id;
+            document.getElementById('apikey-name').value = apiKey.name;
+            document.getElementById('apikey-key').value = apiKey.key;
+            document.getElementById('apikey-permanent').checked = apiKey.permanent;
+            document.getElementById('apikey-expires').value = apiKey.expires_at || '';
+            document.getElementById('apikey-rate-limit').value = apiKey.rate_limit.requests_per_hour;
+            document.getElementById('apikey-enabled').checked = apiKey.enabled;
+
+            // Set permissions
+            const permissionCheckboxes = document.querySelectorAll('#apiKeyForm input[type="checkbox"][value]');
+            permissionCheckboxes.forEach(cb => {
+                cb.checked = apiKey.permissions.includes(cb.value);
+            });
+
+            // Show modal
+            document.querySelector('#apiKeyModal .modal-title').textContent = 'Edit API Key';
+            new bootstrap.Modal(document.getElementById('apiKeyModal')).show();
+        }
+
+        function saveUser() {
+            const formData = new FormData(document.getElementById('userForm'));
+            const userId = formData.get('id');
+            const isEdit = !!userId;
+
+            // Get permissions
+            const permissions = Array.from(document.querySelectorAll('#userForm input[type="checkbox"][value]:checked'))
+                .map(cb => cb.value);
+
+            const userData = {
+                username: formData.get('username'),
+                password: formData.get('password'),
+                role: formData.get('role'),
+                enabled: document.getElementById('user-enabled').checked,
+                permissions: permissions
+            };
+
+            const url = isEdit ? `/admin/users/${userId}` : '/admin/users';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showManagementMessage(`User ${isEdit ? 'updated' : 'created'} successfully!`, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+                    loadManagementData();
+                } else {
+                    showManagementMessage(`Failed to ${isEdit ? 'update' : 'create'} user: ${data.error}`, 'danger');
+                }
+            })
+            .catch(error => {
+                showManagementMessage(`Error ${isEdit ? 'updating' : 'creating'} user`, 'danger');
+            });
+        }
+
+        function saveAPIKey() {
+            const formData = new FormData(document.getElementById('apiKeyForm'));
+            const keyId = formData.get('id');
+            const isEdit = !!keyId;
+
+            // Get permissions
+            const permissions = Array.from(document.querySelectorAll('#apiKeyForm input[type="checkbox"][value]:checked'))
+                .map(cb => cb.value);
+
+            const keyData = {
+                name: formData.get('name'),
+                key: formData.get('key'),
+                permanent: document.getElementById('apikey-permanent').checked,
+                expires_at: formData.get('expires_at'),
+                enabled: document.getElementById('apikey-enabled').checked,
+                permissions: permissions,
+                rate_limit: {
+                    requests_per_hour: parseInt(formData.get('rate_limit')) || 1000,
+                    enabled: false
+                }
+            };
+
+            const url = isEdit ? `/admin/api-keys/${keyId}` : '/admin/api-keys';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(keyData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showManagementMessage(`API key ${isEdit ? 'updated' : 'created'} successfully!`, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('apiKeyModal')).hide();
+                    loadManagementData();
+                } else {
+                    showManagementMessage(`Failed to ${isEdit ? 'update' : 'create'} API key: ${data.error}`, 'danger');
+                }
+            })
+            .catch(error => {
+                showManagementMessage(`Error ${isEdit ? 'updating' : 'creating'} API key`, 'danger');
+            });
+        }
+
+        function deleteUser(userId) {
+            const user = currentUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            if (!confirm(`Delete user "${user.username}"?\n\nThis action cannot be undone.`)) return;
+
+            fetch(`/admin/users/${userId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showManagementMessage('User deleted successfully!', 'success');
+                    loadManagementData();
+                } else {
+                    showManagementMessage(`Failed to delete user: ${data.error}`, 'danger');
+                }
+            })
+            .catch(error => {
+                showManagementMessage('Error deleting user', 'danger');
+            });
+        }
+
+        function deleteAPIKey(keyId) {
+            const apiKey = currentAPIKeys.find(k => k.id === keyId);
+            if (!apiKey) return;
+
+            if (!confirm(`Delete API key "${apiKey.name}"?\n\nThis action cannot be undone.`)) return;
+
+            fetch(`/admin/api-keys/${keyId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showManagementMessage('API key deleted successfully!', 'success');
+                    loadManagementData();
+                } else {
+                    showManagementMessage(`Failed to delete API key: ${data.error}`, 'danger');
+                }
+            })
+            .catch(error => {
+                showManagementMessage('Error deleting API key', 'danger');
+            });
+        }
+
+        function updateSettings() {
+            const sessionTimeout = parseInt(document.getElementById('session-timeout').value);
+            
+            if (sessionTimeout < 5 || sessionTimeout > 1440) {
+                showManagementMessage('Session timeout must be between 5 and 1440 minutes', 'warning');
+                return;
+            }
+            
+            fetch('/admin/credentials', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_timeout: sessionTimeout
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showManagementMessage('Settings updated successfully!', 'success');
+                    loadManagementData();
+                } else {
+                    showManagementMessage(`Failed to update settings: ${data.error}`, 'danger');
+                }
+            })
+            .catch(error => {
+                showManagementMessage('Error updating settings', 'danger');
+            });
+        }
+
+        function generateAPIKey() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+            let apiKey = 'tarr-api-';
+            for (let i = 0; i < 16; i++) {
+                apiKey += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('apikey-key').value = apiKey;
+        }
+
+        function showManagementMessage(message, type) {
+            const messageDiv = document.getElementById('management-message');
+            messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+
+        // Event listeners for management functionality
+        document.getElementById('save-user-btn').addEventListener('click', saveUser);
+        document.getElementById('save-apikey-btn').addEventListener('click', saveAPIKey);
+        document.getElementById('update-settings-btn').addEventListener('click', updateSettings);
+        document.getElementById('refresh-status-btn').addEventListener('click', loadManagementData);
+        document.getElementById('generate-key-btn').addEventListener('click', generateAPIKey);
+
+        // Clear modals when they're hidden
+        document.getElementById('userModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('userForm').reset();
+            document.getElementById('user-id').value = '';
+            document.querySelector('#userModal .modal-title').textContent = 'Add User';
+        });
+
+        document.getElementById('apiKeyModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('apiKeyForm').reset();
+            document.getElementById('apikey-id').value = '';
+            document.querySelector('#apiKeyModal .modal-title').textContent = 'Add API Key';
+        });
+
+        // Toggle expiry section based on permanent checkbox
+        document.getElementById('apikey-permanent').addEventListener('change', function() {
+            const expirySection = document.getElementById('expiry-section');
+            expirySection.style.display = this.checked ? 'none' : 'block';
+        });
+
         // Load queue data on page load and refresh every 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
             loadQueueStatus();
             loadQueueHistory();
+            loadManagementData();
             
             // Auto-refresh every 5 seconds
             setInterval(function() {

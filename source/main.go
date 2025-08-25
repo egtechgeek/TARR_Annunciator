@@ -19,15 +19,71 @@ import (
 )
 
 type Config struct {
-	AdminUsername     string
-	AdminPassword     string
-	APIKey            string
-	APIEnabled        bool
-	BaseDir           string
-	JSONDir           string
-	MP3Dir            string
-	CurrentVolume     float64
+	AdminUsername       string
+	AdminPassword       string
+	APIKey              string
+	APIEnabled          bool
+	BaseDir             string
+	JSONDir             string
+	MP3Dir              string
+	CurrentVolume       float64
 	SelectedAudioDevice string
+	SessionSecret       string
+}
+
+type AdminUser struct {
+	ID          string   `json:"id"`
+	Username    string   `json:"username"`
+	Password    string   `json:"password"`
+	Role        string   `json:"role"`
+	Enabled     bool     `json:"enabled"`
+	CreatedAt   string   `json:"created_at"`
+	LastLogin   string   `json:"last_login"`
+	Permissions []string `json:"permissions"`
+}
+
+type APIKey struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Key         string   `json:"key"`
+	Enabled     bool     `json:"enabled"`
+	Permanent   bool     `json:"permanent"`
+	ExpiresAt   string   `json:"expires_at"`
+	CreatedAt   string   `json:"created_at"`
+	CreatedBy   string   `json:"created_by"`
+	LastUsed    string   `json:"last_used"`
+	Permissions []string `json:"permissions"`
+	RateLimit   struct {
+		RequestsPerHour int  `json:"requests_per_hour"`
+		Enabled         bool `json:"enabled"`
+	} `json:"rate_limit"`
+}
+
+type AdminConfig struct {
+	AdminUsers []AdminUser `json:"admin_users"`
+	APIKeys    []APIKey    `json:"api_keys"`
+	Security   struct {
+		SessionTimeoutMinutes  int    `json:"session_timeout_minutes"`
+		RequireAdminLogin      bool   `json:"require_admin_login"`
+		ShowDefaultCredentials bool   `json:"show_default_credentials"`
+		SessionSecret          string `json:"session_secret"`
+		PasswordPolicy         struct {
+			MinLength           int  `json:"min_length"`
+			RequireSpecialChars bool `json:"require_special_chars"`
+			RequireNumbers      bool `json:"require_numbers"`
+		} `json:"password_policy"`
+		FailedLoginAttempts struct {
+			MaxAttempts            int  `json:"max_attempts"`
+			LockoutDurationMinutes int  `json:"lockout_duration_minutes"`
+			Enabled                bool `json:"enabled"`
+		} `json:"failed_login_attempts"`
+	} `json:"security"`
+	Metadata struct {
+		CreatedAt     string `json:"created_at"`
+		LastModified  string `json:"last_modified"`
+		Version       string `json:"version"`
+		SchemaVersion string `json:"schema_version"`
+	} `json:"metadata"`
 }
 
 type Train struct {
@@ -105,24 +161,39 @@ var app *App
 
 func main() {
 	fmt.Println("Starting TARR Annunciator...")
+	
+	// Initialize paths first
+	baseDir, _ := os.Getwd()
+	jsonDir := filepath.Join(baseDir, "json")
+	mp3Dir := filepath.Join(baseDir, "static", "mp3")
+
+	// Load admin configuration
+	adminConfig, err := loadAdminConfig(filepath.Join(jsonDir, "admin_config.json"))
+	if err != nil {
+		log.Printf("Warning: Could not load admin config, using defaults: %v", err)
+		adminConfig = getDefaultAdminConfig()
+	}
+
+	// Get first admin user for backward compatibility
+	firstAdmin := getFirstAdminUser(adminConfig)
+	firstAPIKey := getFirstAPIKey(adminConfig)
+
 	app = &App{
 		Config: &Config{
-			AdminUsername: "admin",
-			AdminPassword: "tarr2025",
-			APIKey:        "tarr-api-2025",
-			APIEnabled:    true,
-			CurrentVolume: 0.7,
+			AdminUsername:       firstAdmin.Username,
+			AdminPassword:       firstAdmin.Password,
+			APIKey:              firstAPIKey.Key,
+			APIEnabled:          len(adminConfig.APIKeys) > 0 && firstAPIKey.Enabled,
+			CurrentVolume:       0.7,
 			SelectedAudioDevice: "default",
+			SessionSecret:       adminConfig.Security.SessionSecret,
+			BaseDir:             baseDir,
+			JSONDir:             jsonDir,
+			MP3Dir:              mp3Dir,
 		},
 		Scheduler:    cron.New(),
 		AudioEnabled: true,
 	}
-
-	// Initialize paths
-	baseDir, _ := os.Getwd()
-	app.Config.BaseDir = baseDir
-	app.Config.JSONDir = filepath.Join(baseDir, "json")
-	app.Config.MP3Dir = filepath.Join(baseDir, "static", "mp3")
 
 	// Initialize audio
 	if err := initAudio(); err != nil {
@@ -137,7 +208,7 @@ func main() {
 	log.Println("✓ Announcement queue system initialized")
 
 	// Setup router
-	setupRouter()
+	setupRouter(adminConfig)
 
 	// Start scheduler
 	app.Scheduler.Start()
@@ -165,14 +236,18 @@ func audioStatus() string {
 	return "Not Available"
 }
 
-func setupRouter() {
+func setupRouter(adminConfig *AdminConfig) {
 	// Set Gin to release mode
 	gin.SetMode(gin.ReleaseMode)
 
 	app.Router = gin.Default()
 
-	// Session store
-	store := cookie.NewStore([]byte("2932d8c03fb85143293c803ff3f7f1c27923787e520ce335"))
+	// Session store - use session secret from admin config
+	sessionSecret := adminConfig.Security.SessionSecret
+	if sessionSecret == "" {
+		sessionSecret = "2932d8c03fb85143293c803ff3f7f1c27923787e520ce335"
+	}
+	store := cookie.NewStore([]byte(sessionSecret))
 	app.Router.Use(sessions.Sessions("session", store))
 
 	// Add template functions
@@ -211,6 +286,25 @@ func setupWebRoutes() {
 	app.Router.POST("/audio/devices", requireAuth(), setAudioDeviceHandler)
 	app.Router.POST("/audio/volume", requireAuth(), setVolumeHandler)
 	app.Router.POST("/audio/test", requireAuth(), testAudioHandler)
+	
+	// Credential management routes (admin only)
+	app.Router.GET("/admin/credentials", requireAuth(), getCredentialsHandler)
+	app.Router.POST("/admin/credentials", requireAuth(), updateCredentialsHandler)
+	
+	// User management routes (admin only)
+	app.Router.POST("/admin/users", requireAuth(), createUserHandler)
+	app.Router.PUT("/admin/users/:id", requireAuth(), updateUserHandler)
+	app.Router.DELETE("/admin/users/:id", requireAuth(), deleteUserHandler)
+	
+	// API Key management routes (admin only)
+	app.Router.POST("/admin/api-keys", requireAuth(), createAPIKeyHandler)
+	app.Router.PUT("/admin/api-keys/:id", requireAuth(), updateAPIKeyHandler)
+	app.Router.DELETE("/admin/api-keys/:id", requireAuth(), deleteAPIKeyHandler)
+	
+	// Queue management routes (admin only) - session authenticated versions
+	app.Router.GET("/api/queue/status", requireAuth(), apiGetQueueStatusHandler)
+	app.Router.GET("/api/queue/history", requireAuth(), apiGetQueueHistoryHandler)
+	app.Router.POST("/api/queue/cancel", requireAuth(), apiCancelAnnouncementHandler)
 }
 
 func setupAPIRoutes() {
@@ -235,9 +329,6 @@ func setupAPIRoutes() {
 		authAPI.GET("/config", apiGetConfigHandler)
 		authAPI.GET("/schedule", apiGetScheduleHandler)
 		authAPI.POST("/schedule", apiPostScheduleHandler)
-		authAPI.GET("/queue/status", apiGetQueueStatusHandler)
-		authAPI.GET("/queue/history", apiGetQueueHistoryHandler)
-		authAPI.POST("/queue/cancel", apiCancelAnnouncementHandler)
 	}
 }
 
@@ -278,10 +369,31 @@ func requireAPIKey() gin.HandlerFunc {
 			return
 		}
 
-		if apiKey != app.Config.APIKey {
-			c.JSON(401, gin.H{"error": "Invalid API key"})
-			c.Abort()
-			return
+		// Load admin config to check against multiple API keys
+		configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+		adminConfig, err := loadAdminConfig(configPath)
+		if err != nil {
+			// Fall back to single API key check
+			if apiKey != app.Config.APIKey {
+				c.JSON(401, gin.H{"error": "Invalid API key"})
+				c.Abort()
+				return
+			}
+		} else {
+			// Check against multi-API key system
+			apiKeyData := findAPIKeyByKey(adminConfig, apiKey)
+			if apiKeyData == nil {
+				c.JSON(401, gin.H{"error": "Invalid API key"})
+				c.Abort()
+				return
+			}
+			
+			// Update last used time
+			apiKeyData.LastUsed = time.Now().Format(time.RFC3339)
+			saveAdminConfig(configPath, adminConfig)
+			
+			// Store API key info in context for permission checks
+			c.Set("api_key_data", apiKeyData)
 		}
 
 		c.Next()
@@ -412,16 +524,39 @@ func adminLoginPostHandler(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	if username == app.Config.AdminUsername && password == app.Config.AdminPassword {
-		session := sessions.Default(c)
-		session.Set("admin_logged_in", true)
-		session.Save()
-		c.Redirect(http.StatusFound, "/admin")
+	// Load admin config to verify credentials against multi-user system
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		// Fall back to single user check if config load fails
+		if username == app.Config.AdminUsername && password == app.Config.AdminPassword {
+			session := sessions.Default(c)
+			session.Set("admin_logged_in", true)
+			session.Set("admin_user_id", "admin-001")
+			session.Save()
+			c.Redirect(http.StatusFound, "/admin")
+			return
+		}
 	} else {
-		c.HTML(http.StatusOK, "admin_login.html", gin.H{
-			"error": "Invalid username or password!",
-		})
+		// Check against multi-user system
+		user := findUserByUsername(adminConfig, username)
+		if user != nil && user.Password == password {
+			// Update last login time
+			user.LastLogin = time.Now().Format(time.RFC3339)
+			saveAdminConfig(configPath, adminConfig)
+			
+			session := sessions.Default(c)
+			session.Set("admin_logged_in", true)
+			session.Set("admin_user_id", user.ID)
+			session.Save()
+			c.Redirect(http.StatusFound, "/admin")
+			return
+		}
 	}
+
+	c.HTML(http.StatusOK, "admin_login.html", gin.H{
+		"error": "Invalid username or password!",
+	})
 }
 
 func adminLogoutHandler(c *gin.Context) {
@@ -580,4 +715,575 @@ func testAudioHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Audio test played successfully"})
+}
+
+// Admin configuration management functions
+func loadAdminConfig(configPath string) (*AdminConfig, error) {
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var config AdminConfig
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func saveAdminConfig(configPath string, config *AdminConfig) error {
+	config.Metadata.LastModified = time.Now().Format(time.RFC3339)
+	
+	data, err := json.MarshalIndent(config, "", "    ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(configPath, data, 0600) // Restrict permissions for security
+}
+
+func getDefaultAdminConfig() *AdminConfig {
+	config := &AdminConfig{}
+	
+	// Create default admin user
+	defaultUser := AdminUser{
+		ID:          "admin-001",
+		Username:    "admin", 
+		Password:    "tarr2025",
+		Role:        "admin",
+		Enabled:     true,
+		CreatedAt:   time.Now().Format(time.RFC3339),
+		LastLogin:   "",
+		Permissions: []string{"system_config", "user_management", "api_management", "audio_control", "announcements"},
+	}
+	config.AdminUsers = []AdminUser{defaultUser}
+	
+	// Create default API key
+	defaultAPIKey := APIKey{
+		ID:          "api-001",
+		Name:        "Default API Key",
+		Key:         "tarr-api-2025", 
+		Enabled:     true,
+		Permanent:   false,
+		ExpiresAt:   "",
+		CreatedAt:   time.Now().Format(time.RFC3339),
+		CreatedBy:   "admin-001",
+		LastUsed:    "",
+		Permissions: []string{"announce", "status", "config"},
+	}
+	defaultAPIKey.RateLimit.RequestsPerHour = 1000
+	defaultAPIKey.RateLimit.Enabled = false
+	config.APIKeys = []APIKey{defaultAPIKey}
+	
+	// Security settings
+	config.Security.SessionTimeoutMinutes = 60
+	config.Security.RequireAdminLogin = true
+	config.Security.ShowDefaultCredentials = false
+	config.Security.SessionSecret = "tarr-session-secret-change-this"
+	config.Security.PasswordPolicy.MinLength = 8
+	config.Security.PasswordPolicy.RequireSpecialChars = true
+	config.Security.PasswordPolicy.RequireNumbers = true
+	config.Security.FailedLoginAttempts.MaxAttempts = 5
+	config.Security.FailedLoginAttempts.LockoutDurationMinutes = 15
+	config.Security.FailedLoginAttempts.Enabled = true
+	
+	// Metadata
+	config.Metadata.CreatedAt = time.Now().Format(time.RFC3339)
+	config.Metadata.LastModified = time.Now().Format(time.RFC3339)
+	config.Metadata.Version = "2.0"
+	config.Metadata.SchemaVersion = "multi-user"
+	
+	return config
+}
+
+func getFirstAdminUser(config *AdminConfig) AdminUser {
+	if len(config.AdminUsers) > 0 {
+		return config.AdminUsers[0]
+	}
+	// Return default if no users
+	return AdminUser{
+		Username: "admin",
+		Password: "tarr2025",
+		Role:     "admin",
+		Enabled:  true,
+	}
+}
+
+func getFirstAPIKey(config *AdminConfig) APIKey {
+	if len(config.APIKeys) > 0 {
+		return config.APIKeys[0]
+	}
+	// Return default if no API keys
+	return APIKey{
+		Key:     "tarr-api-2025",
+		Enabled: true,
+	}
+}
+
+func findUserByUsername(config *AdminConfig, username string) *AdminUser {
+	for i, user := range config.AdminUsers {
+		if user.Username == username && user.Enabled {
+			return &config.AdminUsers[i]
+		}
+	}
+	return nil
+}
+
+func findAPIKeyByKey(config *AdminConfig, apiKey string) *APIKey {
+	for i, key := range config.APIKeys {
+		if key.Key == apiKey && key.Enabled {
+			return &config.APIKeys[i]
+		}
+	}
+	return nil
+}
+
+func hasPermission(user *AdminUser, permission string) bool {
+	for _, perm := range user.Permissions {
+		if perm == permission {
+			return true
+		}
+	}
+	return false
+}
+
+func hasAPIPermission(apiKey *APIKey, permission string) bool {
+	for _, perm := range apiKey.Permissions {
+		if perm == permission {
+			return true
+		}
+	}
+	return false
+}
+
+// Credential management API endpoints
+func getCredentialsHandler(c *gin.Context) {
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load admin config"})
+		return
+	}
+
+	// Prepare safe user data (no passwords)
+	safeUsers := make([]gin.H, len(adminConfig.AdminUsers))
+	for i, user := range adminConfig.AdminUsers {
+		safeUsers[i] = gin.H{
+			"id":          user.ID,
+			"username":    user.Username,
+			"role":        user.Role,
+			"enabled":     user.Enabled,
+			"created_at":  user.CreatedAt,
+			"last_login":  user.LastLogin,
+			"permissions": user.Permissions,
+		}
+	}
+
+	// Prepare safe API key data (with keys for frontend display)
+	safeAPIKeys := make([]gin.H, len(adminConfig.APIKeys))
+	for i, key := range adminConfig.APIKeys {
+		safeAPIKeys[i] = gin.H{
+			"id":         key.ID,
+			"name":       key.Name,
+			"key":        key.Key, // Include key for frontend masking
+			"enabled":    key.Enabled,
+			"permanent":  key.Permanent,
+			"expires_at": key.ExpiresAt,
+			"created_at": key.CreatedAt,
+			"created_by": key.CreatedBy,
+			"last_used":  key.LastUsed,
+			"permissions": key.Permissions,
+			"rate_limit": key.RateLimit,
+		}
+	}
+
+	// Return safe data
+	c.JSON(http.StatusOK, gin.H{
+		"admin_users":          safeUsers,
+		"api_keys":             safeAPIKeys,
+		"session_timeout":      adminConfig.Security.SessionTimeoutMinutes,
+		"require_admin_login":  adminConfig.Security.RequireAdminLogin,
+		"password_policy":      adminConfig.Security.PasswordPolicy,
+		"failed_login_attempts": adminConfig.Security.FailedLoginAttempts,
+		"last_modified":        adminConfig.Metadata.LastModified,
+		"schema_version":       adminConfig.Metadata.SchemaVersion,
+	})
+}
+
+func updateCredentialsHandler(c *gin.Context) {
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load admin config"})
+		return
+	}
+
+	var updateData struct {
+		SessionTimeout *int `json:"session_timeout,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		return
+	}
+
+	// Update global settings
+	if updateData.SessionTimeout != nil {
+		adminConfig.Security.SessionTimeoutMinutes = *updateData.SessionTimeout
+	}
+
+	// Save updated config
+	if err := saveAdminConfig(configPath, adminConfig); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Settings updated successfully",
+	})
+}
+
+// User management handlers
+func createUserHandler(c *gin.Context) {
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load admin config"})
+		return
+	}
+
+	var newUser AdminUser
+	if err := c.ShouldBindJSON(&newUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user data"})
+		return
+	}
+
+	// Generate unique ID if not provided
+	if newUser.ID == "" {
+		newUser.ID = fmt.Sprintf("admin-%03d", len(adminConfig.AdminUsers)+1)
+	}
+
+	// Check if username already exists
+	for _, user := range adminConfig.AdminUsers {
+		if user.Username == newUser.Username {
+			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+			return
+		}
+	}
+
+	// Set defaults
+	if newUser.Role == "" {
+		newUser.Role = "admin"
+	}
+	if newUser.Permissions == nil {
+		newUser.Permissions = []string{"announcements"}
+	}
+	newUser.CreatedAt = time.Now().Format(time.RFC3339)
+	newUser.Enabled = true
+
+	// Add user to config
+	adminConfig.AdminUsers = append(adminConfig.AdminUsers, newUser)
+
+	// Save config
+	if err := saveAdminConfig(configPath, adminConfig); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "User created successfully",
+		"user_id": newUser.ID,
+	})
+}
+
+func updateUserHandler(c *gin.Context) {
+	userID := c.Param("id")
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load admin config"})
+		return
+	}
+
+	// Find user
+	userIndex := -1
+	for i, user := range adminConfig.AdminUsers {
+		if user.ID == userID {
+			userIndex = i
+			break
+		}
+	}
+
+	if userIndex == -1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var updateData AdminUser
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user data"})
+		return
+	}
+
+	// Update user fields
+	user := &adminConfig.AdminUsers[userIndex]
+	if updateData.Username != "" {
+		// Check if new username already exists (excluding current user)
+		for i, existingUser := range adminConfig.AdminUsers {
+			if i != userIndex && existingUser.Username == updateData.Username {
+				c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+				return
+			}
+		}
+		user.Username = updateData.Username
+	}
+	if updateData.Password != "" {
+		user.Password = updateData.Password
+	}
+	if updateData.Role != "" {
+		user.Role = updateData.Role
+	}
+	if updateData.Permissions != nil {
+		user.Permissions = updateData.Permissions
+	}
+	user.Enabled = updateData.Enabled
+
+	// Save config
+	if err := saveAdminConfig(configPath, adminConfig); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "User updated successfully",
+	})
+}
+
+func deleteUserHandler(c *gin.Context) {
+	userID := c.Param("id")
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load admin config"})
+		return
+	}
+
+	// Find user
+	userIndex := -1
+	for i, user := range adminConfig.AdminUsers {
+		if user.ID == userID {
+			userIndex = i
+			break
+		}
+	}
+
+	if userIndex == -1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Don't allow deleting the last admin user
+	if len(adminConfig.AdminUsers) <= 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete the last admin user"})
+		return
+	}
+
+	// Remove user
+	adminConfig.AdminUsers = append(adminConfig.AdminUsers[:userIndex], adminConfig.AdminUsers[userIndex+1:]...)
+
+	// Save config
+	if err := saveAdminConfig(configPath, adminConfig); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "User deleted successfully",
+	})
+}
+
+// API Key management handlers
+func createAPIKeyHandler(c *gin.Context) {
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load admin config"})
+		return
+	}
+
+	var newAPIKey APIKey
+	if err := c.ShouldBindJSON(&newAPIKey); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid API key data"})
+		return
+	}
+
+	// Generate unique ID if not provided
+	if newAPIKey.ID == "" {
+		newAPIKey.ID = fmt.Sprintf("api-%03d", len(adminConfig.APIKeys)+1)
+	}
+
+	// Check if key already exists
+	for _, key := range adminConfig.APIKeys {
+		if key.Key == newAPIKey.Key {
+			c.JSON(http.StatusConflict, gin.H{"error": "API key already exists"})
+			return
+		}
+	}
+
+	// Set defaults
+	if newAPIKey.Name == "" {
+		newAPIKey.Name = "New API Key"
+	}
+	if newAPIKey.Permissions == nil {
+		newAPIKey.Permissions = []string{"announce", "status"}
+	}
+	newAPIKey.CreatedAt = time.Now().Format(time.RFC3339)
+	newAPIKey.Enabled = true
+
+	// Get current user ID from session
+	session := sessions.Default(c)
+	createdBy := session.Get("admin_user_id")
+	if createdBy != nil {
+		newAPIKey.CreatedBy = createdBy.(string)
+	}
+
+	// Set rate limit defaults
+	if newAPIKey.RateLimit.RequestsPerHour == 0 {
+		newAPIKey.RateLimit.RequestsPerHour = 1000
+	}
+
+	// Add API key to config
+	adminConfig.APIKeys = append(adminConfig.APIKeys, newAPIKey)
+
+	// Save config
+	if err := saveAdminConfig(configPath, adminConfig); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "API key created successfully",
+		"api_key_id": newAPIKey.ID,
+	})
+}
+
+func updateAPIKeyHandler(c *gin.Context) {
+	keyID := c.Param("id")
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load admin config"})
+		return
+	}
+
+	// Find API key
+	keyIndex := -1
+	for i, key := range adminConfig.APIKeys {
+		if key.ID == keyID {
+			keyIndex = i
+			break
+		}
+	}
+
+	if keyIndex == -1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "API key not found"})
+		return
+	}
+
+	var updateData APIKey
+	if err := c.ShouldBindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid API key data"})
+		return
+	}
+
+	// Update API key fields
+	key := &adminConfig.APIKeys[keyIndex]
+	if updateData.Name != "" {
+		key.Name = updateData.Name
+	}
+	if updateData.Key != "" {
+		// Check if new key already exists (excluding current key)
+		for i, existingKey := range adminConfig.APIKeys {
+			if i != keyIndex && existingKey.Key == updateData.Key {
+				c.JSON(http.StatusConflict, gin.H{"error": "API key already exists"})
+				return
+			}
+		}
+		key.Key = updateData.Key
+	}
+	if updateData.Permissions != nil {
+		key.Permissions = updateData.Permissions
+	}
+	if updateData.ExpiresAt != "" {
+		key.ExpiresAt = updateData.ExpiresAt
+	}
+	key.Enabled = updateData.Enabled
+	key.Permanent = updateData.Permanent
+
+	// Update rate limiting
+	if updateData.RateLimit.RequestsPerHour > 0 {
+		key.RateLimit.RequestsPerHour = updateData.RateLimit.RequestsPerHour
+	}
+	key.RateLimit.Enabled = updateData.RateLimit.Enabled
+
+	// Save config
+	if err := saveAdminConfig(configPath, adminConfig); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "API key updated successfully",
+	})
+}
+
+func deleteAPIKeyHandler(c *gin.Context) {
+	keyID := c.Param("id")
+	configPath := filepath.Join(app.Config.JSONDir, "admin_config.json")
+	adminConfig, err := loadAdminConfig(configPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load admin config"})
+		return
+	}
+
+	// Find API key
+	keyIndex := -1
+	for i, key := range adminConfig.APIKeys {
+		if key.ID == keyID {
+			keyIndex = i
+			break
+		}
+	}
+
+	if keyIndex == -1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "API key not found"})
+		return
+	}
+
+	// Check if it's a permanent key
+	if adminConfig.APIKeys[keyIndex].Permanent {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete permanent API key"})
+		return
+	}
+
+	// Remove API key
+	adminConfig.APIKeys = append(adminConfig.APIKeys[:keyIndex], adminConfig.APIKeys[keyIndex+1:]...)
+
+	// Save config
+	if err := saveAdminConfig(configPath, adminConfig); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "API key deleted successfully",
+	})
 }
