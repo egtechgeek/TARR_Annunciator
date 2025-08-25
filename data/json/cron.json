@@ -1,0 +1,34 @@
+{
+    "station_announcements": [
+        {
+            "enabled": false,
+            "cron": "0 8 * * *",
+            "train_number": "1",
+            "direction": "westbound",
+            "destination": "goodwin_station",
+            "track_number": "1"
+        },
+        {
+            "enabled": false,
+            "cron": "0 12 * * *",
+            "train_number": "9",
+            "direction": "eastbound",
+            "destination": "tradewinds_central_station",
+            "track_number": "2"
+        }
+    ],
+    "promo_announcements": [
+        {
+            "enabled": false,
+            "cron": "0 9 * * *",
+            "file": "promo_english.mp3"
+        }
+    ],
+    "safety_announcements": [
+        {
+            "enabled": true,
+            "cron": "*/2 * * * *",
+            "language": "english"
+        }
+    ]
+}

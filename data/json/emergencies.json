@@ -1,0 +1,26 @@
+[
+    {
+        "id": "severe_weather",
+        "name": "Severe Weather Warning",
+        "description": "Severe weather conditions requiring shelter",
+        "category": "Weather"
+    },
+    {
+        "id": "power_outage",
+        "name": "Power Outage",
+        "description": "Emergency power failure notification",
+        "category": "Operations"
+    },
+    {
+        "id": "system_shutdown",
+        "name": "System Shutdown",
+        "description": "Emergency system shutdown announcement",
+        "category": "Operations"
+    },
+    {
+        "id": "all_clear",
+        "name": "All Clear",
+        "description": "Emergency situation resolved - all clear",
+        "category": "Resolution"
+    }
+]

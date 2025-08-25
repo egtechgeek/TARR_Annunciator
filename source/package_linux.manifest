@@ -1,0 +1,139 @@
+# Linux x64 Package Manifest
+# Use this file to create the Linux installation package
+
+# Package Information
+PACKAGE_NAME="TARR_Annunciator_Linux_x64"
+VERSION="1.0.0"
+ARCHITECTURE="x64"
+EXECUTABLE_NAME="tarr-annunciator"
+
+# Required Files (relative paths from project root)
+FILES=(
+    # Main executable
+    "dist/linux/tarr-annunciator"
+    
+    # Scripts and build system
+    "build_linux.sh"
+    "run_linux.sh"
+    "test_crossplatform.sh"
+    "Makefile"
+    
+    # Documentation
+    "README_CrossPlatform.md"
+    "README_Go.md"
+    
+    # Configuration files
+    "json/admin_config.json"
+    "json/cron.json"
+    "json/destinations.json"
+    "json/directions.json"
+    "json/promo.json"
+    "json/safety.json"
+    "json/tracks.json"
+    "json/trains.json"
+    
+    # Web templates
+    "templates/admin.html"
+    "templates/admin_login.html"
+    "templates/api_docs.html"
+    "templates/index.html"
+    
+    # Audio files
+    "static/mp3/chime.mp3"
+    "static/mp3/destination/goodwin_station.mp3"
+    "static/mp3/destination/hialeah.mp3"
+    "static/mp3/destination/picnic_station.mp3"
+    "static/mp3/destination/tradewinds_central_station.mp3"
+    "static/mp3/destination/yard.mp3"
+    "static/mp3/direction/eastbound.mp3"
+    "static/mp3/direction/westbound.mp3"
+    "static/mp3/promo/promo_english.mp3"
+    "static/mp3/safety/safety_announcement.mp3"
+    "static/mp3/safety/safety_english.mp3"
+    "static/mp3/safety/safety_english2.mp3"
+    "static/mp3/safety/safety_portuguese.mp3"
+    "static/mp3/safety/safety_russian.mp3"
+    "static/mp3/safety/safety_spanish.mp3"
+    "static/mp3/safety/safety_tts.txt"
+    "static/mp3/track/1.mp3"
+    "static/mp3/track/2.mp3"
+    "static/mp3/track/express.mp3"
+    "static/mp3/train/1.mp3"
+    "static/mp3/train/2006.mp3"
+    "static/mp3/train/2199.mp3"
+    "static/mp3/train/27.mp3"
+    "static/mp3/train/347.mp3"
+    "static/mp3/train/415.mp3"
+    "static/mp3/train/428.mp3"
+    "static/mp3/train/4900.mp3"
+    "static/mp3/train/573.mp3"
+    "static/mp3/train/774.mp3"
+    "static/mp3/train/815.mp3"
+    "static/mp3/train/9.mp3"
+    "static/mp3/train/944.mp3"
+)
+
+# Directories to create (empty)
+DIRECTORIES=(
+    "logs"
+)
+
+# File mappings (source -> destination in package)
+FILE_MAPPINGS=(
+    "dist/linux/tarr-annunciator:tarr-annunciator"
+    "run_linux.sh:run.sh"
+)
+
+# Executable permissions needed
+EXECUTABLES=(
+    "tarr-annunciator"
+    "build_linux.sh"
+    "run.sh"
+    "test_crossplatform.sh"
+)
+
+# Package format
+PACKAGE_FORMAT="tar.gz"
+PACKAGE_FILENAME="${PACKAGE_NAME}.tar.gz"
+
+# Dependencies to document
+DEPENDENCIES=(
+    "Linux (Ubuntu 18.04+, CentOS 7+, or equivalent)"
+    "ALSA utilities (alsa-utils package)"
+    "PulseAudio (pulseaudio package - recommended)"
+    "libc6 >= 2.17"
+)
+
+# Installation notes
+INSTALL_NOTES="
+1. Extract: tar -xzf ${PACKAGE_FILENAME}
+2. cd ${PACKAGE_NAME}
+3. chmod +x *.sh tarr-annunciator
+4. Run: ./run.sh
+5. Access web interface at http://localhost:8080
+6. Admin panel at http://localhost:8080/admin
+
+For audio support:
+- Ubuntu/Debian: sudo apt install alsa-utils pulseaudio
+- RHEL/CentOS: sudo yum install alsa-utils pulseaudio
+- Arch: sudo pacman -S alsa-utils pulseaudio
+"
+
+# Systemd service template
+SYSTEMD_SERVICE="
+[Unit]
+Description=TARR Annunciator Train Announcement System
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=tarr
+WorkingDirectory=/opt/tarr-annunciator
+ExecStart=/opt/tarr-annunciator/tarr-annunciator
+Restart=always
+RestartSec=5
+Environment=PULSE_SERVER=unix:/run/user/%i/pulse/native
+
+[Install]
+WantedBy=multi-user.target
+"
