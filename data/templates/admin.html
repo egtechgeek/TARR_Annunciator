@@ -417,7 +417,9 @@
         fetch('/api/platform')
         .then(response => response.json())
         .then(data => {
-            document.getElementById('platform-info').textContent = `${data.os}/${data.arch}`;
+            const platform = data.platform_info?.platform || 'Unknown';
+            const arch = data.platform_info?.arch || 'Unknown';
+            document.getElementById('platform-info').textContent = `${platform}/${arch}`;
         })
         .catch(error => {
             document.getElementById('platform-info').textContent = 'Unknown';
