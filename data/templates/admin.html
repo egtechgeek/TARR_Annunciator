@@ -22,224 +22,493 @@
             </div>
         </div>
         
-        <!-- Status Section -->
-        <div class="alert alert-info">
-            <h5>System Status</h5>
-            <p><strong>Platform:</strong> <span id="platform-info">Loading...</span></p>
-            <p><strong>Audio System:</strong> <span class="status-ok">Active (Beep)</span></p>
-            <p><strong>Volume:</strong> <span id="current-volume">{{printf "%.0f" (mul .current_volume 100)}}%</span></p>
-            <p><strong>Selected Device:</strong> <span id="selected-device-info">{{.selected_audio_device}}</span></p>
-            <p><strong>Scheduler:</strong> <span class="status-ok">Running</span></p>
-            <p><strong>Web Interface:</strong> <a href="/" target="_blank">http://localhost:8080</a></p>
-        </div>
+        <!-- Main Tab Navigation -->
+        <ul class="nav nav-tabs mb-4" id="main-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="system-status-tab" data-bs-toggle="tab" data-bs-target="#system-status-panel" type="button" role="tab">📊 System Status</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="audio-controls-tab" data-bs-toggle="tab" data-bs-target="#audio-controls-panel" type="button" role="tab">🔊 Audio Controls</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="schedule-management-tab" data-bs-toggle="tab" data-bs-target="#schedule-management-panel" type="button" role="tab">⏰ Schedule Management</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="announcement-queue-tab" data-bs-toggle="tab" data-bs-target="#announcement-queue-panel" type="button" role="tab">📋 Announcement Queue</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="user-api-management-tab" data-bs-toggle="tab" data-bs-target="#user-api-management-panel" type="button" role="tab">🔐 User & API Management</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="track-layout-tab" data-bs-toggle="tab" data-bs-target="#track-layout-panel" type="button" role="tab">🚂 Track Layout</button>
+            </li>
+        </ul>
 
-        <!-- Audio Controls Section -->
-        <div class="section">
-            <h3>🔊 Audio Controls</h3>
-            
-            <!-- Volume Control -->
-            <div class="mb-3">
-                <label for="volume-slider" class="form-label">Volume: <span id="volume-display">{{printf "%.0f" (mul .current_volume 100)}}%</span></label>
-                <input type="range" class="form-range" id="volume-slider" min="0" max="100" value="{{printf "%.0f" (mul .current_volume 100)}}">
-                <div class="d-flex justify-content-between">
-                    <small class="text-muted">0%</small>
-                    <small class="text-muted">100%</small>
-                </div>
-            </div>
-
-            <!-- Audio Device Selection -->
-            <div class="mb-3">
-                <label for="audio-device-select" class="form-label">Audio Output Device</label>
-                <select class="form-select" id="audio-device-select">
-                    {{range .audio_devices}}
-                        <option value="{{.ID}}" {{if eq .ID $.selected_audio_device}}selected{{end}}>
-                            {{.Name}}{{if .IsDefault}} (Default){{end}}
-                        </option>
-                    {{end}}
-                </select>
-            </div>
-
-            <!-- Audio Test Button -->
-            <button type="button" class="btn btn-secondary" id="test-audio-btn">🔊 Test Audio</button>
-            
-            <div id="audio-message" class="mt-2"></div>
-        </div>
-
-        <!-- Announcement Queue Status -->
-        <div class="section">
-            <h3>📋 Announcement Queue</h3>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">Queue Status</h5>
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-queue-btn">🔄 Refresh</button>
-                        </div>
-                        <div class="card-body">
-                            <div id="queue-status-content">Loading...</div>
-                        </div>
-                    </div>
+        <!-- Tab Content -->
+        <div class="tab-content" id="main-tab-content">
+            <!-- System Status Tab -->
+            <div class="tab-pane fade show active" id="system-status-panel" role="tabpanel">
+                <div class="alert alert-info">
+                    <h5>System Status</h5>
+                    <p><strong>Platform:</strong> <span id="platform-info">Loading...</span></p>
+                    <p><strong>Audio System:</strong> <span class="status-ok">Active (Beep)</span></p>
+                    <p><strong>Volume:</strong> <span id="current-volume">{{printf "%.0f" (mul .current_volume 100)}}%</span></p>
+                    <p><strong>Selected Device:</strong> <span id="selected-device-info">{{.selected_audio_device}}</span></p>
+                    <p><strong>Scheduler:</strong> <span class="status-ok">Running</span></p>
+                    <p><strong>Web Interface:</strong> <a href="/" target="_blank">http://localhost:8080</a></p>
                 </div>
                 
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Recent History</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="queue-history-content">Loading...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Emergency Announcement Controls -->
-            <div class="mt-3">
-                <h6>🚨 Emergency Announcements</h6>
-                <div class="row align-items-end">
-                    <div class="col-md-8">
-                        <label for="emergency-select" class="form-label">Emergency Type</label>
-                        <select class="form-select" id="emergency-select">
-                            <option value="">Select emergency type...</option>
-                            {{range .emergencies}}
-                                <option value="{{.ID}}" data-name="{{.Name}}" data-description="{{.Description}}" data-category="{{.Category}}">
-                                    {{.Name}} ({{.Category}})
-                                </option>
-                            {{end}}
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <button type="button" class="btn btn-danger w-100" id="emergency-announce-btn" disabled>
-                            🚨 TRIGGER EMERGENCY
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="queue-message" class="mt-2"></div>
-        </div>
-
-        <!-- Schedule Management -->
-        <div class="section">
-            <h3>⏰ Schedule Management</h3>
-            <form method="post" action="/admin">
-                <div class="mb-3">
-                    <label for="cron_json" class="form-label">Schedule Configuration (JSON):</label>
-                    <textarea name="cron_json" class="form-control">{{printf "%s" .cron_data}}</textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">💾 Update Schedule</button>
-            </form>
-        </div>
-
-        <!-- Multi-User & API Management Section -->
-        <div class="section">
-            <h3>🔐 User & API Management</h3>
-            
-            <!-- Navigation Tabs -->
-            <ul class="nav nav-tabs mb-3" id="management-tabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-panel" type="button" role="tab">👥 Admin Users</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="apikeys-tab" data-bs-toggle="tab" data-bs-target="#apikeys-panel" type="button" role="tab">🔑 API Keys</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-panel" type="button" role="tab">⚙️ Settings</button>
-                </li>
-            </ul>
-
-            <div class="tab-content" id="management-tab-content">
-                <!-- Admin Users Panel -->
-                <div class="tab-pane fade show active" id="users-panel" role="tabpanel">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5>Admin Users</h5>
-                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#userModal">➕ Add User</button>
-                    </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-striped" id="users-table">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Last Login</th>
-                                    <th>Permissions</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body">
-                                <tr><td colspan="7" class="text-center">Loading users...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- API Keys Panel -->
-                <div class="tab-pane fade" id="apikeys-panel" role="tabpanel">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5>API Keys</h5>
-                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#apiKeyModal">➕ Add API Key</button>
-                    </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-striped" id="apikeys-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Key Preview</th>
-                                    <th>Status</th>
-                                    <th>Type</th>
-                                    <th>Created</th>
-                                    <th>Last Used</th>
-                                    <th>Permissions</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="apikeys-table-body">
-                                <tr><td colspan="8" class="text-center">Loading API keys...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Settings Panel -->
-                <div class="tab-pane fade" id="settings-panel" role="tabpanel">
+                <!-- Application Control Section -->
+                <div class="section">
+                    <h3>🔧 Application Control</h3>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header">
-                                    <h6 class="card-title mb-0">Security Settings</h6>
+                                    <h6 class="card-title mb-0">Service Management</h6>
                                 </div>
                                 <div class="card-body">
-                                    <div class="mb-3">
-                                        <label for="session-timeout" class="form-label">Session Timeout (minutes)</label>
-                                        <input type="number" class="form-control" id="session-timeout" min="5" max="1440" placeholder="60">
+                                    <p class="text-muted">Restart the TARR Annunciator application to apply configuration changes or resolve issues.</p>
+                                    <div class="d-grid gap-2">
+                                        <button type="button" class="btn btn-warning" id="restart-app-btn">
+                                            🔄 Restart Application
+                                        </button>
+                                        <button type="button" class="btn btn-danger" id="shutdown-app-btn">
+                                            ⏻ Shutdown Application
+                                        </button>
                                     </div>
-                                    <button type="button" class="btn btn-primary" id="update-settings-btn">💾 Save Settings</button>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header">
-                                    <h6 class="card-title mb-0">System Status</h6>
+                                    <h6 class="card-title mb-0">System Information</h6>
                                 </div>
-                                <div class="card-body" id="system-status">
-                                    <p><strong>Total Users:</strong> <span id="total-users">-</span></p>
-                                    <p><strong>Active API Keys:</strong> <span id="active-api-keys">-</span></p>
-                                    <p><strong>Last Modified:</strong> <span id="last-modified">Loading...</span></p>
-                                    <button type="button" class="btn btn-outline-primary btn-sm" id="refresh-status-btn">🔄 Refresh</button>
+                                <div class="card-body">
+                                    <p><strong>Uptime:</strong> <span id="app-uptime">Loading...</span></p>
+                                    <p><strong>Memory Usage:</strong> <span id="memory-usage">Loading...</span></p>
+                                    <p><strong>Go Version:</strong> <span id="go-version">Loading...</span></p>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="refresh-system-info-btn">
+                                        🔄 Refresh Info
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <div id="system-control-message" class="mt-2"></div>
                 </div>
             </div>
-            
-            <div id="management-message" class="mt-2"></div>
+
+            <!-- Audio Controls Tab -->
+            <div class="tab-pane fade" id="audio-controls-panel" role="tabpanel">
+                <div class="section">
+                    <h3>🔊 Audio Controls</h3>
+                    
+                    <!-- Volume Control -->
+                    <div class="mb-3">
+                        <label for="volume-slider" class="form-label">Volume: <span id="volume-display">{{printf "%.0f" (mul .current_volume 100)}}%</span></label>
+                        <input type="range" class="form-range" id="volume-slider" min="0" max="100" value="{{printf "%.0f" (mul .current_volume 100)}}">
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">0%</small>
+                            <small class="text-muted">100%</small>
+                        </div>
+                    </div>
+
+                    <!-- Audio Device Selection -->
+                    <div class="mb-3">
+                        <label for="audio-device-select" class="form-label">Audio Output Device</label>
+                        <div class="input-group">
+                            <select class="form-select" id="audio-device-select">
+                                {{range .audio_devices}}
+                                    <option value="{{.ID}}" {{if eq .ID $.selected_audio_device}}selected{{end}}>
+                                        {{.Name}}{{if .IsDefault}} (Default){{end}}
+                                    </option>
+                                {{end}}
+                            </select>
+                            <button type="button" class="btn btn-outline-primary" id="redetect-audio-btn" title="Redetect Audio Devices">
+                                🔄
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Audio System Override (Linux/ARM only) -->
+                    <div class="mb-3" id="audio-system-override-section" style="display: none;">
+                        <label for="audio-system-select" class="form-label">Audio System Override</label>
+                        <div class="input-group">
+                            <select class="form-select" id="audio-system-select">
+                                <option value="auto">Auto-Detect (Recommended)</option>
+                                <option value="pipewire">Force PipeWire</option>
+                                <option value="pulseaudio">Force PulseAudio</option>
+                                <option value="alsa">Force ALSA</option>
+                            </select>
+                            <button type="button" class="btn btn-outline-success" id="apply-audio-system-btn" title="Apply Audio System Selection">
+                                ✓ Apply
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">
+                            Force a specific audio system if auto-detection isn't working properly. 
+                            This will refresh the audio device list.
+                        </small>
+                    </div>
+
+                    <!-- Audio Test Button -->
+                    <button type="button" class="btn btn-secondary" id="test-audio-btn">🔊 Test Audio</button>
+                    
+                    <div id="audio-message" class="mt-2"></div>
+                </div>
+                
+                <!-- Bluetooth Functions Section -->
+                <div class="section">
+                    <h3>📶 Bluetooth Functions</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Bluetooth Discovery</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2 mb-3">
+                                        <button type="button" class="btn btn-primary" id="scan-bluetooth-btn">
+                                            🔍 Scan for Devices
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="stop-scan-btn" disabled>
+                                            ⏹️ Stop Scan
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Discovered Devices:</label>
+                                        <div id="bluetooth-devices-list" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                            <div class="text-muted">Click "Scan for Devices" to discover nearby Bluetooth audio devices</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Paired Devices</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="auto-pair-checkbox">
+                                            <label class="form-check-label" for="auto-pair-checkbox">
+                                                Auto-pair on startup
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="paired-device-select" class="form-label">Preferred Device:</label>
+                                        <select class="form-select" id="paired-device-select">
+                                            <option value="">Select a device...</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div id="paired-devices-list" class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                        <div class="text-muted" id="paired-devices-placeholder">No paired devices</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="bluetooth-message" class="mt-2"></div>
+                </div>
+            </div>
+
+            <!-- Schedule Management Tab -->
+            <div class="tab-pane fade" id="schedule-management-panel" role="tabpanel">
+                <div class="section">
+                    <h3>⏰ Schedule Management</h3>
+                    <form method="post" action="/admin">
+                        <div class="mb-3">
+                            <label for="cron_json" class="form-label">Schedule Configuration (JSON):</label>
+                            <textarea name="cron_json" class="form-control">{{printf "%s" .cron_data}}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">💾 Update Schedule</button>
+                    </form>
+                </div>
+                
+                <!-- Available Configuration Options moved here -->
+                <div class="section">
+                    <h3>Available Configuration Options</h3>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h5>Trains</h5>
+                            <ul class="list-unstyled">
+                                {{range .trains}}
+                                    <li>{{.ID}} - {{.Name}}</li>
+                                {{end}}
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Destinations</h5>
+                            <ul class="list-unstyled">
+                                {{range .destinations}}
+                                    <li>{{.ID}} - {{.Name}}</li>
+                                {{end}}
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Tracks</h5>
+                            <ul class="list-unstyled">
+                                {{range .tracks}}
+                                    <li>{{.ID}} - {{.Name}}</li>
+                                {{end}}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Announcement Queue Tab -->
+            <div class="tab-pane fade" id="announcement-queue-panel" role="tabpanel">
+                <div class="section">
+                    <h3>📋 Announcement Queue</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title mb-0">Queue Status</h5>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-queue-btn">🔄 Refresh</button>
+                                </div>
+                                <div class="card-body">
+                                    <div id="queue-status-content">Loading...</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Recent History</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="queue-history-content">Loading...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Announcement Controls -->
+                    <div class="mt-3">
+                        <h6>🚨 Emergency Announcements</h6>
+                        <div class="row align-items-end">
+                            <div class="col-md-8">
+                                <label for="emergency-select" class="form-label">Emergency Type</label>
+                                <select class="form-select" id="emergency-select">
+                                    <option value="">Select emergency type...</option>
+                                    {{range .emergencies}}
+                                        <option value="{{.ID}}" data-name="{{.Name}}" data-description="{{.Description}}" data-category="{{.Category}}">
+                                            {{.Name}} ({{.Category}})
+                                        </option>
+                                    {{end}}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-danger w-100" id="emergency-announce-btn" disabled>
+                                    🚨 TRIGGER EMERGENCY
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="queue-message" class="mt-2"></div>
+                </div>
+            </div>
+
+            <!-- User & API Management Tab -->
+            <div class="tab-pane fade" id="user-api-management-panel" role="tabpanel">
+                <div class="section">
+                    <h3>🔐 User & API Management</h3>
+                    
+                    <!-- Navigation Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="management-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-panel" type="button" role="tab">👥 Admin Users</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="apikeys-tab" data-bs-toggle="tab" data-bs-target="#apikeys-panel" type="button" role="tab">🔑 API Keys</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-panel" type="button" role="tab">⚙️ Settings</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="management-tab-content">
+                        <!-- Admin Users Panel -->
+                        <div class="tab-pane fade show active" id="users-panel" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>Admin Users</h5>
+                                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#userModal">➕ Add User</button>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Role</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Last Login</th>
+                                            <th>Permissions</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body">
+                                        <tr><td colspan="7" class="text-center">Loading users...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- API Keys Panel -->
+                        <div class="tab-pane fade" id="apikeys-panel" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5>API Keys</h5>
+                                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#apiKeyModal">➕ Add API Key</button>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="apikeys-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Key Preview</th>
+                                            <th>Status</th>
+                                            <th>Type</th>
+                                            <th>Created</th>
+                                            <th>Last Used</th>
+                                            <th>Permissions</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="apikeys-table-body">
+                                        <tr><td colspan="8" class="text-center">Loading API keys...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Settings Panel -->
+                        <div class="tab-pane fade" id="settings-panel" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">Security Settings</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label for="session-timeout" class="form-label">Session Timeout (minutes)</label>
+                                                <input type="number" class="form-control" id="session-timeout" min="5" max="1440" placeholder="60">
+                                            </div>
+                                            <button type="button" class="btn btn-primary" id="update-settings-btn">💾 Save Settings</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="card-title mb-0">System Status</h6>
+                                        </div>
+                                        <div class="card-body" id="system-status">
+                                            <p><strong>Total Users:</strong> <span id="total-users">-</span></p>
+                                            <p><strong>Active API Keys:</strong> <span id="active-api-keys">-</span></p>
+                                            <p><strong>Last Modified:</strong> <span id="last-modified">Loading...</span></p>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="refresh-status-btn">🔄 Refresh</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="management-message" class="mt-2"></div>
+                </div>
+            </div>
+
+            <!-- Track Layout Tab -->
+            <div class="tab-pane fade" id="track-layout-panel" role="tabpanel">
+                <div class="section">
+                    <h3>🚂 Track Layout</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title mb-0">Selected Trains</h5>
+                                    <small class="text-muted">Available on main control page</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="available-trains-select" class="form-label">Available Trains:</label>
+                                        <select class="form-select" id="available-trains-select">
+                                            <option value="">Select a train to add...</option>
+                                            {{range .trains_available}}
+                                                <option value="{{.ID}}" data-name="{{.Name}}">{{.ID}} - {{.Name}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn btn-success btn-sm" id="add-train-btn" disabled>➕ Add Train</button>
+                                    
+                                    <div class="mt-3">
+                                        <h6>Selected Trains:</h6>
+                                        <div id="selected-trains-list" class="list-group">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title mb-0">Selected Destinations</h5>
+                                    <small class="text-muted">Available on main control page</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="available-destinations-select" class="form-label">Available Destinations:</label>
+                                        <select class="form-select" id="available-destinations-select">
+                                            <option value="">Select a destination to add...</option>
+                                            {{range .destinations_available}}
+                                                <option value="{{.ID}}" data-name="{{.Name}}">{{.ID}} - {{.Name}}</option>
+                                            {{end}}
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn btn-success btn-sm" id="add-destination-btn" disabled>➕ Add Destination</button>
+                                    
+                                    <div class="mt-3">
+                                        <h6>Selected Destinations:</h6>
+                                        <div id="selected-destinations-list" class="list-group">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-primary me-2" id="save-track-layout-btn">💾 Save Track Layout</button>
+                            <button type="button" class="btn btn-outline-secondary" id="reset-track-layout-btn">🔄 Reset to Default</button>
+                        </div>
+                    </div>
+                    
+                    <div id="track-layout-message" class="mt-2"></div>
+                </div>
+            </div>
         </div>
 
         <!-- User Modal -->
@@ -379,36 +648,6 @@
             </div>
         </div>
 
-        <!-- Quick Reference -->
-        <div class="section">
-            <h3>Available Configuration Options</h3>
-            <div class="row">
-                <div class="col-md-4">
-                    <h5>Trains</h5>
-                    <ul class="list-unstyled">
-                        {{range .trains}}
-                            <li>{{.ID}} - {{.Name}}</li>
-                        {{end}}
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <h5>Destinations</h5>
-                    <ul class="list-unstyled">
-                        {{range .destinations}}
-                            <li>{{.ID}} - {{.Name}}</li>
-                        {{end}}
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <h5>Tracks</h5>
-                    <ul class="list-unstyled">
-                        {{range .tracks}}
-                            <li>{{.ID}} - {{.Name}}</li>
-                        {{end}}
-                    </ul>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -515,23 +754,34 @@
                     return;
                 }
 
-                if (data.queue && data.queue.length > 0) {
+                if (data.queue_items && data.queue_items.length > 0) {
                     let html = '<div class="list-group">';
-                    data.queue.forEach(item => {
-                        const priorityBadge = item.priority === 1 ? 'danger' : item.priority === 2 ? 'warning' : 'primary';
-                        const priorityText = item.priority === 1 ? 'EMERGENCY' : item.priority === 2 ? 'High' : item.priority === 3 ? 'Normal' : 'Low';
+                    data.queue_items.forEach(item => {
+                        // Priority mapping: 5=Emergency, 4=Critical, 3=High, 2=Normal, 1=Low
+                        const priorityBadge = item.priority === 5 ? 'danger' : item.priority === 4 ? 'warning' : item.priority === 3 ? 'info' : 'primary';
+                        const priorityText = item.priority === 5 ? 'EMERGENCY' : item.priority === 4 ? 'Critical' : item.priority === 3 ? 'High' : item.priority === 2 ? 'Normal' : 'Low';
+                        
+                        // Get announcement type and format it nicely
+                        const typeDisplay = item.type.charAt(0).toUpperCase() + item.type.slice(1);
                         
                         html += `
                             <div class="list-group-item">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">${item.name || item.type}</h6>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">${typeDisplay} Announcement</h6>
                                         <small class="text-muted">ID: ${item.id}</small>
                                     </div>
-                                    <span class="badge bg-${priorityBadge}">${priorityText}</span>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <span class="badge bg-${priorityBadge}">${priorityText}</span>
+                                        ${item.status === 'queued' ? 
+                                            `<button class="btn btn-sm btn-outline-danger" onclick="cancelAnnouncement('${item.id}')" title="Cancel Announcement">
+                                                🗑️
+                                            </button>` : ''
+                                        }
+                                    </div>
                                 </div>
                                 <p class="mb-1"><small>Status: ${item.status}</small></p>
-                                <small class="text-muted">Scheduled: ${new Date(item.scheduled_time).toLocaleString()}</small>
+                                <small class="text-muted">Scheduled: ${new Date(item.scheduled_at).toLocaleString()}</small>
                             </div>
                         `;
                     });
@@ -540,6 +790,39 @@
                 } else {
                     content.innerHTML = '<p class="text-muted">Queue is empty</p>';
                 }
+                
+                // Add queue summary
+                let summaryHtml = `
+                    <div class="mt-3 p-2 bg-light rounded">
+                        <div class="row text-center">
+                            <div class="col">
+                                <strong>${data.queue_length || 0}</strong><br>
+                                <small class="text-muted">Queued</small>
+                            </div>
+                            <div class="col">
+                                <strong>${!data.is_running ? 'Stopped' : data.is_paused ? 'Paused' : 'Running'}</strong><br>
+                                <small class="text-muted">Status</small>
+                            </div>
+                            <div class="col">
+                                <strong>${data.history_count || 0}</strong><br>
+                                <small class="text-muted">History</small>
+                            </div>
+                        </div>
+                `;
+                
+                // Show currently playing
+                if (data.currently_playing) {
+                    const playing = data.currently_playing;
+                    const playingType = playing.type.charAt(0).toUpperCase() + playing.type.slice(1);
+                    summaryHtml += `
+                        <div class="mt-2 p-2 bg-success text-white rounded">
+                            <strong>🎵 Currently Playing:</strong> ${playingType} (${playing.id})
+                        </div>
+                    `;
+                }
+                
+                summaryHtml += '</div>';
+                content.innerHTML += summaryHtml;
             })
             .catch(error => {
                 document.getElementById('queue-status-content').innerHTML = '<p class="text-danger">Failed to load queue status</p>';
@@ -639,6 +922,36 @@
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>`;
+        }
+
+        // Cancel announcement function
+        function cancelAnnouncement(announcementId) {
+            if (!confirm('Are you sure you want to cancel this announcement?')) {
+                return;
+            }
+
+            fetch('/api/queue/cancel', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: announcementId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showQueueMessage('Announcement cancelled successfully', 'success');
+                    // Refresh the queue status to show updated list
+                    loadQueueStatus();
+                    loadQueueHistory();
+                } else {
+                    showQueueMessage('Failed to cancel announcement: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                showQueueMessage('Error cancelling announcement: ' + error.message, 'danger');
+            });
         }
 
         // Event listeners for queue management
@@ -1005,17 +1318,659 @@
             expirySection.style.display = this.checked ? 'none' : 'block';
         });
 
+        // Track Layout Management
+        let selectedTrains = [];
+        let selectedDestinations = [];
+
+        function loadTrackLayout() {
+            fetch('/admin/track-layout', {
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showTrackLayoutMessage('Failed to load track layout: ' + data.error, 'danger');
+                    return;
+                }
+                
+                selectedTrains = data.selected_trains || [];
+                selectedDestinations = data.selected_destinations || [];
+                
+                updateSelectedTrainsList();
+                updateSelectedDestinationsList();
+            })
+            .catch(error => {
+                showTrackLayoutMessage('Error loading track layout: ' + error.message, 'danger');
+                // Initialize with all available items as fallback
+                selectedTrains = Array.from(document.getElementById('available-trains-select').options)
+                    .filter(opt => opt.value)
+                    .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
+                selectedDestinations = Array.from(document.getElementById('available-destinations-select').options)
+                    .filter(opt => opt.value)
+                    .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
+                
+                updateSelectedTrainsList();
+                updateSelectedDestinationsList();
+            });
+        }
+
+        function updateSelectedTrainsList() {
+            const listContainer = document.getElementById('selected-trains-list');
+            if (selectedTrains.length === 0) {
+                listContainer.innerHTML = '<div class="text-muted">No trains selected</div>';
+                return;
+            }
+
+            listContainer.innerHTML = selectedTrains.map(train => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>${train.id} - ${train.name}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSelectedTrain('${train.id}')">
+                        🗑️ Remove
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateSelectedDestinationsList() {
+            const listContainer = document.getElementById('selected-destinations-list');
+            if (selectedDestinations.length === 0) {
+                listContainer.innerHTML = '<div class="text-muted">No destinations selected</div>';
+                return;
+            }
+
+            listContainer.innerHTML = selectedDestinations.map(destination => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>${destination.id} - ${destination.name}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSelectedDestination('${destination.id}')">
+                        🗑️ Remove
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addSelectedTrain() {
+            const select = document.getElementById('available-trains-select');
+            const selectedValue = select.value;
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedValue) return;
+            
+            const trainId = selectedValue;
+            const trainName = selectedOption.getAttribute('data-name');
+            
+            // Check if already selected
+            if (selectedTrains.find(t => t.id === trainId)) {
+                showTrackLayoutMessage('Train is already selected', 'warning');
+                return;
+            }
+            
+            selectedTrains.push({ id: trainId, name: trainName });
+            updateSelectedTrainsList();
+            
+            // Reset dropdown
+            select.value = '';
+            document.getElementById('add-train-btn').disabled = true;
+        }
+
+        function addSelectedDestination() {
+            const select = document.getElementById('available-destinations-select');
+            const selectedValue = select.value;
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (!selectedValue) return;
+            
+            const destinationId = selectedValue;
+            const destinationName = selectedOption.getAttribute('data-name');
+            
+            // Check if already selected
+            if (selectedDestinations.find(d => d.id === destinationId)) {
+                showTrackLayoutMessage('Destination is already selected', 'warning');
+                return;
+            }
+            
+            selectedDestinations.push({ id: destinationId, name: destinationName });
+            updateSelectedDestinationsList();
+            
+            // Reset dropdown
+            select.value = '';
+            document.getElementById('add-destination-btn').disabled = true;
+        }
+
+        function removeSelectedTrain(trainId) {
+            selectedTrains = selectedTrains.filter(t => t.id !== trainId);
+            updateSelectedTrainsList();
+        }
+
+        function removeSelectedDestination(destinationId) {
+            selectedDestinations = selectedDestinations.filter(d => d.id !== destinationId);
+            updateSelectedDestinationsList();
+        }
+
+        function saveTrackLayout() {
+            const trackLayoutData = {
+                selected_trains: selectedTrains,
+                selected_destinations: selectedDestinations
+            };
+
+            fetch('/admin/track-layout', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(trackLayoutData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showTrackLayoutMessage('Track layout saved successfully! Main control page will show updated options.', 'success');
+                } else {
+                    showTrackLayoutMessage('Failed to save track layout: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showTrackLayoutMessage('Error saving track layout: ' + error.message, 'danger');
+            });
+        }
+
+        function resetTrackLayout() {
+            if (!confirm('Reset track layout to show all available trains and destinations?')) {
+                return;
+            }
+            
+            // Reset to all available items
+            selectedTrains = Array.from(document.getElementById('available-trains-select').options)
+                .filter(opt => opt.value)
+                .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
+            selectedDestinations = Array.from(document.getElementById('available-destinations-select').options)
+                .filter(opt => opt.value)
+                .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
+            
+            updateSelectedTrainsList();
+            updateSelectedDestinationsList();
+            
+            showTrackLayoutMessage('Track layout reset to default (all items available)', 'info');
+        }
+
+        function showTrackLayoutMessage(message, type) {
+            const messageDiv = document.getElementById('track-layout-message');
+            messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+
+        // Track Layout Event Listeners
+        document.getElementById('available-trains-select').addEventListener('change', function() {
+            document.getElementById('add-train-btn').disabled = this.value === '';
+        });
+
+        document.getElementById('available-destinations-select').addEventListener('change', function() {
+            document.getElementById('add-destination-btn').disabled = this.value === '';
+        });
+
+        document.getElementById('add-train-btn').addEventListener('click', addSelectedTrain);
+        document.getElementById('add-destination-btn').addEventListener('click', addSelectedDestination);
+        document.getElementById('save-track-layout-btn').addEventListener('click', saveTrackLayout);
+        document.getElementById('reset-track-layout-btn').addEventListener('click', resetTrackLayout);
+
+        // System Control Functions
+        function showSystemControlMessage(message, type) {
+            const messageDiv = document.getElementById('system-control-message');
+            messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+
+        function restartApplication() {
+            if (!confirm('Are you sure you want to restart the TARR Annunciator application? This will temporarily interrupt all services.')) {
+                return;
+            }
+
+            fetch('/admin/system/restart', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSystemControlMessage('Application restart initiated. Please wait 10-15 seconds, then refresh this page.', 'warning');
+                    // Disable buttons temporarily
+                    document.getElementById('restart-app-btn').disabled = true;
+                    document.getElementById('shutdown-app-btn').disabled = true;
+                } else {
+                    showSystemControlMessage('Failed to restart application: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                showSystemControlMessage('Error restarting application: ' + error.message, 'danger');
+            });
+        }
+
+        function shutdownApplication() {
+            if (!confirm('Are you sure you want to shutdown the TARR Annunciator application? You will need to manually restart it.')) {
+                return;
+            }
+
+            fetch('/admin/system/shutdown', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSystemControlMessage('Application shutdown initiated. The service will stop in a few seconds.', 'warning');
+                } else {
+                    showSystemControlMessage('Failed to shutdown application: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                showSystemControlMessage('Error shutting down application: ' + error.message, 'danger');
+            });
+        }
+
+        function loadSystemInfo() {
+            fetch('/admin/system/info', {
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('app-uptime').textContent = 'Error';
+                    document.getElementById('memory-usage').textContent = 'Error';
+                    document.getElementById('go-version').textContent = 'Error';
+                    return;
+                }
+                
+                document.getElementById('app-uptime').textContent = data.uptime || 'Unknown';
+                document.getElementById('memory-usage').textContent = data.memory_usage || 'Unknown';
+                document.getElementById('go-version').textContent = data.go_version || 'Unknown';
+            })
+            .catch(error => {
+                document.getElementById('app-uptime').textContent = 'Error loading';
+                document.getElementById('memory-usage').textContent = 'Error loading';
+                document.getElementById('go-version').textContent = 'Error loading';
+            });
+        }
+
+        // Audio Device Functions
+        function redetectAudioDevices() {
+            const button = document.getElementById('redetect-audio-btn');
+            button.disabled = true;
+            button.innerHTML = '⏳';
+
+            fetch('/admin/audio/redetect', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.devices) {
+                    const select = document.getElementById('audio-device-select');
+                    const currentSelection = select.value;
+                    
+                    // Clear and repopulate
+                    select.innerHTML = '';
+                    data.devices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.id;
+                        option.textContent = device.name + (device.is_default ? ' (Default)' : '');
+                        if (device.id === currentSelection) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                    
+                    showAudioMessage('Audio devices redetected successfully. Found ' + data.devices.length + ' devices.', 'success');
+                } else {
+                    showAudioMessage('Failed to redetect audio devices: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                showAudioMessage('Error redetecting audio devices: ' + error.message, 'danger');
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerHTML = '🔄';
+            });
+        }
+
+        // Audio System Override Functions
+        function applyAudioSystemOverride() {
+            const button = document.getElementById('apply-audio-system-btn');
+            const select = document.getElementById('audio-system-select');
+            const selectedSystem = select.value;
+            
+            button.disabled = true;
+            button.innerHTML = '⏳';
+
+            fetch('/admin/audio/system-override', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    system: selectedSystem
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAudioMessage(`Audio system override applied: ${selectedSystem}. Found ${data.devices ? data.devices.length : 0} devices.`, 'success');
+                    
+                    // Update the audio device dropdown with new devices
+                    if (data.devices) {
+                        const deviceSelect = document.getElementById('audio-device-select');
+                        const currentSelection = deviceSelect.value;
+                        
+                        deviceSelect.innerHTML = '';
+                        data.devices.forEach(device => {
+                            const option = document.createElement('option');
+                            option.value = device.id;
+                            option.textContent = device.name + (device.is_default ? ' (Default)' : '');
+                            if (device.id === currentSelection) {
+                                option.selected = true;
+                            }
+                            deviceSelect.appendChild(option);
+                        });
+                    }
+                } else {
+                    showAudioMessage('Failed to apply audio system override: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                showAudioMessage('Error applying audio system override: ' + error.message, 'danger');
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerHTML = '✓ Apply';
+            });
+        }
+
+        // Show/hide audio system override based on platform
+        function checkAudioSystemOverrideVisibility() {
+            fetch('/admin/system/platform-info', {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.platform === 'linux' || data.is_arm === true) {
+                    document.getElementById('audio-system-override-section').style.display = 'block';
+                } else {
+                    document.getElementById('audio-system-override-section').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.warn('Could not determine platform for audio system override visibility:', error);
+                // Default to showing it on non-Windows systems
+                if (!navigator.platform.includes('Win')) {
+                    document.getElementById('audio-system-override-section').style.display = 'block';
+                }
+            });
+        }
+
+        // Bluetooth Functions
+        function showBluetoothMessage(message, type) {
+            const messageDiv = document.getElementById('bluetooth-message');
+            messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+
+        function scanForBluetoothDevices() {
+            const scanBtn = document.getElementById('scan-bluetooth-btn');
+            const stopBtn = document.getElementById('stop-scan-btn');
+            const devicesList = document.getElementById('bluetooth-devices-list');
+            
+            scanBtn.disabled = true;
+            stopBtn.disabled = false;
+            scanBtn.innerHTML = '🔍 Scanning...';
+            devicesList.innerHTML = '<div class="text-info">🔍 Scanning for Bluetooth devices...</div>';
+
+            fetch('/admin/bluetooth/scan', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showBluetoothMessage('Bluetooth scan started. Devices will appear as they are discovered.', 'info');
+                    // Start polling for discovered devices
+                    pollBluetoothDevices();
+                } else {
+                    showBluetoothMessage('Failed to start Bluetooth scan: ' + (data.error || 'Unknown error'), 'danger');
+                    resetScanButtons();
+                }
+            })
+            .catch(error => {
+                showBluetoothMessage('Error starting Bluetooth scan: ' + error.message, 'danger');
+                resetScanButtons();
+            });
+        }
+
+        function stopBluetoothScan() {
+            fetch('/admin/bluetooth/scan/stop', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showBluetoothMessage('Bluetooth scan stopped.', 'info');
+                } else {
+                    showBluetoothMessage('Failed to stop Bluetooth scan: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                showBluetoothMessage('Error stopping Bluetooth scan: ' + error.message, 'danger');
+            })
+            .finally(() => {
+                resetScanButtons();
+            });
+        }
+
+        function resetScanButtons() {
+            document.getElementById('scan-bluetooth-btn').disabled = false;
+            document.getElementById('scan-bluetooth-btn').innerHTML = '🔍 Scan for Devices';
+            document.getElementById('stop-scan-btn').disabled = true;
+        }
+
+        function pollBluetoothDevices() {
+            fetch('/admin/bluetooth/devices', {
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.devices && data.devices.length > 0) {
+                    updateBluetoothDevicesList(data.devices);
+                }
+                
+                // Continue polling if scan is still active
+                if (!document.getElementById('stop-scan-btn').disabled) {
+                    setTimeout(pollBluetoothDevices, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('Error polling Bluetooth devices:', error);
+            });
+        }
+
+        function updateBluetoothDevicesList(devices) {
+            const devicesList = document.getElementById('bluetooth-devices-list');
+            if (devices.length === 0) {
+                devicesList.innerHTML = '<div class="text-muted">No devices discovered yet...</div>';
+                return;
+            }
+
+            let html = '';
+            devices.forEach(device => {
+                html += `
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <div>
+                            <strong>${device.name || 'Unknown Device'}</strong><br>
+                            <small class="text-muted">${device.address}</small>
+                            ${device.rssi ? `<br><small class="text-info">Signal: ${device.rssi} dBm</small>` : ''}
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="pairBluetoothDevice('${device.address}', '${device.name || 'Unknown'}')">
+                            📶 Pair
+                        </button>
+                    </div>
+                `;
+            });
+            devicesList.innerHTML = html;
+        }
+
+        function pairBluetoothDevice(address, name) {
+            if (!confirm(`Pair with ${name} (${address})?`)) {
+                return;
+            }
+
+            fetch('/admin/bluetooth/pair', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    address: address,
+                    name: name
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showBluetoothMessage(`Successfully paired with ${name}`, 'success');
+                    loadPairedDevices();
+                } else {
+                    showBluetoothMessage(`Failed to pair with ${name}: ` + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                showBluetoothMessage(`Error pairing with ${name}: ` + error.message, 'danger');
+            });
+        }
+
+        function loadPairedDevices() {
+            fetch('/admin/bluetooth/paired', {
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const pairedList = document.getElementById('paired-devices-list');
+                const pairedSelect = document.getElementById('paired-device-select');
+                
+                if (data.devices && data.devices.length > 0) {
+                    // Update paired devices list
+                    let html = '';
+                    data.devices.forEach(device => {
+                        html += `
+                            <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                                <div>
+                                    <strong>${device.name}</strong><br>
+                                    <small class="text-muted">${device.address}</small>
+                                    ${device.connected ? '<br><span class="badge bg-success">Connected</span>' : '<br><span class="badge bg-secondary">Disconnected</span>'}
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="unpairBluetoothDevice('${device.address}', '${device.name}')">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    pairedList.innerHTML = html;
+                    
+                    // Update select dropdown
+                    pairedSelect.innerHTML = '<option value="">Select a device...</option>';
+                    data.devices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.address;
+                        option.textContent = device.name;
+                        pairedSelect.appendChild(option);
+                    });
+                } else {
+                    pairedList.innerHTML = '<div class="text-muted">No paired devices</div>';
+                    pairedSelect.innerHTML = '<option value="">No paired devices available</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading paired devices:', error);
+            });
+        }
+
+        function unpairBluetoothDevice(address, name) {
+            if (!confirm(`Unpair ${name}?`)) {
+                return;
+            }
+
+            fetch('/admin/bluetooth/unpair', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ address: address })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showBluetoothMessage(`Unpaired ${name}`, 'info');
+                    loadPairedDevices();
+                } else {
+                    showBluetoothMessage(`Failed to unpair ${name}: ` + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                showBluetoothMessage(`Error unpairing ${name}: ` + error.message, 'danger');
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('restart-app-btn').addEventListener('click', restartApplication);
+        document.getElementById('shutdown-app-btn').addEventListener('click', shutdownApplication);
+        document.getElementById('refresh-system-info-btn').addEventListener('click', loadSystemInfo);
+        document.getElementById('redetect-audio-btn').addEventListener('click', redetectAudioDevices);
+        document.getElementById('apply-audio-system-btn').addEventListener('click', applyAudioSystemOverride);
+        document.getElementById('scan-bluetooth-btn').addEventListener('click', scanForBluetoothDevices);
+        document.getElementById('stop-scan-btn').addEventListener('click', stopBluetoothScan);
+
         // Load queue data on page load and refresh every 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
             loadQueueStatus();
             loadQueueHistory();
             loadManagementData();
+            loadTrackLayout();
+            loadSystemInfo();
+            loadPairedDevices();
+            checkAudioSystemOverrideVisibility();
             
             // Auto-refresh every 5 seconds
             setInterval(function() {
                 loadQueueStatus();
                 loadQueueHistory();
             }, 5000);
+            
+            // Refresh system info every 30 seconds
+            setInterval(loadSystemInfo, 30000);
         });
     </script>
 </body>

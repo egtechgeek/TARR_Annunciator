@@ -73,6 +73,72 @@ func playAudio(filePath string) error {
 	return nil
 }
 
+// playAudioWithCancellation plays audio but can be cancelled via a channel
+func playAudioWithCancellation(filePath string, cancelChan chan bool) error {
+	if !app.AudioEnabled {
+		log.Printf("Audio not available - would play: %s", filePath)
+		return fmt.Errorf("audio not available")
+	}
+
+	if !fileExists(filePath) {
+		log.Printf("Audio file not found: %s", filePath)
+		return fmt.Errorf("audio file not found: %s", filePath)
+	}
+
+	log.Printf("Playing audio: %s (Volume: %d%%)", filePath, int(app.Config.CurrentVolume*100))
+
+	// Open the file
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open audio file: %v", err)
+	}
+	defer file.Close()
+
+	// Decode the MP3
+	streamer, format, err := mp3.Decode(file)
+	if err != nil {
+		return fmt.Errorf("failed to decode MP3: %v", err)
+	}
+	defer streamer.Close()
+
+	// Resample if necessary
+	resampled := beep.Resample(4, format.SampleRate, beep.SampleRate(44100), streamer)
+
+	// Apply volume
+	volume := &effects.Volume{
+		Streamer: resampled,
+		Base:     2,
+		Volume:   0, // Will be set below
+		Silent:   false,
+	}
+	
+	// Convert linear volume (0.0-1.0) to logarithmic scale
+	if app.Config.CurrentVolume <= 0.0 {
+		volume.Silent = true
+	} else {
+		// Convert to decibels: 20 * log10(volume)
+		// But since beep uses base 2, we need different calculation
+		volume.Volume = (app.Config.CurrentVolume - 1.0) * 5 // Approximate conversion
+	}
+
+	// Create a done channel to wait for playback completion
+	done := make(chan bool)
+	speaker.Play(beep.Seq(volume, beep.Callback(func() {
+		done <- true
+	})))
+
+	// Wait for either playback completion or cancellation
+	select {
+	case <-done:
+		return nil
+	case <-cancelChan:
+		// Clear the speaker to stop playback immediately
+		speaker.Clear()
+		log.Printf("Audio playback cancelled: %s", filePath)
+		return fmt.Errorf("playback cancelled")
+	}
+}
+
 func playAudioSequence(filePaths []string) {
 	// Note: This function should only be called when already holding the globalAudioMutex
 	// The mutex locking is handled by the caller to prevent deadlocks

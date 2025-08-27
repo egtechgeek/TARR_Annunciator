@@ -105,7 +105,9 @@ type AnnouncementManager struct {
 	mutex           sync.RWMutex
 	playing         *Announcement
 	stopChan        chan bool
+	cancelChan      chan bool
 	isRunning       bool
+	isPaused        bool
 	maxHistory      int
 	nextID          int64
 }
@@ -122,6 +124,7 @@ func InitializeAnnouncementManager() {
 		queue:      &AnnouncementQueue{},
 		history:    make([]*Announcement, 0),
 		stopChan:   make(chan bool),
+		cancelChan: make(chan bool, 1),
 		maxHistory: 100, // Keep last 100 announcements in history
 		nextID:     1,
 	}
@@ -238,6 +241,11 @@ func (am *AnnouncementManager) processNextAnnouncement() {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 	
+	// If paused, don't process any announcements
+	if am.isPaused {
+		return
+	}
+	
 	// If currently playing, don't start another
 	if am.playing != nil {
 		return
@@ -273,6 +281,14 @@ func (am *AnnouncementManager) processNextAnnouncement() {
 
 // playAnnouncement plays a single announcement
 func (am *AnnouncementManager) playAnnouncement(announcement *Announcement) {
+	// Clear any pending cancellation signals before starting new announcement
+	select {
+	case <-am.cancelChan:
+		// Drained any pending cancellation
+	default:
+		// No pending cancellation
+	}
+	
 	startTime := time.Now()
 	
 	// Play the audio sequence
@@ -303,7 +319,7 @@ func (am *AnnouncementManager) playAnnouncement(announcement *Announcement) {
 	am.playing = nil
 }
 
-// playAnnouncementAudio plays the audio files for an announcement with proper synchronization
+// playAnnouncementAudio plays the audio files for an announcement with proper synchronization and cancellation support
 func (am *AnnouncementManager) playAnnouncementAudio(audioFiles []string) error {
 	// Lock the global audio mutex to prevent any audio overlap
 	globalAudioMutex.Lock()
@@ -317,13 +333,32 @@ func (am *AnnouncementManager) playAnnouncementAudio(audioFiles []string) error 
 			continue
 		}
 		
-		if err := playAudio(filePath); err != nil {
+		// Check for cancellation before playing each file
+		select {
+		case <-am.cancelChan:
+			log.Printf("🔓 Audio mutex unlocked - announcement cancelled")
+			return fmt.Errorf("announcement cancelled")
+		default:
+			// Continue with playback
+		}
+		
+		if err := playAudioWithCancellation(filePath, am.cancelChan); err != nil {
+			if err.Error() == "playback cancelled" {
+				log.Printf("🔓 Audio mutex unlocked - announcement cancelled during playback")
+				return err
+			}
 			log.Printf("🔓 Audio mutex unlocked due to error")
 			return fmt.Errorf("error playing %s: %v", filePath, err)
 		}
 		
-		// Small gap between audio files
-		time.Sleep(300 * time.Millisecond)
+		// Small gap between audio files (with cancellation check)
+		select {
+		case <-am.cancelChan:
+			log.Printf("🔓 Audio mutex unlocked - announcement cancelled during gap")
+			return fmt.Errorf("announcement cancelled")
+		case <-time.After(300 * time.Millisecond):
+			// Continue
+		}
 	}
 	
 	log.Printf("🔓 Audio mutex unlocked - announcement playback complete")
@@ -354,6 +389,7 @@ func (am *AnnouncementManager) GetQueueStatus() map[string]interface{} {
 		"queue_items":     queueItems,
 		"history_count":   len(am.history),
 		"is_running":      am.isRunning,
+		"is_paused":       am.isPaused,
 	}
 }
 
@@ -378,7 +414,7 @@ func (am *AnnouncementManager) GetHistory(limit int) []*Announcement {
 	return result
 }
 
-// CancelAnnouncement cancels a queued announcement
+// CancelAnnouncement cancels a queued announcement by ID
 func (am *AnnouncementManager) CancelAnnouncement(id string) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
@@ -387,6 +423,7 @@ func (am *AnnouncementManager) CancelAnnouncement(id string) error {
 	for i, announcement := range *am.queue {
 		if announcement.ID == id {
 			if announcement.Status == StatusQueued {
+				// Mark as cancelled
 				announcement.Status = StatusCancelled
 				now := time.Now()
 				announcement.CompletedAt = &now
@@ -405,6 +442,11 @@ func (am *AnnouncementManager) CancelAnnouncement(id string) error {
 		}
 	}
 	
+	// Check if it's the currently playing announcement
+	if am.playing != nil && am.playing.ID == id {
+		return fmt.Errorf("cannot cancel currently playing announcement - use stop instead")
+	}
+	
 	return fmt.Errorf("announcement not found: %s", id)
 }
 
@@ -417,6 +459,48 @@ func (am *AnnouncementManager) Stop() {
 		am.isRunning = false
 		am.stopChan <- true
 		log.Printf("Announcement manager stopped")
+	}
+}
+
+// PauseQueue pauses the announcement queue processing
+func (am *AnnouncementManager) PauseQueue() {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+	
+	am.isPaused = true
+	log.Printf("Announcement queue paused")
+}
+
+// ResumeQueue resumes the announcement queue processing
+func (am *AnnouncementManager) ResumeQueue() {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+	
+	am.isPaused = false
+	log.Printf("Announcement queue resumed")
+}
+
+// StopCurrent stops the currently playing announcement
+func (am *AnnouncementManager) StopCurrent() {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+	
+	if am.playing != nil {
+		log.Printf("Stopping current announcement: %s", am.playing.ID)
+		
+		// Send cancellation signal (non-blocking)
+		select {
+		case am.cancelChan <- true:
+			// Successfully sent cancellation
+		default:
+			// Channel was full, but that's okay - cancellation is already pending
+		}
+		
+		am.playing.Status = StatusCancelled
+		am.addToHistory(am.playing)
+		am.playing = nil
+	} else {
+		log.Printf("No announcement currently playing")
 	}
 }
 

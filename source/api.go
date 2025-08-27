@@ -528,6 +528,7 @@ func apiGetQueueHistoryHandler(c *gin.Context) {
 	})
 }
 
+
 func apiCancelAnnouncementHandler(c *gin.Context) {
 	if announcementManager == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Announcement manager not initialized"})
@@ -648,6 +649,155 @@ func apiEmergencyAnnouncementHandler(c *gin.Context) {
 			"scheduled_at": announcement.ScheduledAt.Format(time.RFC3339),
 		},
 		"timestamp": time.Now().Format(time.RFC3339),
+	})
+}
+
+// Announcement Control Handlers
+func apiPauseAnnouncementsHandler(c *gin.Context) {
+	if announcementManager != nil {
+		announcementManager.PauseQueue()
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "All announcements paused",
+		})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "Announcement manager not initialized",
+		})
+	}
+}
+
+func apiResumeAnnouncementsHandler(c *gin.Context) {
+	if announcementManager != nil {
+		announcementManager.ResumeQueue()
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "All announcements resumed",
+		})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "Announcement manager not initialized",
+		})
+	}
+}
+
+func apiStopCurrentAnnouncementHandler(c *gin.Context) {
+	if announcementManager != nil {
+		announcementManager.StopCurrent()
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "Current announcement stopped",
+		})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "Announcement manager not initialized",
+		})
+	}
+}
+
+// Track Layout Handlers
+func getTrackLayoutHandler(c *gin.Context) {
+	// Load current selections
+	selectedTrains := loadJSON("trains", []Train{}).([]Train)
+	selectedDestinations := loadJSON("destinations", []Destination{}).([]Destination)
+	
+	// Convert to the expected format
+	selectedTrainsList := make([]map[string]string, 0)
+	selectedDestinationsList := make([]map[string]string, 0)
+	
+	for _, train := range selectedTrains {
+		selectedTrainsList = append(selectedTrainsList, map[string]string{
+			"id": train.ID,
+			"name": train.Name,
+		})
+	}
+	
+	for _, destination := range selectedDestinations {
+		selectedDestinationsList = append(selectedDestinationsList, map[string]string{
+			"id": destination.ID,
+			"name": destination.Name,
+		})
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"selected_trains": selectedTrainsList,
+		"selected_destinations": selectedDestinationsList,
+	})
+}
+
+func postTrackLayoutHandler(c *gin.Context) {
+	var data map[string]interface{}
+	if err := c.ShouldBindJSON(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error": "Invalid JSON data",
+		})
+		return
+	}
+	
+	// Extract selected trains and destinations
+	selectedTrainsData, ok1 := data["selected_trains"].([]interface{})
+	selectedDestinationsData, ok2 := data["selected_destinations"].([]interface{})
+	
+	if !ok1 || !ok2 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error": "Missing or invalid selected_trains or selected_destinations",
+		})
+		return
+	}
+	
+	// Convert to Train and Destination structs
+	var selectedTrains []Train
+	var selectedDestinations []Destination
+	
+	for _, trainData := range selectedTrainsData {
+		trainMap := trainData.(map[string]interface{})
+		selectedTrains = append(selectedTrains, Train{
+			ID: trainMap["id"].(string),
+			Name: trainMap["name"].(string),
+		})
+	}
+	
+	for _, destData := range selectedDestinationsData {
+		destMap := destData.(map[string]interface{})
+		selectedDestinations = append(selectedDestinations, Destination{
+			ID: destMap["id"].(string),
+			Name: destMap["name"].(string),
+		})
+	}
+	
+	// Save to JSON files
+	trainsWrapper := struct {
+		Trains []Train `json:"trains"`
+	}{Trains: selectedTrains}
+	
+	destinationsWrapper := struct {
+		Destinations []Destination `json:"destinations"`
+	}{Destinations: selectedDestinations}
+	
+	if err := saveJSON("trains", trainsWrapper); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "Failed to save trains configuration",
+		})
+		return
+	}
+	
+	if err := saveJSON("destinations", destinationsWrapper); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error": "Failed to save destinations configuration",
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Track layout configuration saved successfully",
 	})
 }
 

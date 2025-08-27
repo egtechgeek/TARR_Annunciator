@@ -18,11 +18,15 @@ func loadJSON(name string, defaultValue interface{}) interface{} {
 	
 	switch name {
 	case "trains":
-		filePath = filepath.Join(app.Config.JSONDir, "trains.json")
+		filePath = filepath.Join(app.Config.JSONDir, "trains_selected.json")
+	case "trains_available":
+		filePath = filepath.Join(app.Config.JSONDir, "trains_available.json")
 	case "directions":
 		filePath = filepath.Join(app.Config.JSONDir, "directions.json")
 	case "destinations":
-		filePath = filepath.Join(app.Config.JSONDir, "destinations.json")
+		filePath = filepath.Join(app.Config.JSONDir, "destinations_selected.json")
+	case "destinations_available":
+		filePath = filepath.Join(app.Config.JSONDir, "destinations_available.json")
 	case "tracks":
 		filePath = filepath.Join(app.Config.JSONDir, "tracks.json")
 	case "promo":
@@ -150,11 +154,15 @@ func saveJSON(name string, data interface{}) error {
 	
 	switch name {
 	case "trains":
-		filePath = filepath.Join(app.Config.JSONDir, "trains.json")
+		filePath = filepath.Join(app.Config.JSONDir, "trains_selected.json")
+	case "trains_available":
+		filePath = filepath.Join(app.Config.JSONDir, "trains_available.json")
 	case "directions":
 		filePath = filepath.Join(app.Config.JSONDir, "directions.json")
 	case "destinations":
-		filePath = filepath.Join(app.Config.JSONDir, "destinations.json")
+		filePath = filepath.Join(app.Config.JSONDir, "destinations_selected.json")
+	case "destinations_available":
+		filePath = filepath.Join(app.Config.JSONDir, "destinations_available.json")
 	case "tracks":
 		filePath = filepath.Join(app.Config.JSONDir, "tracks.json")
 	case "promo":

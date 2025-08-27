@@ -32,6 +32,17 @@
         <p>🎵 Audio System: Active | 🕒 Scheduler: Running | ⚙️ <a href="/admin" style="color: #4CAF50;">🔒 Admin Panel (Protected)</a> | 🔗 <a href="/api/docs" style="color: #4CAF50;">API Docs</a></p>
     </div>
 
+    <!-- Announcement Control Buttons -->
+    <div class="section" style="text-align: center; padding: 15px;">
+        <h3>Announcement Controls</h3>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button type="button" id="pause-announcements-btn" style="background-color: #ff9800;">⏸️ Pause Announcement Queue</button>
+            <button type="button" id="resume-announcements-btn" style="background-color: #4CAF50;">▶️ Resume All Announcements</button>
+            <button type="button" id="stop-current-btn" style="background-color: #f44336;">⏹️ Stop Current Announcement</button>
+        </div>
+        <div id="announcement-control-message" style="margin-top: 10px;"></div>
+    </div>
+
     <!-- Station Announcement -->
     <div class="section">
         <h2>Station Announcement</h2>
@@ -126,6 +137,92 @@
             e.preventDefault();
             postForm('safetyForm', '/play_safety_announcement');
         });
+
+        // Announcement control functions
+        function showAnnouncementControlMessage(message, type = 'info') {
+            const messageDiv = document.getElementById('announcement-control-message');
+            const colorMap = {
+                'success': '#4CAF50',
+                'error': '#f44336',
+                'warning': '#ff9800',
+                'info': '#2196F3'
+            };
+            
+            messageDiv.innerHTML = `<p style="color: ${colorMap[type]}; font-weight: bold; margin: 5px 0;">${message}</p>`;
+            
+            // Clear message after 5 seconds
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        async function pauseAnnouncements() {
+            try {
+                const resp = await fetch('/api/announcements/pause', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'tarr-api-2025'
+                    }
+                });
+                const data = await resp.json();
+                
+                if (data.success) {
+                    showAnnouncementControlMessage('All announcements paused', 'success');
+                } else {
+                    showAnnouncementControlMessage('Failed to pause announcements: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                showAnnouncementControlMessage('Error pausing announcements: ' + err.message, 'error');
+            }
+        }
+
+        async function resumeAnnouncements() {
+            try {
+                const resp = await fetch('/api/announcements/resume', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'tarr-api-2025'
+                    }
+                });
+                const data = await resp.json();
+                
+                if (data.success) {
+                    showAnnouncementControlMessage('All announcements resumed', 'success');
+                } else {
+                    showAnnouncementControlMessage('Failed to resume announcements: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                showAnnouncementControlMessage('Error resuming announcements: ' + err.message, 'error');
+            }
+        }
+
+        async function stopCurrentAnnouncement() {
+            try {
+                const resp = await fetch('/api/announcements/stop-current', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'tarr-api-2025'
+                    }
+                });
+                const data = await resp.json();
+                
+                if (data.success) {
+                    showAnnouncementControlMessage('Current announcement stopped', 'success');
+                } else {
+                    showAnnouncementControlMessage('Failed to stop current announcement: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                showAnnouncementControlMessage('Error stopping announcement: ' + err.message, 'error');
+            }
+        }
+
+        // Event listeners for announcement control buttons
+        document.getElementById('pause-announcements-btn').addEventListener('click', pauseAnnouncements);
+        document.getElementById('resume-announcements-btn').addEventListener('click', resumeAnnouncements);
+        document.getElementById('stop-current-btn').addEventListener('click', stopCurrentAnnouncement);
     </script>
 </body>
 </html>

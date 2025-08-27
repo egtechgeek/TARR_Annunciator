@@ -301,6 +301,28 @@ func setupWebRoutes() {
 	app.Router.PUT("/admin/api-keys/:id", requireAuth(), updateAPIKeyHandler)
 	app.Router.DELETE("/admin/api-keys/:id", requireAuth(), deleteAPIKeyHandler)
 	
+	// Track Layout Routes (Authenticated)
+	app.Router.GET("/admin/track-layout", requireAuth(), getTrackLayoutHandler)
+	app.Router.POST("/admin/track-layout", requireAuth(), postTrackLayoutHandler)
+	
+	// System Control Routes (Authenticated)
+	app.Router.GET("/admin/system/info", requireAuth(), getSystemInfoHandler)
+	app.Router.POST("/admin/system/restart", requireAuth(), restartApplicationHandler)
+	app.Router.POST("/admin/system/shutdown", requireAuth(), shutdownApplicationHandler)
+	
+	// Audio Management Routes (Authenticated)
+	app.Router.POST("/admin/audio/redetect", requireAuth(), redetectAudioDevicesHandler)
+	app.Router.POST("/admin/audio/system-override", requireAuth(), audioSystemOverrideHandler)
+	app.Router.GET("/admin/system/platform-info", requireAuth(), getPlatformInfoHandler)
+	
+	// Bluetooth Management Routes (Authenticated)
+	app.Router.POST("/admin/bluetooth/scan", requireAuth(), startBluetoothScanHandler)
+	app.Router.POST("/admin/bluetooth/scan/stop", requireAuth(), stopBluetoothScanHandler)
+	app.Router.GET("/admin/bluetooth/devices", requireAuth(), getBluetoothDevicesHandler)
+	app.Router.GET("/admin/bluetooth/paired", requireAuth(), getPairedBluetoothDevicesHandler)
+	app.Router.POST("/admin/bluetooth/pair", requireAuth(), pairBluetoothDeviceHandler)
+	app.Router.POST("/admin/bluetooth/unpair", requireAuth(), unpairBluetoothDeviceHandler)
+	
 	// Queue management routes (admin only) - session authenticated versions
 	app.Router.GET("/api/queue/status", requireAuth(), apiGetQueueStatusHandler)
 	app.Router.GET("/api/queue/history", requireAuth(), apiGetQueueHistoryHandler)
@@ -322,6 +344,9 @@ func setupAPIRoutes() {
 		authAPI.POST("/announce/safety", apiSafetyAnnouncementHandler)
 		authAPI.POST("/announce/promo", apiPromoAnnouncementHandler)
 		authAPI.POST("/announce/emergency", apiEmergencyAnnouncementHandler)
+		authAPI.POST("/announcements/pause", apiPauseAnnouncementsHandler)
+		authAPI.POST("/announcements/resume", apiResumeAnnouncementsHandler)
+		authAPI.POST("/announcements/stop-current", apiStopCurrentAnnouncementHandler)
 		authAPI.GET("/audio/volume", apiGetVolumeHandler)
 		authAPI.POST("/audio/volume", apiSetVolumeHandler)
 		authAPI.GET("/audio/devices", apiGetAudioDevicesHandler)
@@ -571,8 +596,10 @@ func adminHandler(c *gin.Context) {
 	cronDataJSON, _ := json.MarshalIndent(cronData, "", "    ")
 	
 	trains := loadJSON("trains", []Train{}).([]Train)
+	trainsAvailable := loadJSON("trains_available", []Train{}).([]Train)
 	directions := loadJSON("directions", []Direction{}).([]Direction)
 	destinations := loadJSON("destinations", []Destination{}).([]Destination)
+	destinationsAvailable := loadJSON("destinations_available", []Destination{}).([]Destination)
 	tracks := loadJSON("tracks", []Track{}).([]Track)
 	promoAnnouncements := loadJSON("promo", []PromoAnnouncement{}).([]PromoAnnouncement)
 	safetyLanguages := loadJSON("safety", []SafetyLanguage{}).([]SafetyLanguage)
@@ -589,11 +616,13 @@ func adminHandler(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "admin.html", gin.H{
-		"cron_data":            string(cronDataJSON),
-		"trains":               trains,
-		"directions":           directions,
-		"destinations":         destinations,
-		"tracks":               tracks,
+		"cron_data":              string(cronDataJSON),
+		"trains":                 trains,
+		"trains_available":       trainsAvailable,
+		"directions":             directions,
+		"destinations":           destinations,
+		"destinations_available": destinationsAvailable,
+		"tracks":                 tracks,
 		"promo_announcements":  promoAnnouncements,
 		"safety_languages":     safetyLanguages,
 		"emergencies":          emergencies,
