@@ -2,6 +2,187 @@
 
 All notable changes and enhancements to the TARR Annunciator project.
 
+## [2.1] - Advanced Features & System Improvements - 2025-08-29
+
+### Major Features Added
+
+#### Enhanced Multi-Language Safety Announcements
+- **Implemented back-to-back language support for safety announcements**
+  - Extended `SafetyCronJob` structure with `languages` array and configurable `delay`
+  - Sequential playback of multiple languages with precise timing control
+  - Backward compatibility maintained for single `language` field
+  - Smart queuing system ensures proper priority and sequencing
+  - Example: English followed by Spanish with 3-second delay
+  ```json
+  {
+    "enabled": true,
+    "cron": "0 */10 * * *",
+    "languages": ["english", "spanish"],
+    "delay": 3
+  }
+  ```
+
+#### Comprehensive File Logging System
+- **Cross-platform file logging with automatic rotation**
+  - Date-stamped log files: `tarr-annunciator_YYYY-MM-DD_HH-MM-SS.log`
+  - Dual output: console and file simultaneously
+  - Automatic 30-day log purge with detailed cleanup reporting
+  - Graceful shutdown handling with proper file closure
+  - Startup/shutdown banners with system information
+  - Works identically across Windows, Linux, and ARM platforms
+
+#### Advanced Version Tracking for Updater
+- **Implemented efficient version manifest system**
+  - File-level version tracking with MD5 hash verification
+  - Selective file updates (only changed files downloaded)
+  - Atomic update operations with integrity verification
+  - Local and remote manifest comparison
+  - Bandwidth and time efficient updates
+  - Rollback safety with temp file verification
+  ```go
+  type VersionManifest struct {
+      ApplicationVersion string
+      Files              map[string]FileVersion
+      Platform           string
+  }
+  ```
+
+#### Track Layout Management System
+- **Fixed and enhanced track layout functionality**
+  - Available Trains and Destinations dropdowns now populate correctly
+  - Fixed JSON parsing for `trains_available` and `destinations_available`
+  - Dynamic dropdown filtering (removed items reappear in Available lists)
+  - Added safety languages visibility in Available Configuration Options
+  - Improved UI layout with 4-column display (Trains, Destinations, Tracks, Safety Languages)
+
+### Audio & Hardware Improvements
+
+#### Bluetooth Discovery & Pairing Enhancement
+- **Complete Bluetooth system overhaul for Raspberry Pi**
+  - Fixed device discovery issues with proper `bluetoothctl` workflow
+  - Enhanced service management with automatic Bluetooth daemon startup
+  - Improved pairing process with device trusting and connection handling
+  - Audio profile detection and labeling for audio-capable devices
+  - Extended scan duration and proper device cache management
+  - Comprehensive error handling and fallback mechanisms
+
+#### Raspberry Pi Audio System Integration
+- **Enhanced audio system compatibility**
+  - PipeWire support with PulseAudio compatibility layer
+  - Manual audio system override (Auto/PipeWire/PulseAudio/ALSA)
+  - Dynamic override visibility for ARM/Linux platforms only
+  - Improved ALSA development library installation in setup scripts
+  - Better audio device detection across different hardware configurations
+
+#### Screen Session Management
+- **Replaced systemd service with GNU Screen for Raspberry Pi**
+  - Resolved audio permission issues through user session execution
+  - Proper screen session management with restart functionality
+  - Auto-startup configuration with helper scripts
+  - Session monitoring and management commands
+  - Screen-based restart functionality in admin UI
+
+### User Interface Improvements
+
+#### Admin Interface Enhancements
+- **Removed Shutdown Application button** for improved safety
+- **Enhanced Available Configuration Options display**
+  - Added Safety Languages section for better visibility
+  - Improved 4-column layout for better organization
+  - Updated responsive design for various screen sizes
+
+#### System Control Improvements
+- **Platform-specific restart functionality**
+  - Raspberry Pi screen session restart support
+  - Proper detection of running environment (screen vs systemd)
+  - Improved restart button text based on platform detection
+  - Enhanced error handling and status reporting
+
+### Infrastructure & Installation
+
+#### Installation Script Improvements
+- **Enhanced Raspberry Pi installation script**
+  - ALSA development libraries (`libasound2-dev`, `pkg-config`, `build-essential`)
+  - Automatic logs directory creation
+  - PipeWire and modern audio system support
+  - Bluetooth support with optional installation
+  - Autologin detection and configuration
+  - Comprehensive dependency management
+
+#### Build System Enhancements
+- **Improved cross-platform build support**
+  - Fixed ALSA library dependency issues
+  - CGO compilation support with proper library detection
+  - Cross-compilation improvements for ARM platforms
+  - Build script enhancements for different architectures
+
+### Technical Improvements
+
+#### Logging Infrastructure
+- **Production-ready logging system**
+  - Structured logging with timestamps and log levels
+  - Automatic log rotation every application restart
+  - Configurable retention period (30 days)
+  - Log cleanup statistics and reporting
+  - Cross-platform file path handling
+  - Memory-efficient logging operations
+
+#### Version Control & Update System
+- **Advanced update mechanism**
+  - Hash-based file change detection
+  - Incremental updates for improved efficiency
+  - Platform-aware file handling
+  - Download verification and integrity checks
+  - Fallback to traditional update methods
+  - Update progress reporting and status
+
+#### Queue Management Enhancements
+- **Multi-language announcement queuing**
+  - Sequential language scheduling with precise timing
+  - Priority-based queue insertion for language sequences
+  - Comprehensive logging of multi-language operations
+  - Thread-safe queue operations for concurrent languages
+  - Smart delay calculations between languages
+
+### Bug Fixes
+
+#### Critical System Fixes
+- **Fixed Bluetooth discovery on Raspberry Pi**
+  - Resolved "Host is down" errors with pw-cli
+  - Proper bluetoothctl command sequences
+  - Service dependency checking and startup
+  - Device cache management and scanning improvements
+
+#### Track Layout System Fixes
+- **Resolved dropdown population issues**
+  - Fixed JSON parsing for available trains/destinations
+  - Corrected dropdown filtering logic
+  - Fixed item removal and reappearance functionality
+  - Improved error handling for missing data files
+
+#### Audio System Fixes
+- **Resolved ALSA compilation issues**
+  - Fixed pkg-config dependency errors
+  - Proper ALSA development library installation
+  - CGO compilation flags and library linking
+  - Cross-platform audio library compatibility
+
+#### Screen Session Management Fixes
+- **Fixed Raspberry Pi restart functionality**
+  - Proper screen session termination before restart
+  - Enhanced restart script with comprehensive session management
+  - Fixed screen command syntax and environment variables
+  - Improved session detection and status reporting
+
+### Performance Optimizations
+- **Efficient file operations** with hash-based change detection
+- **Optimized update process** downloading only changed files
+- **Improved memory usage** in logging and version tracking systems
+- **Faster startup times** with streamlined initialization
+- **Reduced bandwidth usage** through selective updates
+
+---
+
 ## [2.0] - Multi-User & Cross-Platform Release - 2025-08-25
 
 ### Major Features Added
@@ -223,3 +404,43 @@ The system now supports everything from simple home model railroad setups to pro
 - **Cross-platform support** for Windows, Linux, and ARM architectures
 
 This changelog documents the transformation of a simple announcement script into a comprehensive, production-ready train announcement system suitable for both hobbyist and professional applications.
+
+---
+
+## [2.1] Development Summary
+
+Version 2.1 represents a significant advancement in system robustness, multilingual capabilities, and operational efficiency. Key achievements include:
+
+### Production-Grade Features
+- **Multi-language announcements** with sequential playback for international accessibility
+- **Enterprise-level logging** with automatic rotation and long-term retention
+- **Intelligent update system** with selective file synchronization
+- **Enhanced hardware support** especially for Raspberry Pi deployments
+
+### System Reliability Improvements
+- **Resolved critical Bluetooth issues** on Raspberry Pi platforms
+- **Fixed track layout management** for proper configuration management
+- **Enhanced audio system compatibility** across different hardware configurations
+- **Improved session management** with GNU Screen integration
+
+### Developer & Operations Enhancements
+- **Comprehensive logging infrastructure** for debugging and monitoring
+- **Version tracking system** for efficient maintenance and updates
+- **Cross-platform build improvements** with proper dependency management
+- **Enhanced installation scripts** with automatic dependency resolution
+
+### Statistics for v2.1
+- **15+ new functions** added for multi-language and logging systems
+- **500+ lines of enhanced Go code** for version tracking and file management
+- **2 major system overhauls** (Bluetooth discovery, Screen session management)
+- **4 critical bug fixes** resolving deployment and operational issues
+- **Complete backward compatibility** maintained for existing configurations
+- **Cross-platform logging support** for Windows, Linux, and ARM architectures
+
+Version 2.1 solidifies TARR Annunciator as a professional-grade solution suitable for:
+- **Multilingual environments** requiring sequential language announcements
+- **Production deployments** needing comprehensive logging and monitoring
+- **Raspberry Pi installations** with advanced hardware integration
+- **Enterprise environments** requiring reliable update mechanisms and system management
+
+The combination of v2.0's multi-user architecture and v2.1's operational enhancements creates a robust platform ready for demanding real-world applications while maintaining the simplicity and flexibility that makes it suitable for hobbyist use.

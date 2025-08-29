@@ -1,5 +1,9 @@
 {
     "safety": [
+		{
+			"id": "en_es",
+			"name": "Safety Bilingual"
+		},
         {
             "id": "english",
             "name": "Safety English"

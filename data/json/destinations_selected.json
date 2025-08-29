@@ -5,12 +5,12 @@
             "name": "Goodwin Station"
         },
         {
-            "id": "picnic_station",
-            "name": "Picnic Station"
-        },
-        {
             "id": "yard",
             "name": "Rail Yard"
+        },
+        {
+            "id": "picnic_station",
+            "name": "Picnic Station"
         }
     ]
 }

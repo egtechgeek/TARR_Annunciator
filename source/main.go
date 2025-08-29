@@ -3,11 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
+	"strings"
+	"syscall"
 	"time"
 
 	"github.com/faiface/beep"
@@ -26,6 +31,7 @@ type Config struct {
 	BaseDir             string
 	JSONDir             string
 	MP3Dir              string
+	LogDir              string
 	CurrentVolume       float64
 	SelectedAudioDevice string
 	SessionSecret       string
@@ -145,9 +151,11 @@ type PromoCronJob struct {
 }
 
 type SafetyCronJob struct {
-	Enabled  bool   `json:"enabled"`
-	Cron     string `json:"cron"`
-	Language string `json:"language"`
+	Enabled   bool     `json:"enabled"`
+	Cron      string   `json:"cron"`
+	Language  string   `json:"language"`           // Legacy single language support
+	Languages []string `json:"languages,omitempty"` // New multi-language support
+	Delay     int      `json:"delay,omitempty"`     // Optional delay between languages in seconds (default: 2)
 }
 
 type App struct {
@@ -166,6 +174,12 @@ func main() {
 	baseDir, _ := os.Getwd()
 	jsonDir := filepath.Join(baseDir, "json")
 	mp3Dir := filepath.Join(baseDir, "static", "mp3")
+	logDir := filepath.Join(baseDir, "logs")
+	
+	// Initialize logging system
+	if err := initializeLogging(logDir); err != nil {
+		log.Printf("Warning: Failed to initialize file logging: %v", err)
+	}
 
 	// Load admin configuration
 	adminConfig, err := loadAdminConfig(filepath.Join(jsonDir, "admin_config.json"))
@@ -190,6 +204,7 @@ func main() {
 			BaseDir:             baseDir,
 			JSONDir:             jsonDir,
 			MP3Dir:              mp3Dir,
+			LogDir:              logDir,
 		},
 		Scheduler:    cron.New(),
 		AudioEnabled: true,
@@ -220,6 +235,26 @@ func main() {
 	log.Printf("Audio system: %s", audioStatus())
 	log.Println("Access the application at: http://localhost:8080")
 	log.Println("Admin interface at: http://localhost:8080/admin")
+
+	// Setup graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	
+	go func() {
+		<-sigChan
+		log.Println("Received shutdown signal, cleaning up...")
+		
+		// Stop scheduler
+		if app.Scheduler != nil {
+			app.Scheduler.Stop()
+			log.Println("Scheduler stopped")
+		}
+		
+		// Close logging
+		closeLogging()
+		
+		os.Exit(0)
+	}()
 
 	app.Router.Run(":8080")
 }
@@ -1315,4 +1350,122 @@ func deleteAPIKeyHandler(c *gin.Context) {
 		"success": true,
 		"message": "API key deleted successfully",
 	})
+}
+
+// Logging system variables
+var (
+	logFile   *os.File
+	logWriter io.Writer
+)
+
+// initializeLogging sets up file logging with automatic rotation and cleanup
+func initializeLogging(logDir string) error {
+	// Create logs directory if it doesn't exist
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return fmt.Errorf("failed to create logs directory: %v", err)
+	}
+	
+	// Generate log filename with timestamp
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	logFileName := fmt.Sprintf("tarr-annunciator_%s.log", timestamp)
+	logFilePath := filepath.Join(logDir, logFileName)
+	
+	// Open log file
+	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open log file: %v", err)
+	}
+	
+	logFile = file
+	
+	// Create multi-writer to write to both console and file
+	logWriter = io.MultiWriter(os.Stdout, file)
+	log.SetOutput(logWriter)
+	
+	// Add log header
+	log.Printf("=== TARR Annunciator Started ===")
+	log.Printf("Version: Go Application")
+	log.Printf("Platform: %s/%s", runtime.GOOS, runtime.GOARCH)
+	log.Printf("Log file: %s", logFilePath)
+	log.Printf("Timestamp: %s", time.Now().Format("2006-01-02 15:04:05"))
+	log.Printf("=====================================")
+	
+	// Start log cleanup routine
+	go func() {
+		if err := cleanupOldLogs(logDir); err != nil {
+			log.Printf("Warning: Failed to cleanup old logs: %v", err)
+		}
+		
+		// Setup periodic cleanup (every 24 hours)
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		
+		for range ticker.C {
+			if err := cleanupOldLogs(logDir); err != nil {
+				log.Printf("Warning: Failed to cleanup old logs: %v", err)
+			}
+		}
+	}()
+	
+	return nil
+}
+
+// cleanupOldLogs removes log files older than 30 days
+func cleanupOldLogs(logDir string) error {
+	log.Printf("Starting log cleanup routine...")
+	
+	// Read directory contents
+	files, err := os.ReadDir(logDir)
+	if err != nil {
+		return fmt.Errorf("failed to read logs directory: %v", err)
+	}
+	
+	cutoffTime := time.Now().AddDate(0, 0, -30) // 30 days ago
+	deletedCount := 0
+	totalSize := int64(0)
+	
+	for _, file := range files {
+		// Only process .log files
+		if !strings.HasSuffix(file.Name(), ".log") {
+			continue
+		}
+		
+		// Get file info
+		info, err := file.Info()
+		if err != nil {
+			log.Printf("Warning: Could not get info for log file %s: %v", file.Name(), err)
+			continue
+		}
+		
+		totalSize += info.Size()
+		
+		// Check if file is older than 30 days
+		if info.ModTime().Before(cutoffTime) {
+			filePath := filepath.Join(logDir, file.Name())
+			if err := os.Remove(filePath); err != nil {
+				log.Printf("Warning: Could not delete old log file %s: %v", file.Name(), err)
+			} else {
+				log.Printf("Deleted old log file: %s (%.2f MB, %s old)", 
+					file.Name(), 
+					float64(info.Size())/1024/1024,
+					time.Since(info.ModTime()).Round(24*time.Hour))
+				deletedCount++
+			}
+		}
+	}
+	
+	log.Printf("Log cleanup completed: %d files deleted, total log size: %.2f MB", 
+		deletedCount, float64(totalSize)/1024/1024)
+	
+	return nil
+}
+
+// closeLogging properly closes the log file
+func closeLogging() {
+	if logFile != nil {
+		log.Printf("=== TARR Annunciator Shutting Down ===")
+		log.Printf("Timestamp: %s", time.Now().Format("2006-01-02 15:04:05"))
+		log.Printf("=======================================")
+		logFile.Close()
+	}
 }

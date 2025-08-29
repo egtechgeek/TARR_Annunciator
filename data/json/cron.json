@@ -26,9 +26,15 @@
     ],
     "safety_announcements": [
         {
-            "enabled": true,
-            "cron": "*/2 * * * *",
+            "enabled": false,
+            "cron": "*/5 * * * *",
             "language": "english"
+        },
+        {
+            "enabled": true,
+            "cron": "*/5 * * * *",
+            "languages": ["english", "spanish"],
+            "delay": 2
         }
     ]
 }

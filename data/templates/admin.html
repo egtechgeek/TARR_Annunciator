@@ -71,10 +71,7 @@
                                     <p class="text-muted">Restart the TARR Annunciator application to apply configuration changes or resolve issues.</p>
                                     <div class="d-grid gap-2">
                                         <button type="button" class="btn btn-warning" id="restart-app-btn">
-                                            🔄 Restart Application
-                                        </button>
-                                        <button type="button" class="btn btn-danger" id="shutdown-app-btn">
-                                            ⏻ Shutdown Application
+                                            <span id="restart-btn-text">🔄 Restart Application</span>
                                         </button>
                                     </div>
                                 </div>
@@ -239,7 +236,7 @@
                 <div class="section">
                     <h3>Available Configuration Options</h3>
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <h5>Trains</h5>
                             <ul class="list-unstyled">
                                 {{range .trains}}
@@ -247,7 +244,7 @@
                                 {{end}}
                             </ul>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <h5>Destinations</h5>
                             <ul class="list-unstyled">
                                 {{range .destinations}}
@@ -255,10 +252,18 @@
                                 {{end}}
                             </ul>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <h5>Tracks</h5>
                             <ul class="list-unstyled">
                                 {{range .tracks}}
+                                    <li>{{.ID}} - {{.Name}}</li>
+                                {{end}}
+                            </ul>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Safety Languages</h5>
+                            <ul class="list-unstyled">
+                                {{range .safety_languages}}
                                     <li>{{.ID}} - {{.Name}}</li>
                                 {{end}}
                             </ul>
@@ -1321,8 +1326,18 @@
         // Track Layout Management
         let selectedTrains = [];
         let selectedDestinations = [];
+        let allAvailableTrains = [];
+        let allAvailableDestinations = [];
 
         function loadTrackLayout() {
+            // Load all available options from the template
+            allAvailableTrains = Array.from(document.getElementById('available-trains-select').options)
+                .filter(opt => opt.value)
+                .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
+            allAvailableDestinations = Array.from(document.getElementById('available-destinations-select').options)
+                .filter(opt => opt.value)
+                .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
+
             fetch('/admin/track-layout', {
                 credentials: 'same-origin'
             })
@@ -1338,19 +1353,19 @@
                 
                 updateSelectedTrainsList();
                 updateSelectedDestinationsList();
+                updateAvailableTrainsDropdown();
+                updateAvailableDestinationsDropdown();
             })
             .catch(error => {
                 showTrackLayoutMessage('Error loading track layout: ' + error.message, 'danger');
-                // Initialize with all available items as fallback
-                selectedTrains = Array.from(document.getElementById('available-trains-select').options)
-                    .filter(opt => opt.value)
-                    .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
-                selectedDestinations = Array.from(document.getElementById('available-destinations-select').options)
-                    .filter(opt => opt.value)
-                    .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
+                // Initialize with empty selections as fallback
+                selectedTrains = [];
+                selectedDestinations = [];
                 
                 updateSelectedTrainsList();
                 updateSelectedDestinationsList();
+                updateAvailableTrainsDropdown();
+                updateAvailableDestinationsDropdown();
             });
         }
 
@@ -1388,6 +1403,42 @@
             `).join('');
         }
 
+        function updateAvailableTrainsDropdown() {
+            const select = document.getElementById('available-trains-select');
+            const selectedIds = selectedTrains.map(t => t.id);
+            const availableTrains = allAvailableTrains.filter(train => !selectedIds.includes(train.id));
+            
+            // Clear all options except the first one
+            select.innerHTML = '<option value="">Select a train to add...</option>';
+            
+            // Add available options
+            availableTrains.forEach(train => {
+                const option = document.createElement('option');
+                option.value = train.id;
+                option.setAttribute('data-name', train.name);
+                option.textContent = `${train.id} - ${train.name}`;
+                select.appendChild(option);
+            });
+        }
+
+        function updateAvailableDestinationsDropdown() {
+            const select = document.getElementById('available-destinations-select');
+            const selectedIds = selectedDestinations.map(d => d.id);
+            const availableDestinations = allAvailableDestinations.filter(dest => !selectedIds.includes(dest.id));
+            
+            // Clear all options except the first one
+            select.innerHTML = '<option value="">Select a destination to add...</option>';
+            
+            // Add available options
+            availableDestinations.forEach(destination => {
+                const option = document.createElement('option');
+                option.value = destination.id;
+                option.setAttribute('data-name', destination.name);
+                option.textContent = `${destination.id} - ${destination.name}`;
+                select.appendChild(option);
+            });
+        }
+
         function addSelectedTrain() {
             const select = document.getElementById('available-trains-select');
             const selectedValue = select.value;
@@ -1406,9 +1457,9 @@
             
             selectedTrains.push({ id: trainId, name: trainName });
             updateSelectedTrainsList();
+            updateAvailableTrainsDropdown();
             
-            // Reset dropdown
-            select.value = '';
+            // Reset dropdown and button
             document.getElementById('add-train-btn').disabled = true;
         }
 
@@ -1430,20 +1481,22 @@
             
             selectedDestinations.push({ id: destinationId, name: destinationName });
             updateSelectedDestinationsList();
+            updateAvailableDestinationsDropdown();
             
-            // Reset dropdown
-            select.value = '';
+            // Reset dropdown and button
             document.getElementById('add-destination-btn').disabled = true;
         }
 
         function removeSelectedTrain(trainId) {
             selectedTrains = selectedTrains.filter(t => t.id !== trainId);
             updateSelectedTrainsList();
+            updateAvailableTrainsDropdown();
         }
 
         function removeSelectedDestination(destinationId) {
             selectedDestinations = selectedDestinations.filter(d => d.id !== destinationId);
             updateSelectedDestinationsList();
+            updateAvailableDestinationsDropdown();
         }
 
         function saveTrackLayout() {
@@ -1479,15 +1532,13 @@
             }
             
             // Reset to all available items
-            selectedTrains = Array.from(document.getElementById('available-trains-select').options)
-                .filter(opt => opt.value)
-                .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
-            selectedDestinations = Array.from(document.getElementById('available-destinations-select').options)
-                .filter(opt => opt.value)
-                .map(opt => ({id: opt.value, name: opt.getAttribute('data-name')}));
+            selectedTrains = [...allAvailableTrains];
+            selectedDestinations = [...allAvailableDestinations];
             
             updateSelectedTrainsList();
             updateSelectedDestinationsList();
+            updateAvailableTrainsDropdown();
+            updateAvailableDestinationsDropdown();
             
             showTrackLayoutMessage('Track layout reset to default (all items available)', 'info');
         }
@@ -1541,7 +1592,6 @@
                     showSystemControlMessage('Application restart initiated. Please wait 10-15 seconds, then refresh this page.', 'warning');
                     // Disable buttons temporarily
                     document.getElementById('restart-app-btn').disabled = true;
-                    document.getElementById('shutdown-app-btn').disabled = true;
                 } else {
                     showSystemControlMessage('Failed to restart application: ' + (data.error || 'Unknown error'), 'danger');
                 }
@@ -1551,30 +1601,6 @@
             });
         }
 
-        function shutdownApplication() {
-            if (!confirm('Are you sure you want to shutdown the TARR Annunciator application? You will need to manually restart it.')) {
-                return;
-            }
-
-            fetch('/admin/system/shutdown', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSystemControlMessage('Application shutdown initiated. The service will stop in a few seconds.', 'warning');
-                } else {
-                    showSystemControlMessage('Failed to shutdown application: ' + (data.error || 'Unknown error'), 'danger');
-                }
-            })
-            .catch(error => {
-                showSystemControlMessage('Error shutting down application: ' + error.message, 'danger');
-            });
-        }
 
         function loadSystemInfo() {
             fetch('/admin/system/info', {
@@ -1698,7 +1724,7 @@
             });
         }
 
-        // Show/hide audio system override based on platform
+        // Show/hide audio system override based on platform and update UI elements
         function checkAudioSystemOverrideVisibility() {
             fetch('/admin/system/platform-info', {
                 method: 'GET',
@@ -1706,15 +1732,28 @@
             })
             .then(response => response.json())
             .then(data => {
+                // Show/hide audio system override
                 if (data.platform === 'linux' || data.is_arm === true) {
                     document.getElementById('audio-system-override-section').style.display = 'block';
                 } else {
                     document.getElementById('audio-system-override-section').style.display = 'none';
                 }
+                
+                // Update restart button text for Raspberry Pi
+                const restartBtnText = document.getElementById('restart-btn-text');
+                if (data.is_raspberry_pi === true) {
+                    if (restartBtnText) {
+                        restartBtnText.textContent = '🔄 Restart Screen Session (Pi)';
+                        restartBtnText.title = 'Restarts the application within the GNU Screen session';
+                    }
+                } else if (restartBtnText) {
+                    restartBtnText.textContent = '🔄 Restart Application';
+                    restartBtnText.title = 'Restarts the application service';
+                }
             })
             .catch(error => {
-                console.warn('Could not determine platform for audio system override visibility:', error);
-                // Default to showing it on non-Windows systems
+                console.warn('Could not determine platform for UI customization:', error);
+                // Default to showing audio override on non-Windows systems
                 if (!navigator.platform.includes('Win')) {
                     document.getElementById('audio-system-override-section').style.display = 'block';
                 }
@@ -1946,7 +1985,6 @@
 
         // Event Listeners
         document.getElementById('restart-app-btn').addEventListener('click', restartApplication);
-        document.getElementById('shutdown-app-btn').addEventListener('click', shutdownApplication);
         document.getElementById('refresh-system-info-btn').addEventListener('click', loadSystemInfo);
         document.getElementById('redetect-audio-btn').addEventListener('click', redetectAudioDevices);
         document.getElementById('apply-audio-system-btn').addEventListener('click', applyAudioSystemOverride);

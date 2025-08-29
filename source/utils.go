@@ -66,6 +66,19 @@ func loadJSON(name string, defaultValue interface{}) interface{} {
 			return trains
 		}
 		
+	case "trains_available":
+		var wrapper struct {
+			Trains []Train `json:"trains"`
+		}
+		if err := json.Unmarshal(data, &wrapper); err == nil && len(wrapper.Trains) > 0 {
+			return wrapper.Trains
+		}
+		// Try direct array format
+		var trains []Train
+		if err := json.Unmarshal(data, &trains); err == nil {
+			return trains
+		}
+		
 	case "directions":
 		var wrapper struct {
 			Directions []Direction `json:"directions"`
@@ -79,6 +92,18 @@ func loadJSON(name string, defaultValue interface{}) interface{} {
 		}
 		
 	case "destinations":
+		var wrapper struct {
+			Destinations []Destination `json:"destinations"`
+		}
+		if err := json.Unmarshal(data, &wrapper); err == nil && len(wrapper.Destinations) > 0 {
+			return wrapper.Destinations
+		}
+		var destinations []Destination
+		if err := json.Unmarshal(data, &destinations); err == nil {
+			return destinations
+		}
+		
+	case "destinations_available":
 		var wrapper struct {
 			Destinations []Destination `json:"destinations"`
 		}
@@ -261,33 +286,106 @@ func updateScheduler() {
 	// Safety announcements
 	for i, item := range cronData.SafetyAnnouncements {
 		if item.Enabled {
+			// Determine which languages to use (new multi-language or legacy single language)
+			var languages []string
+			var delay int = 2 // Default delay
+			
+			if len(item.Languages) > 0 {
+				// New multi-language format
+				languages = item.Languages
+				if item.Delay > 0 {
+					delay = item.Delay
+				}
+			} else if item.Language != "" {
+				// Legacy single language format
+				languages = []string{item.Language}
+			} else {
+				log.Printf("Warning: Safety announcement %d has no language configured", i)
+				continue
+			}
+			
 			// Capture variables for closure
-			language := item.Language
+			languagesCopy := make([]string, len(languages))
+			copy(languagesCopy, languages)
+			delaySeconds := delay
+			
 			_, err := app.Scheduler.AddFunc(item.Cron, func() {
-				log.Printf("🕐 Scheduled safety announcement triggered: %s", language)
-				if announcementManager != nil {
-					parameters := map[string]interface{}{
-						"language": language,
-					}
-					announcement, queueErr := announcementManager.QueueAnnouncement(TypeSafety, PriorityHigh, parameters, time.Now())
-					if queueErr != nil {
-						log.Printf("Error queuing scheduled safety announcement: %v", queueErr)
-					} else {
-						log.Printf("Scheduled safety announcement queued successfully (ID: %s)", announcement.ID)
-					}
+				if len(languagesCopy) == 1 {
+					// Single language - use existing logic
+					log.Printf("🕐 Scheduled safety announcement triggered: %s", languagesCopy[0])
+					queueSafetyAnnouncement(languagesCopy[0])
 				} else {
-					log.Printf("⚠️  Announcement manager not available for scheduled announcement")
+					// Multiple languages - queue sequentially with delays
+					log.Printf("🕐 Scheduled multi-language safety announcement triggered: %v", languagesCopy)
+					queueMultiLanguageSafetyAnnouncement(languagesCopy, delaySeconds)
 				}
 			})
 			if err != nil {
 				log.Printf("Error scheduling safety announcement %d: %v", i, err)
 			} else {
-				log.Printf("Scheduled: %s - %s", item.Cron, item.Language)
+				if len(languages) == 1 {
+					log.Printf("Scheduled: %s - %s", item.Cron, languages[0])
+				} else {
+					log.Printf("Scheduled: %s - %v (multi-language, %ds delay)", item.Cron, languages, delay)
+				}
 			}
 		}
 	}
 
 	log.Printf("Scheduler updated with %d active jobs.", len(app.Scheduler.Entries()))
+}
+
+// queueSafetyAnnouncement queues a single safety announcement
+func queueSafetyAnnouncement(language string) {
+	if announcementManager != nil {
+		parameters := map[string]interface{}{
+			"language": language,
+		}
+		announcement, queueErr := announcementManager.QueueAnnouncement(TypeSafety, PriorityHigh, parameters, time.Now())
+		if queueErr != nil {
+			log.Printf("Error queuing scheduled safety announcement: %v", queueErr)
+		} else {
+			log.Printf("Scheduled safety announcement queued successfully (ID: %s)", announcement.ID)
+		}
+	} else {
+		log.Printf("⚠️  Announcement manager not available for scheduled announcement")
+	}
+}
+
+// queueMultiLanguageSafetyAnnouncement queues multiple safety announcements with delays
+func queueMultiLanguageSafetyAnnouncement(languages []string, delaySeconds int) {
+	if announcementManager == nil {
+		log.Printf("⚠️  Announcement manager not available for scheduled announcements")
+		return
+	}
+	
+	// Queue all languages with calculated delays
+	for i, language := range languages {
+		// Calculate delay for this language (first language has no delay)
+		delay := time.Duration(i * delaySeconds) * time.Second
+		scheduledTime := time.Now().Add(delay)
+		
+		// Create a goroutine to queue each announcement at the appropriate time
+		go func(lang string, langIndex int, schedTime time.Time) {
+			if langIndex > 0 {
+				// Wait for the delay before queuing
+				time.Sleep(time.Until(schedTime))
+			}
+			
+			parameters := map[string]interface{}{
+				"language": lang,
+			}
+			announcement, queueErr := announcementManager.QueueAnnouncement(TypeSafety, PriorityHigh, parameters, schedTime)
+			if queueErr != nil {
+				log.Printf("Error queuing multi-language safety announcement (%s): %v", lang, queueErr)
+			} else {
+				log.Printf("Multi-language safety announcement queued successfully: %s (ID: %s, sequence: %d/%d)", 
+					lang, announcement.ID, langIndex+1, len(languages))
+			}
+		}(language, i, scheduledTime)
+	}
+	
+	log.Printf("Queued %d safety announcements in sequence with %d second intervals", len(languages), delaySeconds)
 }
 
 // File system utilities

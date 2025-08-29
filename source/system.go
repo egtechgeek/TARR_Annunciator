@@ -103,21 +103,156 @@ func restartApplicationHandler(c *gin.Context) {
 			// On Windows, we'll use a batch script approach
 			cmd := exec.Command("cmd", "/C", "timeout /T 3 && start", os.Args[0])
 			cmd.Start()
+			os.Exit(0)
 		} else {
-			// On Linux, use systemctl or direct restart
-			if _, err := exec.LookPath("systemctl"); err == nil {
-				// Try systemctl restart
+			// Check if this is a Raspberry Pi running in screen
+			if isRaspberryPi() && isRunningInScreen() {
+				log.Printf("Detected Raspberry Pi with screen session, using screen-based restart")
+				restartInScreen()
+			} else if _, err := exec.LookPath("systemctl"); err == nil {
+				// Try systemctl restart for regular Linux systems
 				exec.Command("systemctl", "restart", "tarr-annunciator").Run()
+				os.Exit(0)
 			} else {
-				// Direct restart
+				// Direct restart for other systems
 				cmd := exec.Command(os.Args[0])
 				cmd.Start()
+				os.Exit(0)
 			}
 		}
-		
-		// Exit current process
-		os.Exit(0)
 	}()
+}
+
+// isRaspberryPi checks if the system is a Raspberry Pi
+func isRaspberryPi() bool {
+	// Check for Raspberry Pi specific files
+	piFiles := []string{
+		"/sys/firmware/devicetree/base/model",
+		"/proc/device-tree/model",
+	}
+	
+	for _, file := range piFiles {
+		if content, err := exec.Command("cat", file).Output(); err == nil {
+			contentStr := strings.ToLower(string(content))
+			if strings.Contains(contentStr, "raspberry pi") {
+				return true
+			}
+		}
+	}
+	
+	// Check /proc/cpuinfo for BCM processors
+	if content, err := exec.Command("cat", "/proc/cpuinfo").Output(); err == nil {
+		contentStr := strings.ToLower(string(content))
+		piProcessors := []string{"bcm2835", "bcm2836", "bcm2837", "bcm2711", "bcm2712"}
+		for _, processor := range piProcessors {
+			if strings.Contains(contentStr, processor) {
+				return true
+			}
+		}
+	}
+	
+	return false
+}
+
+// isRunningInScreen checks if the application is running inside a screen session
+func isRunningInScreen() bool {
+	// Check STY environment variable (set by screen)
+	if sty := os.Getenv("STY"); sty != "" {
+		log.Printf("Detected screen session: %s", sty)
+		return true
+	}
+	
+	// Check TERM environment variable
+	if term := os.Getenv("TERM"); strings.HasPrefix(term, "screen") {
+		log.Printf("Detected screen terminal: %s", term)
+		return true
+	}
+	
+	// Check if parent process is screen
+	if ppid := os.Getppid(); ppid > 1 {
+		if content, err := exec.Command("ps", "-p", fmt.Sprintf("%d", ppid), "-o", "comm=").Output(); err == nil {
+			parentCmd := strings.TrimSpace(string(content))
+			if strings.Contains(parentCmd, "screen") {
+				log.Printf("Detected screen parent process: %s", parentCmd)
+				return true
+			}
+		}
+	}
+	
+	return false
+}
+
+// restartInScreen restarts the application within a screen session
+func restartInScreen() {
+	log.Printf("Performing screen-based restart...")
+	
+	// Get current working directory
+	workDir, _ := os.Getwd()
+	execPath := os.Args[0]
+	
+	// Create a comprehensive restart script
+	restartScript := fmt.Sprintf(`#!/bin/bash
+echo "Starting screen-based restart..."
+
+# Kill any existing tarr-annunciator screen sessions
+screen -S tarr-annunciator -X quit 2>/dev/null || true
+
+# Wait for process to fully terminate
+sleep 2
+
+# Change to the correct directory
+cd "%s"
+
+# Start new screen session with proper configuration
+screen -dmS tarr-annunciator bash -c "
+    echo '==============================================='
+    echo '🍓 TARR Annunciator - Raspberry Pi'
+    echo '📺 Running in GNU Screen Session'
+    echo '==============================================='
+    echo 'Working directory: $(pwd)'
+    echo 'Screen session: tarr-annunciator'
+    echo 'Started: $(date)'
+    echo ''
+    echo '📱 Web Interface: http://localhost:8080'
+    echo '⚙️  Admin Panel: http://localhost:8080/admin'
+    echo ''
+    echo 'Press Ctrl+A then D to detach from session'
+    echo 'Use \"screen -r tarr-annunciator\" to reattach'
+    echo ''
+    echo 'Starting application...'
+    echo '==============================================='
+    echo ''
+    exec '%s'
+"
+
+echo "New screen session started successfully"
+`, workDir, execPath)
+	
+	// Write the restart script
+	scriptPath := "/tmp/tarr_restart.sh"
+	if err := os.WriteFile(scriptPath, []byte(restartScript), 0755); err != nil {
+		log.Printf("Error creating restart script: %v", err)
+		// Fallback to direct restart
+		cmd := exec.Command(os.Args[0])
+		cmd.Start()
+		os.Exit(0)
+		return
+	}
+	
+	// Execute the restart script in the background
+	cmd := exec.Command("bash", scriptPath)
+	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
+	if err := cmd.Start(); err != nil {
+		log.Printf("Error starting restart script: %v", err)
+		// Fallback to direct restart
+		fallbackCmd := exec.Command(os.Args[0])
+		fallbackCmd.Start()
+	} else {
+		log.Printf("Screen restart script started successfully")
+	}
+	
+	// Exit current process
+	os.Exit(0)
 }
 
 // Shutdown Application Handler
@@ -281,29 +416,147 @@ func performBluetoothScan() {
 
 	log.Printf("Starting Bluetooth device scan...")
 	
-	// Use hcitool or bluetoothctl depending on what's available
-	var cmd *exec.Cmd
+	// Check if bluetoothctl is available
 	if _, err := exec.LookPath("bluetoothctl"); err == nil {
-		// Use bluetoothctl (more modern)
-		cmd = exec.Command("bluetoothctl", "--timeout", "30", "scan", "on")
+		// Use bluetoothctl (modern approach)
+		performBluetoothctlScan()
 	} else if _, err := exec.LookPath("hcitool"); err == nil {
-		// Use hcitool (legacy but widely available)  
-		cmd = exec.Command("hcitool", "scan")
+		// Use hcitool (legacy but widely available)
+		performHcitoolScan()
 	} else {
-		log.Printf("No Bluetooth tools available")
+		log.Printf("No Bluetooth tools available (bluetoothctl or hcitool)")
 		return
 	}
-
-	output, err := cmd.Output()
-	if err != nil {
-		log.Printf("Bluetooth scan error: %v", err)
-		return
-	}
-
-	parseBluetoothScanResults(string(output))
 }
 
-func parseBluetoothScanResults(output string) {
+// performBluetoothctlScan performs device discovery using bluetoothctl
+func performBluetoothctlScan() {
+	log.Printf("Using bluetoothctl for device discovery")
+	
+	// Step 0: Check if Bluetooth service is running
+	if !checkBluetoothService() {
+		log.Printf("Bluetooth service is not running, attempting to start...")
+		if !startBluetoothService() {
+			log.Printf("Failed to start Bluetooth service")
+			return
+		}
+	}
+	
+	// Step 1: Turn on the Bluetooth adapter
+	log.Printf("Powering on Bluetooth adapter...")
+	powerOnCmd := exec.Command("bluetoothctl", "power", "on")
+	if output, err := powerOnCmd.CombinedOutput(); err != nil {
+		log.Printf("Error powering on Bluetooth: %v, output: %s", err, string(output))
+		return
+	}
+	
+	// Wait for adapter to initialize
+	time.Sleep(2 * time.Second)
+	
+	// Step 2: Make adapter discoverable and pairable
+	discoverableCmd := exec.Command("bluetoothctl", "discoverable", "on")
+	discoverableCmd.Run()
+	
+	pairableCmd := exec.Command("bluetoothctl", "pairable", "on")
+	pairableCmd.Run()
+	
+	// Step 3: Clear any previous scan cache
+	log.Printf("Clearing previous device cache...")
+	clearCacheCmd := exec.Command("bluetoothctl", "--timeout", "1", "scan", "off")
+	clearCacheCmd.Run()
+	
+	time.Sleep(1 * time.Second)
+	
+	// Step 4: Start scanning
+	log.Printf("Starting Bluetooth device scan...")
+	scanCmd := exec.Command("bluetoothctl", "scan", "on")
+	if err := scanCmd.Start(); err != nil {
+		log.Printf("Error starting Bluetooth scan: %v", err)
+		return
+	}
+	
+	// Step 5: Wait for scan to discover devices
+	log.Printf("Scanning for devices for 15 seconds...")
+	time.Sleep(15 * time.Second)
+	
+	// Step 6: Get discovered devices
+	devicesCmd := exec.Command("bluetoothctl", "devices")
+	output, err := devicesCmd.Output()
+	if err != nil {
+		log.Printf("Error getting discovered devices: %v", err)
+	} else {
+		parseBluetoothctlDevices(string(output))
+	}
+	
+	// Step 7: Stop scanning
+	stopScanCmd := exec.Command("bluetoothctl", "scan", "off")
+	stopScanCmd.Run()
+	
+	log.Printf("Bluetooth scan completed, found %d devices", len(bluetoothDevices))
+}
+
+// checkBluetoothService checks if the Bluetooth service is running
+func checkBluetoothService() bool {
+	// Check systemd service
+	cmd := exec.Command("systemctl", "is-active", "bluetooth")
+	output, err := cmd.Output()
+	if err == nil && strings.TrimSpace(string(output)) == "active" {
+		return true
+	}
+	
+	// Check if bluetoothd process is running
+	cmd = exec.Command("pgrep", "bluetoothd")
+	err = cmd.Run()
+	return err == nil
+}
+
+// startBluetoothService attempts to start the Bluetooth service
+func startBluetoothService() bool {
+	log.Printf("Attempting to start Bluetooth service...")
+	
+	// Try to start bluetooth service
+	cmd := exec.Command("sudo", "systemctl", "start", "bluetooth")
+	if err := cmd.Run(); err != nil {
+		log.Printf("Failed to start bluetooth service with systemctl: %v", err)
+		
+		// Try alternative method
+		cmd = exec.Command("sudo", "/etc/init.d/bluetooth", "start")
+		if err := cmd.Run(); err != nil {
+			log.Printf("Failed to start bluetooth service with init.d: %v", err)
+			return false
+		}
+	}
+	
+	// Wait for service to start
+	time.Sleep(3 * time.Second)
+	
+	return checkBluetoothService()
+}
+
+// performHcitoolScan performs device discovery using hcitool
+func performHcitoolScan() {
+	log.Printf("Using hcitool for device discovery")
+	
+	// Use hcitool scan with longer timeout
+	cmd := exec.Command("hcitool", "scan", "--length=15")
+	output, err := cmd.Output()
+	if err != nil {
+		log.Printf("hcitool scan error: %v", err)
+		
+		// Try basic scan without length parameter
+		cmd = exec.Command("hcitool", "scan")
+		output, err = cmd.Output()
+		if err != nil {
+			log.Printf("hcitool basic scan error: %v", err)
+			return
+		}
+	}
+
+	parseHcitoolScanResults(string(output))
+}
+
+// parseBluetoothctlDevices parses bluetoothctl devices output
+func parseBluetoothctlDevices(output string) {
 	lines := strings.Split(output, "\n")
 	
 	for _, line := range lines {
@@ -312,7 +565,99 @@ func parseBluetoothScanResults(output string) {
 			continue
 		}
 		
-		// Parse bluetooth scan results (format varies by tool)
+		// bluetoothctl devices output format: "Device AA:BB:CC:DD:EE:FF Device Name"
+		if strings.HasPrefix(line, "Device ") {
+			parts := strings.Fields(line)
+			if len(parts) >= 3 {
+				address := parts[1]
+				name := strings.Join(parts[2:], " ")
+				
+				// Check if it's a valid MAC address
+				if isValidBluetoothAddress(address) {
+					device := BluetoothDevice{
+						Name:    name,
+						Address: address,
+						Paired:  false,
+					}
+					
+					// Check if device supports audio profiles
+					if supportsAudioProfile(address) {
+						device.Name = device.Name + " (Audio)"
+					}
+					
+					// Add to discovered devices if not already present
+					found := false
+					for _, existing := range bluetoothDevices {
+						if existing.Address == address {
+							found = true
+							break
+						}
+					}
+					
+					if !found {
+						bluetoothDevices = append(bluetoothDevices, device)
+						log.Printf("Discovered Bluetooth device: %s (%s)", name, address)
+					}
+				}
+			}
+		}
+	}
+}
+
+// supportsAudioProfile checks if a Bluetooth device supports audio profiles
+func supportsAudioProfile(address string) bool {
+	// Get device info to check for audio profiles
+	cmd := exec.Command("bluetoothctl", "info", address)
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	
+	outputStr := string(output)
+	// Look for common audio service UUIDs
+	audioProfiles := []string{
+		"0000110b", // Audio Sink (A2DP)
+		"0000110a", // Audio Source 
+		"0000111e", // Handsfree
+		"00001108", // Headset
+		"0000110d", // Advanced Audio Distribution Profile
+	}
+	
+	for _, profile := range audioProfiles {
+		if strings.Contains(outputStr, profile) {
+			return true
+		}
+	}
+	
+	// Also check for service names
+	audioServices := []string{
+		"Audio Sink",
+		"Audio Source",
+		"Headset",
+		"Handsfree",
+		"A2DP",
+	}
+	
+	for _, service := range audioServices {
+		if strings.Contains(outputStr, service) {
+			return true
+		}
+	}
+	
+	return false
+}
+
+// parseHcitoolScanResults parses hcitool scan output
+func parseHcitoolScanResults(output string) {
+	lines := strings.Split(output, "\n")
+	
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 || strings.HasPrefix(line, "Scanning") {
+			continue
+		}
+		
+		// hcitool scan output format: "AA:BB:CC:DD:EE:FF    Device Name"
 		if strings.Contains(line, ":") && len(line) > 17 {
 			parts := strings.Fields(line)
 			if len(parts) >= 2 {
@@ -356,18 +701,33 @@ func pairBluetoothDevice(address, name string) error {
 		return fmt.Errorf("Bluetooth pairing not supported on Windows")
 	}
 
-	// Try to pair using bluetoothctl
+	log.Printf("Attempting to pair with device %s (%s)", name, address)
+	
+	// Step 1: Make sure the device is discoverable and trusted
+	trustCmd := exec.Command("bluetoothctl", "trust", address)
+	if output, err := trustCmd.Output(); err != nil {
+		log.Printf("Warning: Failed to trust device %s: %v, output: %s", address, err, string(output))
+	}
+	
+	// Step 2: Try to pair using bluetoothctl
 	cmd := exec.Command("bluetoothctl", "pair", address)
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput() // Get both stdout and stderr
 	if err != nil {
-		return fmt.Errorf("pairing failed: %v", err)
+		log.Printf("Pairing failed for %s: %v, output: %s", address, err, string(output))
+		return fmt.Errorf("pairing failed: %v - %s", err, string(output))
 	}
 
-	log.Printf("Paired with %s (%s): %s", name, address, string(output))
+	log.Printf("Successfully paired with %s (%s): %s", name, address, string(output))
 	
-	// Try to connect after pairing
+	// Step 3: Try to connect after pairing
 	connectCmd := exec.Command("bluetoothctl", "connect", address)
-	connectCmd.Run() // Don't fail if connection fails
+	connectOutput, connectErr := connectCmd.CombinedOutput()
+	if connectErr != nil {
+		log.Printf("Warning: Failed to connect to %s after pairing: %v, output: %s", address, connectErr, string(connectOutput))
+		// Don't return error, pairing was successful even if connection failed
+	} else {
+		log.Printf("Successfully connected to %s (%s)", name, address)
+	}
 	
 	return nil
 }
