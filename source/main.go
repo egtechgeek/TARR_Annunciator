@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode/utf16"
 
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
@@ -222,6 +224,11 @@ func main() {
 	InitializeAnnouncementManager()
 	log.Println("✓ Announcement queue system initialized")
 
+	// Initialize lightning trigger system
+	if err := initializeLightningTrigger(); err != nil {
+		log.Printf("Warning: Lightning trigger initialization failed: %v", err)
+	}
+
 	// Setup router
 	setupRouter(adminConfig)
 
@@ -249,6 +256,10 @@ func main() {
 			app.Scheduler.Stop()
 			log.Println("Scheduler stopped")
 		}
+		
+		// Stop lightning trigger
+		stopLightningTrigger()
+		log.Println("Lightning trigger stopped")
 		
 		// Close logging
 		closeLogging()
@@ -362,6 +373,12 @@ func setupWebRoutes() {
 	app.Router.GET("/api/queue/status", requireAuth(), apiGetQueueStatusHandler)
 	app.Router.GET("/api/queue/history", requireAuth(), apiGetQueueHistoryHandler)
 	app.Router.POST("/api/queue/cancel", requireAuth(), apiCancelAnnouncementHandler)
+	
+	// Lightning trigger management routes (admin only)
+	app.Router.GET("/admin/lightning/status", requireAuth(), getLightningTriggerStatusHandler)
+	app.Router.POST("/admin/lightning/config", requireAuth(), updateLightningTriggerConfigHandler)
+	app.Router.POST("/admin/lightning/test", requireAuth(), testLightningFetchHandler)
+	app.Router.POST("/admin/lightning/test-condition/:condition", requireAuth(), testLightningConditionHandler)
 }
 
 func setupAPIRoutes() {
@@ -379,6 +396,7 @@ func setupAPIRoutes() {
 		authAPI.POST("/announce/safety", apiSafetyAnnouncementHandler)
 		authAPI.POST("/announce/promo", apiPromoAnnouncementHandler)
 		authAPI.POST("/announce/emergency", apiEmergencyAnnouncementHandler)
+		authAPI.POST("/lightning/test/:condition", apiTestLightningConditionHandler)
 		authAPI.POST("/announcements/pause", apiPauseAnnouncementsHandler)
 		authAPI.POST("/announcements/resume", apiResumeAnnouncementsHandler)
 		authAPI.POST("/announcements/stop-current", apiStopCurrentAnnouncementHandler)
@@ -389,6 +407,8 @@ func setupAPIRoutes() {
 		authAPI.GET("/config", apiGetConfigHandler)
 		authAPI.GET("/schedule", apiGetScheduleHandler)
 		authAPI.POST("/schedule", apiPostScheduleHandler)
+		authAPI.GET("/lightning/status", apiGetLightningStatusHandler)
+		authAPI.POST("/lightning/config", apiUpdateLightningConfigHandler)
 	}
 }
 
@@ -1458,6 +1478,348 @@ func cleanupOldLogs(logDir string) error {
 		deletedCount, float64(totalSize)/1024/1024)
 	
 	return nil
+}
+
+// Lightning trigger handler functions
+func getLightningTriggerStatusHandler(c *gin.Context) {
+	status := getLightningTriggerStatus()
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   status,
+	})
+}
+
+func updateLightningTriggerConfigHandler(c *gin.Context) {
+	var config struct {
+		URL           string `json:"url"`
+		FetchInterval int    `json:"fetch_interval"`
+		Timeout       int    `json:"timeout"`
+		Enabled       bool   `json:"enabled"`
+	}
+	
+	if err := c.ShouldBindJSON(&config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"error":  "Invalid request format: " + err.Error(),
+		})
+		return
+	}
+	
+	// Validate inputs
+	if config.URL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"error":  "URL is required",
+		})
+		return
+	}
+	
+	if config.FetchInterval < 30 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"error":  "Fetch interval must be at least 30 seconds",
+		})
+		return
+	}
+	
+	if config.Timeout < 5 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"error":  "Timeout must be at least 5 seconds",
+		})
+		return
+	}
+	
+	// Update lightning trigger configuration
+	if lightningTrigger != nil {
+		if err := lightningTrigger.UpdateConfig(config.URL, config.FetchInterval, config.Timeout); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"status": "error",
+				"error":  "Failed to update lightning trigger configuration: " + err.Error(),
+			})
+			return
+		}
+		
+		// Update enabled state
+		lightningTrigger.Enabled = config.Enabled
+		
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "Lightning trigger configuration updated successfully",
+		})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status": "error",
+			"error":  "Lightning trigger system not initialized",
+		})
+	}
+}
+
+// API handlers for lightning trigger
+func apiGetLightningStatusHandler(c *gin.Context) {
+	status := getLightningTriggerStatus()
+	c.JSON(http.StatusOK, status)
+}
+
+func apiUpdateLightningConfigHandler(c *gin.Context) {
+	updateLightningTriggerConfigHandler(c)
+}
+
+// Test lightning XML fetch handler
+func testLightningFetchHandler(c *gin.Context) {
+	var config struct {
+		URL     string `json:"url"`
+		Timeout int    `json:"timeout"`
+	}
+	
+	if err := c.ShouldBindJSON(&config); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"message":  "Invalid request format: " + err.Error(),
+		})
+		return
+	}
+	
+	if config.URL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"message":  "URL is required",
+		})
+		return
+	}
+	
+	if config.Timeout == 0 {
+		config.Timeout = 30 // Default timeout
+	}
+	
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: time.Duration(config.Timeout) * time.Second,
+	}
+	
+	// Fetch XML
+	resp, err := client.Get(config.URL)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "error",
+			"message": "Failed to fetch XML: " + err.Error(),
+		})
+		return
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "error",
+			"message": fmt.Sprintf("HTTP %d: %s", resp.StatusCode, resp.Status),
+		})
+		return
+	}
+	
+	// Read response body
+	xmlData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "error",
+			"message": "Failed to read response: " + err.Error(),
+		})
+		return
+	}
+	
+	// Convert XML from UTF-16 to UTF-8 if needed
+	xmlStr, err := convertXMLEncodingTest(xmlData)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "error",
+			"message": "Failed to convert XML encoding: " + err.Error(),
+		})
+		return
+	}
+	
+	// Debug: Log XML preview for debugging
+	xmlPreview := xmlStr
+	if len(xmlStr) > 1000 {
+		xmlPreview = xmlStr[:1000] + "..."
+	}
+	log.Printf("Test Lightning XML preview (converted): %s", xmlPreview)
+	
+	// Check for lightningalert tag
+	startTag := "<lightningalert>"
+	endTag := "</lightningalert>"
+	
+	startIndex := strings.Index(xmlStr, startTag)
+	var lightningAlert string
+	
+	if startIndex != -1 {
+		startIndex += len(startTag)
+		endIndex := strings.Index(xmlStr[startIndex:], endTag)
+		if endIndex != -1 {
+			lightningAlert = strings.TrimSpace(xmlStr[startIndex : startIndex+endIndex])
+			log.Printf("Test Lightning: Successfully found value: '%s'", lightningAlert)
+		}
+	} else {
+		// Check for case-insensitive version
+		lowerXML := strings.ToLower(xmlStr)
+		if strings.Contains(lowerXML, "<lightningalert>") {
+			log.Printf("Test Lightning: Found lightningalert tag in different case")
+		} else {
+			log.Printf("Test Lightning: No lightningalert tag found")
+		}
+	}
+	
+	if lightningAlert != "" {
+		c.JSON(http.StatusOK, gin.H{
+			"status":           "success",
+			"message":          "Test successful! Lightning alert tag found in XML.",
+			"lightningalert":   lightningAlert,
+			"xml_size":         len(xmlData),
+			"response_status":  resp.Status,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status":          "warning",
+			"message":         "Test completed, but no lightningalert tag found in XML.",
+			"xml_size":        len(xmlData),
+			"response_status": resp.Status,
+			"xml_preview":     xmlPreview,
+		})
+	}
+}
+
+// Convert XML encoding from UTF-16 to UTF-8 if needed (for test handler)
+func convertXMLEncodingTest(xmlData []byte) (string, error) {
+	// Check if the data starts with a UTF-16 BOM
+	if len(xmlData) >= 2 {
+		// UTF-16 LE BOM
+		if xmlData[0] == 0xFF && xmlData[1] == 0xFE {
+			return decodeUTF16LETest(xmlData[2:])
+		}
+		// UTF-16 BE BOM
+		if xmlData[0] == 0xFE && xmlData[1] == 0xFF {
+			return decodeUTF16BETest(xmlData[2:])
+		}
+	}
+	
+	// Check if it looks like UTF-16 by checking for null bytes in even positions
+	xmlStr := string(xmlData)
+	if len(xmlData) > 20 && strings.Contains(xmlStr[:100], "\x00") {
+		// Looks like UTF-16, try to decode as UTF-16 LE
+		decoded, err := decodeUTF16LETest(xmlData)
+		if err == nil && strings.Contains(decoded, "<?xml") {
+			return decoded, nil
+		}
+	}
+	
+	// Already UTF-8 or ASCII
+	return string(xmlData), nil
+}
+
+// Decode UTF-16 Little Endian (for test handler)
+func decodeUTF16LETest(data []byte) (string, error) {
+	if len(data)%2 != 0 {
+		return "", fmt.Errorf("odd length data for UTF-16")
+	}
+	
+	u16s := make([]uint16, len(data)/2)
+	for i := 0; i < len(u16s); i++ {
+		u16s[i] = uint16(data[i*2]) | uint16(data[i*2+1])<<8
+	}
+	
+	runes := utf16.Decode(u16s)
+	return string(runes), nil
+}
+
+// Decode UTF-16 Big Endian (for test handler)
+func decodeUTF16BETest(data []byte) (string, error) {
+	if len(data)%2 != 0 {
+		return "", fmt.Errorf("odd length data for UTF-16")
+	}
+	
+	u16s := make([]uint16, len(data)/2)
+	for i := 0; i < len(u16s); i++ {
+		u16s[i] = uint16(data[i*2])<<8 | uint16(data[i*2+1])
+	}
+	
+	runes := utf16.Decode(u16s)
+	return string(runes), nil
+}
+
+// Test lightning condition for debugging
+// API Test lightning condition handler  
+func apiTestLightningConditionHandler(c *gin.Context) {
+	condition := c.Param("condition")
+	
+	// Validate condition
+	validConditions := []string{"RedAlert", "AllClear", "Warning", "Unknown"}
+	valid := false
+	for _, v := range validConditions {
+		if strings.EqualFold(condition, v) {
+			condition = v // Use proper case
+			valid = true
+			break
+		}
+	}
+	
+	if !valid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid condition. Valid options: RedAlert, AllClear, Warning, Unknown",
+		})
+		return
+	}
+	
+	if lightningTrigger != nil {
+		log.Printf("API: Manual %s test triggered", condition)
+		// Call the test function
+		lightningTrigger.TestCondition(condition)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": fmt.Sprintf("%s test triggered", condition),
+			"condition": condition,
+		})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Lightning trigger not available",
+		})
+	}
+}
+
+func testLightningConditionHandler(c *gin.Context) {
+	condition := c.Param("condition")
+	
+	// Validate condition
+	validConditions := []string{"RedAlert", "AllClear", "Warning", "Unknown"}
+	valid := false
+	for _, v := range validConditions {
+		if strings.EqualFold(condition, v) {
+			condition = v // Use proper case
+			valid = true
+			break
+		}
+	}
+	
+	if !valid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "error",
+			"message": "Invalid condition. Valid options: RedAlert, AllClear, Warning, Unknown",
+		})
+		return
+	}
+	
+	if lightningTrigger != nil {
+		log.Printf("DEBUG: Manual %s test triggered", condition)
+		// Call the test function
+		lightningTrigger.TestCondition(condition)
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"message": fmt.Sprintf("%s test triggered", condition),
+			"condition": condition,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "error",
+			"message": "Lightning trigger not available",
+		})
+	}
 }
 
 // closeLogging properly closes the log file

@@ -1,0 +1,31 @@
+[redalert]
+This is an automated emergency notification.
+Your Attention Please! 
+
+The THOR Guard Lightning Prediction and Detection System status has changed to Red Alert. Unsafe conditions may occur. Lightning can be especially dangerous, Please seek safe shelter immediately!
+Train operations may continue as soon as it is safe to do so.
+If we are unable to continue train service, come back next month, or next year! Your train tickets never expire! Your safety is top priority!
+
+Esta es una notificación de emergencia automatizada.
+¡Atención!
+
+El estado del Sistema de Predicción y Detección de Rayos THOR Guard ha cambiado a Alerta Roja. Pueden presentarse condiciones peligrosas. Los rayos pueden ser altamente peligrosos. ¡Busque refugio seguro de inmediato!
+Las operaciones ferroviarias podrán reanudarse tan pronto como sea seguro hacerlo.
+Si no podemos continuar el servicio de trenes, ¡regrese el próximo mes o el próximo año! ¡Sus boletos de tren no vencen! ¡Su seguridad es nuestra prioridad!
+
+[allclear]
+This is an automated notification.
+Your Attention Please! 
+
+The THOR Guard Lightning Prediction and Detection System status has changed to All Clear. Train operations and activities may now continue. 
+
+Esta es una notificación automática.
+¡Atención!
+
+El estado del Sistema de Predicción y Detección de Rayos THOR Guard ha cambiado a "Todo despejado". Las operaciones y actividades ferroviarias pueden continuar.
+
+[warning]
+This is an automated notification.
+Your Attention Please! 
+
+The THOR Guard Lightning Prediction and Detection System has changed to Warning status.

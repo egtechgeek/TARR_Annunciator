@@ -42,6 +42,9 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="track-layout-tab" data-bs-toggle="tab" data-bs-target="#track-layout-panel" type="button" role="tab">🚂 Track Layout</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="lightning-trigger-tab" data-bs-toggle="tab" data-bs-target="#lightning-trigger-panel" type="button" role="tab">⚡ Lightning Alerts</button>
+            </li>
         </ul>
 
         <!-- Tab Content -->
@@ -512,6 +515,103 @@
                     </div>
                     
                     <div id="track-layout-message" class="mt-2"></div>
+                </div>
+            </div>
+            
+            <!-- Lightning Trigger Tab -->
+            <div class="tab-pane fade" id="lightning-trigger-panel" role="tabpanel">
+                <div class="section">
+                    <h3>⚡ Lightning Alert System</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Lightning Trigger Status</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="lightning-status-content">
+                                        <p>Loading lightning trigger status...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Lightning Trigger Configuration</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="lightning-config-form">
+                                        <div class="mb-3">
+                                            <label for="lightning-url" class="form-label">XML URL</label>
+                                            <input type="url" class="form-control" id="lightning-url" placeholder="https://broward.thormobile4.net/tp/FL0115.xml" required>
+                                            <div class="form-text">URL to fetch lightning alert XML data from</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="lightning-interval" class="form-label">Fetch Interval (seconds)</label>
+                                            <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="300" required>
+                                            <div class="form-text">How often to check for lightning alerts (minimum 30 seconds)</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="lightning-timeout" class="form-label">Request Timeout (seconds)</label>
+                                            <input type="number" class="form-control" id="lightning-timeout" min="5" max="120" value="30" required>
+                                            <div class="form-text">HTTP request timeout (minimum 5 seconds)</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="lightning-enabled" checked>
+                                                <label class="form-check-label" for="lightning-enabled">
+                                                    Enable Lightning Monitoring
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary">💾 Update Configuration</button>
+                                        <button type="button" class="btn btn-outline-secondary" id="test-lightning-fetch">🧪 Test Fetch</button>
+                                    </form>
+                                    
+                                    <div id="lightning-config-message" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Lightning Alert Types</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <strong>🔴 Red Alert:</strong>
+                                        <small class="text-muted d-block">Extreme danger - immediate shelter required</small>
+                                        <small class="text-muted d-block">🔊 Preceded by: <code>redalert.mp3</code></small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>🟡 Warning:</strong>
+                                        <small class="text-muted d-block">Lightning activity detected - use caution</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>🟢 All Clear:</strong>
+                                        <small class="text-muted d-block">Lightning threat has passed</small>
+                                        <small class="text-muted d-block">🔊 Preceded by: <code>allclear.mp3</code></small>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <h6>System Information</h6>
+                                    <p class="small text-muted">
+                                        The system monitors XML data for a <code>&lt;lightningalert&gt;</code> tag and plays appropriate announcements when conditions change.
+                                    </p>
+                                    <p class="small text-muted">
+                                        Audio files are configured in <code>lightning.json</code> and announcements are played only once per condition change.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1983,6 +2083,137 @@
             });
         }
 
+        // Lightning Trigger Functions
+        function loadLightningTriggerStatus() {
+            fetch('/admin/lightning/status', {
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const content = document.getElementById('lightning-status-content');
+                
+                if (data.status === 'success' && data.data) {
+                    const status = data.data;
+                    let statusHtml = '<div class="row">';
+                    
+                    statusHtml += '<div class="col-md-6">';
+                    statusHtml += `<p><strong>Status:</strong> <span class="badge ${status.running ? 'bg-success' : 'bg-secondary'}">${status.running ? 'Running' : 'Stopped'}</span></p>`;
+                    statusHtml += `<p><strong>Enabled:</strong> ${status.enabled ? '✅ Yes' : '❌ No'}</p>`;
+                    statusHtml += `<p><strong>URL:</strong> <code class="small">${status.url || 'Not configured'}</code></p>`;
+                    statusHtml += `<p><strong>Fetch Interval:</strong> ${status.fetch_interval || 300} seconds</p>`;
+                    statusHtml += '</div>';
+                    
+                    statusHtml += '<div class="col-md-6">';
+                    statusHtml += `<p><strong>Last Fetch:</strong> ${status.last_fetch || 'Never'}</p>`;
+                    statusHtml += `<p><strong>Current Condition:</strong> <span class="badge ${getConditionBadgeClass(status.last_condition)}">${status.last_condition || 'None'}</span></p>`;
+                    statusHtml += `<p><strong>Last Condition Change:</strong> ${status.last_condition_time || 'Never'}</p>`;
+                    statusHtml += `<p><strong>Timeout:</strong> ${status.timeout || 30} seconds</p>`;
+                    statusHtml += '</div>';
+                    
+                    statusHtml += '</div>';
+                    content.innerHTML = statusHtml;
+                    
+                    // Update form with current values
+                    document.getElementById('lightning-url').value = status.url || 'https://broward.thormobile4.net/tp/FL0115.xml';
+                    document.getElementById('lightning-interval').value = status.fetch_interval || 300;
+                    document.getElementById('lightning-timeout').value = status.timeout || 30;
+                    document.getElementById('lightning-enabled').checked = status.enabled || false;
+                } else {
+                    content.innerHTML = '<p class="text-danger">Error loading lightning trigger status</p>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('lightning-status-content').innerHTML = 
+                    '<p class="text-danger">Failed to load lightning trigger status</p>';
+            });
+        }
+        
+        function getConditionBadgeClass(condition) {
+            switch (condition?.toLowerCase()) {
+                case 'redalert': return 'bg-danger';
+                case 'warning': return 'bg-warning';
+                case 'allclear': return 'bg-success';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        function updateLightningTriggerConfig(event) {
+            event.preventDefault();
+            
+            const formData = {
+                url: document.getElementById('lightning-url').value,
+                fetch_interval: parseInt(document.getElementById('lightning-interval').value),
+                timeout: parseInt(document.getElementById('lightning-timeout').value),
+                enabled: document.getElementById('lightning-enabled').checked
+            };
+            
+            fetch('/admin/lightning/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showLightningMessage('Lightning trigger configuration updated successfully', 'success');
+                    loadLightningTriggerStatus(); // Reload status
+                } else {
+                    showLightningMessage(`Failed to update configuration: ${data.error}`, 'danger');
+                }
+            })
+            .catch(error => {
+                showLightningMessage(`Error updating configuration: ${error.message}`, 'danger');
+            });
+        }
+        
+        function testLightningFetch() {
+            showLightningMessage('Testing lightning fetch...', 'info');
+            
+            const url = document.getElementById('lightning-url').value;
+            const timeout = parseInt(document.getElementById('lightning-timeout').value);
+            
+            // Use server-side test endpoint to avoid CORS issues
+            fetch('/admin/lightning/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    url: url,
+                    timeout: timeout
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showLightningMessage(`✅ ${data.message} Current value: ${data.lightningalert}`, 'success');
+                } else if (data.status === 'warning') {
+                    showLightningMessage(`⚠️ ${data.message}`, 'warning');
+                } else {
+                    showLightningMessage(`❌ ${data.message}`, 'danger');
+                }
+            })
+            .catch(error => {
+                showLightningMessage(`❌ Test failed: ${error.message}`, 'danger');
+            });
+        }
+        
+        function showLightningMessage(message, type) {
+            const messageDiv = document.getElementById('lightning-config-message');
+            messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+        
+        // Lightning Event Listeners
+        document.getElementById('lightning-config-form').addEventListener('submit', updateLightningTriggerConfig);
+        document.getElementById('test-lightning-fetch').addEventListener('click', testLightningFetch);
+
         // Event Listeners
         document.getElementById('restart-app-btn').addEventListener('click', restartApplication);
         document.getElementById('refresh-system-info-btn').addEventListener('click', loadSystemInfo);
@@ -1999,12 +2230,14 @@
             loadTrackLayout();
             loadSystemInfo();
             loadPairedDevices();
+            loadLightningTriggerStatus();
             checkAudioSystemOverrideVisibility();
             
             // Auto-refresh every 5 seconds
             setInterval(function() {
                 loadQueueStatus();
                 loadQueueHistory();
+                loadLightningTriggerStatus();
             }, 5000);
             
             // Refresh system info every 30 seconds

@@ -186,72 +186,169 @@ func isRunningInScreen() bool {
 func restartInScreen() {
 	log.Printf("Performing screen-based restart...")
 	
-	// Get current working directory
+	// Get current working directory and executable path
 	workDir, _ := os.Getwd()
 	execPath := os.Args[0]
 	
-	// Create a comprehensive restart script
+	// Make executable path absolute if it's relative
+	if !strings.HasPrefix(execPath, "/") && !strings.Contains(execPath, "/") {
+		// It's just a filename, make it relative to current directory
+		execPath = fmt.Sprintf("./%s", execPath)
+	}
+	
+	log.Printf("Restart parameters - WorkDir: %s, ExecPath: %s", workDir, execPath)
+	
+	// Create a self-contained restart script that doesn't depend on external scripts
 	restartScript := fmt.Sprintf(`#!/bin/bash
-echo "Starting screen-based restart..."
+set -e  # Exit on error
+
+echo "=== TARR Annunciator Screen Restart Script ==="
+echo "Working directory: %s"
+echo "Executable path: %s"
+echo "Started at: $(date)"
+echo ""
+
+# Function to log with timestamp
+log_msg() {
+    echo "[$(date '+%%Y-%%m-%%d %%H:%%M:%%S')] $1"
+}
+
+log_msg "Terminating existing screen sessions..."
 
 # Kill any existing tarr-annunciator screen sessions
+screen -ls | grep tarr-annunciator || true
 screen -S tarr-annunciator -X quit 2>/dev/null || true
 
-# Wait for process to fully terminate
+# Wait a bit longer for graceful shutdown
+log_msg "Waiting for graceful shutdown..."
+sleep 3
+
+# Kill any remaining tarr-annunciator processes
+pkill -f "tarr-annunciator" 2>/dev/null || true
+sleep 1
+
+log_msg "Starting new screen session..."
+
+# Change to working directory
+cd "%s" || {
+    log_msg "ERROR: Cannot change to directory %s"
+    exit 1
+}
+
+# Verify executable exists and is executable
+if [ ! -f "%s" ]; then
+    log_msg "ERROR: Executable %s not found"
+    exit 1
+fi
+
+if [ ! -x "%s" ]; then
+    log_msg "Making executable %s executable"
+    chmod +x "%s" 2>/dev/null || {
+        log_msg "ERROR: Cannot make %s executable"
+        exit 1
+    }
+fi
+
+# Start new screen session with comprehensive startup banner
+screen -dmS tarr-annunciator bash -c '
+    echo "==============================================="
+    echo "🍓 TARR Annunciator - Raspberry Pi Restart"
+    echo "📺 Running in GNU Screen Session"  
+    echo "==============================================="
+    echo "Working directory: $(pwd)"
+    echo "Screen session: tarr-annunciator"
+    echo "Restarted: $(date)"
+    echo ""
+    echo "📱 Web Interface: http://localhost:8080"
+    echo "⚙️  Admin Panel: http://localhost:8080/admin"
+    echo ""
+    echo "📋 Screen Session Commands:"
+    echo "• Detach from session: Ctrl+A then D"
+    echo "• Reattach to session: screen -r tarr-annunciator"
+    echo "• List all sessions: screen -list"
+    echo ""
+    echo "==============================================="
+    echo "Starting TARR Annunciator application..."
+    echo "==============================================="
+    echo ""
+    
+    # Execute the application with proper error handling
+    exec "%s" 2>&1 || {
+        echo "ERROR: Failed to start TARR Annunciator"
+        echo "Check executable permissions and path: %s"
+        exit 1
+    }
+'
+
+# Verify screen session started successfully
 sleep 2
+if screen -ls | grep -q tarr-annunciator; then
+    log_msg "✅ New screen session 'tarr-annunciator' started successfully"
+    log_msg "📺 Use 'screen -r tarr-annunciator' to attach to the session"
+    log_msg "🌐 Web interface should be available at: http://localhost:8080"
+else
+    log_msg "❌ Failed to start screen session"
+    log_msg "Attempting fallback direct execution..."
+    
+    # Fallback: try to start directly without screen
+    nohup "%s" > /tmp/tarr-annunciator.log 2>&1 &
+    if [ $? -eq 0 ]; then
+        log_msg "✅ Fallback: Started TARR Annunciator directly (background)"
+        log_msg "📋 Check logs at: /tmp/tarr-annunciator.log"
+    else
+        log_msg "❌ All restart methods failed"
+    fi
+fi
 
-# Change to the correct directory
-cd "%s"
-
-# Start new screen session with proper configuration
-screen -dmS tarr-annunciator bash -c "
-    echo '==============================================='
-    echo '🍓 TARR Annunciator - Raspberry Pi'
-    echo '📺 Running in GNU Screen Session'
-    echo '==============================================='
-    echo 'Working directory: $(pwd)'
-    echo 'Screen session: tarr-annunciator'
-    echo 'Started: $(date)'
-    echo ''
-    echo '📱 Web Interface: http://localhost:8080'
-    echo '⚙️  Admin Panel: http://localhost:8080/admin'
-    echo ''
-    echo 'Press Ctrl+A then D to detach from session'
-    echo 'Use \"screen -r tarr-annunciator\" to reattach'
-    echo ''
-    echo 'Starting application...'
-    echo '==============================================='
-    echo ''
-    exec '%s'
-"
-
-echo "New screen session started successfully"
-`, workDir, execPath)
+log_msg "Restart script completed"
+`, workDir, execPath, workDir, workDir, execPath, execPath, execPath, execPath, execPath, execPath, execPath)
 	
-	// Write the restart script
+	// Write the restart script to a temporary location
 	scriptPath := "/tmp/tarr_restart.sh"
 	if err := os.WriteFile(scriptPath, []byte(restartScript), 0755); err != nil {
 		log.Printf("Error creating restart script: %v", err)
-		// Fallback to direct restart
+		// Fallback to simple direct restart
 		cmd := exec.Command(os.Args[0])
-		cmd.Start()
+		cmd.Dir = workDir
+		if err := cmd.Start(); err != nil {
+			log.Printf("Fallback restart failed: %v", err)
+		}
 		os.Exit(0)
 		return
 	}
 	
-	// Execute the restart script in the background
-	cmd := exec.Command("bash", scriptPath)
+	log.Printf("Restart script written to %s", scriptPath)
+	
+	// Execute the restart script with nohup to completely detach from current process
+	cmd := exec.Command("nohup", "bash", scriptPath)
+	cmd.Dir = workDir
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
-	if err := cmd.Start(); err != nil {
-		log.Printf("Error starting restart script: %v", err)
-		// Fallback to direct restart
-		fallbackCmd := exec.Command(os.Args[0])
-		fallbackCmd.Start()
-	} else {
-		log.Printf("Screen restart script started successfully")
+	
+	// Redirect output to a log file for debugging
+	logFile := "/tmp/tarr_restart.log"
+	if file, err := os.Create(logFile); err == nil {
+		cmd.Stdout = file
+		cmd.Stderr = file
+		defer file.Close()
+		log.Printf("Restart output will be logged to: %s", logFile)
 	}
 	
-	// Exit current process
+	if err := cmd.Start(); err != nil {
+		log.Printf("Error starting restart script: %v", err)
+		// Final fallback to direct restart
+		fallbackCmd := exec.Command(os.Args[0])
+		fallbackCmd.Dir = workDir
+		if err := fallbackCmd.Start(); err != nil {
+			log.Printf("All restart methods failed: %v", err)
+		}
+	} else {
+		log.Printf("✅ Screen restart script started successfully (PID: %d)", cmd.Process.Pid)
+		log.Printf("📋 Monitor restart progress: tail -f %s", logFile)
+	}
+	
+	// Give the restart script a moment to initialize before exiting current process
+	time.Sleep(1 * time.Second)
+	log.Printf("Current process exiting to allow restart...")
 	os.Exit(0)
 }
 

@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 )
@@ -27,6 +28,7 @@ const (
 	TypeSafety      AnnouncementType = "safety"
 	TypePromo       AnnouncementType = "promo"
 	TypeEmergency   AnnouncementType = "emergency"
+	TypeLightning   AnnouncementType = "lightning"
 	TypeMaintenance AnnouncementType = "maintenance"
 )
 
@@ -176,6 +178,8 @@ func (am *AnnouncementManager) QueueAnnouncement(announcementType AnnouncementTy
 func (am *AnnouncementManager) buildAudioSequence(announcementType AnnouncementType, parameters map[string]interface{}) ([]string, error) {
 	var audioFiles []string
 	
+	log.Printf("DEBUG buildAudioSequence: Type=%s, Parameters=%+v", announcementType, parameters)
+	
 	switch announcementType {
 	case TypeStation:
 		// Station announcement sequence: chime + train + direction + destination + track
@@ -210,6 +214,37 @@ func (am *AnnouncementManager) buildAudioSequence(announcementType AnnouncementT
 		} else {
 			return nil, fmt.Errorf("emergency announcement requires 'file' parameter")
 		}
+		
+	case TypeLightning:
+		// Lightning announcement (emergency priority, lightning audio files)
+		condition, hasCondition := parameters["condition"].(string)
+		if !hasCondition {
+			return nil, fmt.Errorf("lightning announcement requires 'condition' parameter")
+		}
+		
+		log.Printf("DEBUG: Lightning announcement for condition: %s", condition)
+		
+		// Build lightning-specific audio sequence based on condition
+		switch strings.ToLower(condition) {
+		case "redalert":
+			audioFiles = []string{
+				fmt.Sprintf("%s/lightning/thor_red_alert.mp3", app.Config.MP3Dir),   // Horn first
+				fmt.Sprintf("%s/lightning/redalert.mp3", app.Config.MP3Dir),        // Then announcement
+			}
+		case "allclear":
+			audioFiles = []string{
+				fmt.Sprintf("%s/lightning/thor_all_clear.mp3", app.Config.MP3Dir),  // Horn first
+				fmt.Sprintf("%s/lightning/all_clear.mp3", app.Config.MP3Dir),       // Then announcement
+			}
+		case "warning":
+			audioFiles = []string{
+				fmt.Sprintf("%s/lightning/warning.mp3", app.Config.MP3Dir),         // Warning only
+			}
+		default:
+			return nil, fmt.Errorf("unsupported lightning condition: %s", condition)
+		}
+		
+		log.Printf("DEBUG: Lightning audio sequence: %v", audioFiles)
 		
 	default:
 		return nil, fmt.Errorf("unsupported announcement type: %s", announcementType)
