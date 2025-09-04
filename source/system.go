@@ -857,11 +857,11 @@ func loadPairedBluetoothDevices() {
 
 	pairedDevices = make([]BluetoothDevice, 0)
 	
-	// Get paired devices using bluetoothctl
-	cmd := exec.Command("bluetoothctl", "paired-devices")
+	// Get all devices using bluetoothctl and then filter for paired ones
+	cmd := exec.Command("bluetoothctl", "devices")
 	output, err := cmd.Output()
 	if err != nil {
-		log.Printf("Error getting paired devices: %v", err)
+		log.Printf("Error getting devices: %v", err)
 		return
 	}
 
@@ -874,22 +874,35 @@ func loadPairedBluetoothDevices() {
 				address := parts[1]
 				name := strings.Join(parts[2:], " ")
 				
-				// Check connection status
+				// Check if device is paired and get connection status
 				statusCmd := exec.Command("bluetoothctl", "info", address)
-				statusOutput, _ := statusCmd.Output()
-				connected := strings.Contains(string(statusOutput), "Connected: yes")
-				
-				device := BluetoothDevice{
-					Name:      name,
-					Address:   address,
-					Connected: connected,
-					Paired:    true,
+				statusOutput, statusErr := statusCmd.Output()
+				if statusErr != nil {
+					log.Printf("Error getting device info for %s: %v", address, statusErr)
+					continue
 				}
 				
-				pairedDevices = append(pairedDevices, device)
+				statusStr := string(statusOutput)
+				paired := strings.Contains(statusStr, "Paired: yes")
+				connected := strings.Contains(statusStr, "Connected: yes")
+				
+				// Only add if device is actually paired
+				if paired {
+					device := BluetoothDevice{
+						Name:      name,
+						Address:   address,
+						Connected: connected,
+						Paired:    true,
+					}
+					
+					pairedDevices = append(pairedDevices, device)
+					log.Printf("Found paired device: %s (%s) - Connected: %t", name, address, connected)
+				}
 			}
 		}
 	}
+	
+	log.Printf("Loaded %d paired Bluetooth devices", len(pairedDevices))
 }
 
 // ============== WINDOWS BLUETOOTH IMPLEMENTATION ==============

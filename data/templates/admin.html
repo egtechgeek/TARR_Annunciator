@@ -2100,7 +2100,7 @@
                     statusHtml += `<p><strong>Status:</strong> <span class="badge ${status.running ? 'bg-success' : 'bg-secondary'}">${status.running ? 'Running' : 'Stopped'}</span></p>`;
                     statusHtml += `<p><strong>Enabled:</strong> ${status.enabled ? '✅ Yes' : '❌ No'}</p>`;
                     statusHtml += `<p><strong>URL:</strong> <code class="small">${status.url || 'Not configured'}</code></p>`;
-                    statusHtml += `<p><strong>Fetch Interval:</strong> ${status.fetch_interval || 300} seconds</p>`;
+                    statusHtml += `<p><strong>Fetch Interval:</strong> ${status.fetch_interval || 30} seconds</p>`;
                     statusHtml += '</div>';
                     
                     statusHtml += '<div class="col-md-6">';
@@ -2115,7 +2115,7 @@
                     
                     // Update form with current values
                     document.getElementById('lightning-url').value = status.url || 'https://broward.thormobile4.net/tp/FL0115.xml';
-                    document.getElementById('lightning-interval').value = status.fetch_interval || 300;
+                    document.getElementById('lightning-interval').value = status.fetch_interval || 30;
                     document.getElementById('lightning-timeout').value = status.timeout || 30;
                     document.getElementById('lightning-enabled').checked = status.enabled || false;
                 } else {

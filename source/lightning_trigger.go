@@ -66,7 +66,7 @@ func initializeLightningTrigger() error {
 		Name:          "Lightning Alert Monitor",
 		Enabled:       true,
 		URL:           "https://broward.thormobile4.net/tp/FL0115.xml",
-		FetchInterval: 300, // 5 minutes default
+		FetchInterval: 30, // 30 seconds default
 		Timeout:       30,  // 30 seconds timeout
 		LastCondition: "Reset",
 		stopChan:      make(chan bool),
@@ -200,16 +200,34 @@ func (t *LightningTrigger) fetchAndCheck() {
 	// Check if condition has changed
 	if lightningAlert != t.LastCondition {
 		log.Printf("Lightning condition changed from '%s' to '%s'", t.LastCondition, lightningAlert)
-		t.LastCondition = lightningAlert
-		t.LastConditionTime = time.Now()
 		
 		// Handle different lightning conditions
 		if strings.ToLower(lightningAlert) == "unknown" {
-			log.Printf("Lightning status 'Unknown' logged - no announcement will be played")
-		} else {
-			// Play appropriate announcement for non-Unknown conditions
-			t.playLightningAnnouncement(lightningAlert)
+			log.Printf("Lightning status 'Unknown' - treating as XML error, ignoring condition change")
+			// Don't update LastCondition for Unknown - treat as XML parsing error
+			return
 		}
+		
+		// Check if this is an AllClear condition
+		if strings.ToLower(lightningAlert) == "allclear" {
+			// Only play AllClear if previous condition was RedAlert or Warning
+			prevCondition := strings.ToLower(t.LastCondition)
+			if prevCondition != "redalert" && prevCondition != "warning" {
+				log.Printf("AllClear condition ignored - previous condition was '%s' (not RedAlert or Warning)", t.LastCondition)
+				// Update the condition but don't play announcement
+				t.LastCondition = lightningAlert
+				t.LastConditionTime = time.Now()
+				return
+			}
+			log.Printf("AllClear condition accepted - previous condition was '%s'", t.LastCondition)
+		}
+		
+		// Update condition state for valid (non-Unknown) conditions
+		t.LastCondition = lightningAlert
+		t.LastConditionTime = time.Now()
+		
+		// Play appropriate announcement for valid conditions
+		t.playLightningAnnouncement(lightningAlert)
 	}
 }
 
