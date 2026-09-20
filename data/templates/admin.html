@@ -53,6 +53,7 @@
             <div class="tab-pane fade show active" id="system-status-panel" role="tabpanel">
                 <div class="alert alert-info">
                     <h5>System Status</h5>
+                    <p><strong>App Version:</strong> <span id="app-version-info">Loading...</span></p>
                     <p><strong>Platform:</strong> <span id="platform-info">Loading...</span></p>
                     <p><strong>Audio System:</strong> <span class="status-ok">Active (Beep)</span></p>
                     <p><strong>Volume:</strong> <span id="current-volume">{{printf "%.0f" (mul .current_volume 100)}}%</span></p>
@@ -62,6 +63,24 @@
                     <p><strong>Web Interface:</strong> <a href="/" target="_blank">http://localhost:8080</a></p>
                 </div>
                 
+                <!-- Updates Section -->
+                <div class="section">
+                    <h3>📦 Software Updates</h3>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <p class="mb-1"><strong>Running:</strong> <span id="update-local-version">Loading...</span></p>
+                            <p class="mb-1"><strong>Latest available:</strong> <span id="update-remote-version">Not checked</span></p>
+                            <p class="mb-3 text-muted small" id="update-status-text">Check GitHub Releases for a newer slim Pi package, then install without SSH.</p>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <button type="button" class="btn btn-outline-primary" id="check-updates-btn">🔍 Check for Updates</button>
+                                <button type="button" class="btn btn-success" id="install-updates-btn" disabled>⬇️ Download and Install</button>
+                            </div>
+                            <pre id="update-log" class="bg-light border rounded p-2 small" style="max-height: 180px; overflow: auto; white-space: pre-wrap;"></pre>
+                            <div id="update-message" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Application Control Section -->
                 <div class="section">
                     <h3>🔧 Application Control</h3>
@@ -87,6 +106,7 @@
                                     <h6 class="card-title mb-0">System Information</h6>
                                 </div>
                                 <div class="card-body">
+                                    <p><strong>App Version:</strong> <span id="sysinfo-app-version">Loading...</span></p>
                                     <p><strong>Uptime:</strong> <span id="app-uptime">Loading...</span></p>
                                     <p><strong>Memory Usage:</strong> <span id="memory-usage">Loading...</span></p>
                                     <p><strong>Go Version:</strong> <span id="go-version">Loading...</span></p>
@@ -2031,6 +2051,14 @@
                 document.getElementById('app-uptime').textContent = data.uptime || 'Unknown';
                 document.getElementById('memory-usage').textContent = data.memory_usage || 'Unknown';
                 document.getElementById('go-version').textContent = data.go_version || 'Unknown';
+                const ver = data.app_version || 'Unknown';
+                const installed = data.installed_version || ver;
+                const appVerEl = document.getElementById('app-version-info');
+                const sysVerEl = document.getElementById('sysinfo-app-version');
+                const localVerEl = document.getElementById('update-local-version');
+                if (appVerEl) appVerEl.textContent = 'v' + ver;
+                if (sysVerEl) sysVerEl.textContent = 'v' + ver + ' (record ' + installed + ')';
+                if (localVerEl) localVerEl.textContent = 'v' + ver;
             })
             .catch(error => {
                 document.getElementById('app-uptime').textContent = 'Error loading';
@@ -2038,6 +2066,125 @@
                 document.getElementById('go-version').textContent = 'Error loading';
             });
         }
+
+        function showUpdateMessage(message, type) {
+            const el = document.getElementById('update-message');
+            if (!el) return;
+            el.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        }
+
+        function renderUpdateJob(job) {
+            const logEl = document.getElementById('update-log');
+            const statusEl = document.getElementById('update-status-text');
+            const installBtn = document.getElementById('install-updates-btn');
+            if (statusEl && job) statusEl.textContent = job.message || '';
+            if (logEl && job && job.log) logEl.textContent = (job.log || []).join('\n');
+            if (installBtn && job) {
+                const busy = job.status === 'downloading' || job.status === 'applying' || job.status === 'restarting';
+                const canInstall = job.status === 'available' || (job.remote && job.remote.update_available);
+                installBtn.disabled = busy || !canInstall;
+            }
+            if (job && job.remote) {
+                const remoteEl = document.getElementById('update-remote-version');
+                if (remoteEl) {
+                    remoteEl.textContent = 'v' + (job.remote.app_version || '?') +
+                        (job.remote.update_available ? ' (newer)' : ' (same or older)');
+                }
+            }
+        }
+
+        function refreshUpdateStatus() {
+            fetch('/admin/updates/status', { credentials: 'same-origin' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.version) {
+                        const v = data.version.app_version || '';
+                        const localVerEl = document.getElementById('update-local-version');
+                        if (localVerEl && v) localVerEl.textContent = 'v' + v;
+                    }
+                    if (data.job) renderUpdateJob(data.job);
+                })
+                .catch(function() {});
+        }
+
+        const checkUpdatesBtn = document.getElementById('check-updates-btn');
+        if (checkUpdatesBtn) {
+            checkUpdatesBtn.addEventListener('click', function() {
+                checkUpdatesBtn.disabled = true;
+                fetch('/admin/updates/check', { credentials: 'same-origin' })
+                    .then(r => r.json())
+                    .then(data => {
+                        checkUpdatesBtn.disabled = false;
+                        if (!data.success) {
+                            showUpdateMessage(data.error || 'Check failed', 'danger');
+                            return;
+                        }
+                        if (data.remote) {
+                            const remoteEl = document.getElementById('update-remote-version');
+                            if (remoteEl) {
+                                remoteEl.textContent = 'v' + data.remote.app_version +
+                                    (data.remote.update_available ? ' (newer)' : ' (up to date)');
+                            }
+                            showUpdateMessage(
+                                data.remote.update_available
+                                    ? 'Update available: v' + data.remote.app_version
+                                    : 'Already on the latest release',
+                                data.remote.update_available ? 'info' : 'success'
+                            );
+                        }
+                        if (data.job) renderUpdateJob(data.job);
+                    })
+                    .catch(function(err) {
+                        checkUpdatesBtn.disabled = false;
+                        showUpdateMessage('Check failed: ' + err.message, 'danger');
+                    });
+            });
+        }
+
+        const installUpdatesBtn = document.getElementById('install-updates-btn');
+        if (installUpdatesBtn) {
+            installUpdatesBtn.addEventListener('click', function() {
+                if (!confirm('Download and install the latest Pi package? The app will restart when finished.')) {
+                    return;
+                }
+                installUpdatesBtn.disabled = true;
+                fetch('/admin/updates/install', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                })
+                    .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
+                    .then(({ ok, data }) => {
+                        if (!ok && data.error) {
+                            showUpdateMessage(data.error, 'danger');
+                            installUpdatesBtn.disabled = false;
+                            return;
+                        }
+                        showUpdateMessage(data.message || 'Update started…', 'info');
+                        const poll = setInterval(function() {
+                            refreshUpdateStatus();
+                            fetch('/admin/updates/status', { credentials: 'same-origin' })
+                                .then(r => r.json())
+                                .then(st => {
+                                    if (!st.job) return;
+                                    if (st.job.status === 'error') {
+                                        clearInterval(poll);
+                                        showUpdateMessage(st.job.message || 'Update failed', 'danger');
+                                        installUpdatesBtn.disabled = false;
+                                    } else if (st.job.status === 'restarting' || st.job.status === 'done') {
+                                        clearInterval(poll);
+                                        showUpdateMessage('Update applied. Waiting for restart…', 'success');
+                                    }
+                                });
+                        }, 2000);
+                    })
+                    .catch(function(err) {
+                        installUpdatesBtn.disabled = false;
+                        showUpdateMessage('Install failed: ' + err.message, 'danger');
+                    });
+            });
+        }
+
+        refreshUpdateStatus();
 
         // Audio Device Functions
         function redetectAudioDevices() {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/heap"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -9,14 +10,18 @@ import (
 	"time"
 )
 
+// ErrRedAlertSuppressed is returned when a non-critical announcement is blocked
+// because a THOR Guard Red Alert is active.
+var ErrRedAlertSuppressed = errors.New("announcement suppressed: THOR Guard Red Alert is active until All Clear")
+
 // AnnouncementPriority defines the priority levels for announcements
 type AnnouncementPriority int
 
 const (
-	PriorityLow    AnnouncementPriority = 1
-	PriorityNormal AnnouncementPriority = 2
-	PriorityHigh   AnnouncementPriority = 3
-	PriorityCritical AnnouncementPriority = 4
+	PriorityLow       AnnouncementPriority = 1
+	PriorityNormal    AnnouncementPriority = 2
+	PriorityHigh      AnnouncementPriority = 3
+	PriorityCritical  AnnouncementPriority = 4
 	PriorityEmergency AnnouncementPriority = 5
 )
 
@@ -36,8 +41,8 @@ const (
 type AnnouncementStatus string
 
 const (
-	StatusQueued  AnnouncementStatus = "queued"
-	StatusPlaying AnnouncementStatus = "playing"
+	StatusQueued    AnnouncementStatus = "queued"
+	StatusPlaying   AnnouncementStatus = "playing"
 	StatusCompleted AnnouncementStatus = "completed"
 	StatusCancelled AnnouncementStatus = "cancelled"
 	StatusFailed    AnnouncementStatus = "failed"
@@ -49,15 +54,15 @@ type Announcement struct {
 	Type        AnnouncementType       `json:"type"`
 	Priority    AnnouncementPriority   `json:"priority"`
 	Status      AnnouncementStatus     `json:"status"`
-	CreatedAt   time.Time             `json:"created_at"`
-	ScheduledAt time.Time             `json:"scheduled_at,omitempty"`
-	StartedAt   *time.Time            `json:"started_at,omitempty"`
-	CompletedAt *time.Time            `json:"completed_at,omitempty"`
+	CreatedAt   time.Time              `json:"created_at"`
+	ScheduledAt time.Time              `json:"scheduled_at,omitempty"`
+	StartedAt   *time.Time             `json:"started_at,omitempty"`
+	CompletedAt *time.Time             `json:"completed_at,omitempty"`
 	Parameters  map[string]interface{} `json:"parameters"`
-	AudioFiles  []string              `json:"audio_files"`
-	Duration    time.Duration         `json:"duration,omitempty"`
-	Error       string                `json:"error,omitempty"`
-	
+	AudioFiles  []string               `json:"audio_files"`
+	Duration    time.Duration          `json:"duration,omitempty"`
+	Error       string                 `json:"error,omitempty"`
+
 	// Internal fields for queue management
 	index int // Index in the heap
 }
@@ -102,16 +107,16 @@ func (aq *AnnouncementQueue) Pop() interface{} {
 
 // AnnouncementManager manages the announcement queue and playback
 type AnnouncementManager struct {
-	queue           *AnnouncementQueue
-	history         []*Announcement
-	mutex           sync.RWMutex
-	playing         *Announcement
-	stopChan        chan bool
-	cancelChan      chan bool
-	isRunning       bool
-	isPaused        bool
-	maxHistory      int
-	nextID          int64
+	queue      *AnnouncementQueue
+	history    []*Announcement
+	mutex      sync.RWMutex
+	playing    *Announcement
+	stopChan   chan bool
+	cancelChan chan bool
+	isRunning  bool
+	isPaused   bool
+	maxHistory int
+	nextID     int64
 }
 
 // Global announcement manager instance
@@ -131,7 +136,7 @@ func InitializeAnnouncementManager() {
 		nextID:     1,
 	}
 	heap.Init(announcementManager.queue)
-	
+
 	// Start the announcement processor
 	go announcementManager.processQueue()
 	log.Printf("Announcement manager initialized with queuing system")
@@ -145,9 +150,14 @@ func (am *AnnouncementManager) generateID() string {
 
 // QueueAnnouncement adds a new announcement to the queue
 func (am *AnnouncementManager) QueueAnnouncement(announcementType AnnouncementType, priority AnnouncementPriority, parameters map[string]interface{}, scheduledAt time.Time) (*Announcement, error) {
+	if isRedAlertSuppressionActive() && !isAllowedDuringRedAlert(announcementType) {
+		log.Printf("Blocked %s announcement — THOR Guard Red Alert is active until All Clear", announcementType)
+		return nil, ErrRedAlertSuppressed
+	}
+
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	
+
 	announcement := &Announcement{
 		ID:          am.generateID(),
 		Type:        announcementType,
@@ -157,29 +167,29 @@ func (am *AnnouncementManager) QueueAnnouncement(announcementType AnnouncementTy
 		ScheduledAt: scheduledAt,
 		Parameters:  parameters,
 	}
-	
+
 	// Build audio file paths based on announcement type
 	var err error
 	announcement.AudioFiles, err = am.buildAudioSequence(announcementType, parameters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build audio sequence: %v", err)
 	}
-	
+
 	// Add to queue
 	heap.Push(announcementManager.queue, announcement)
-	
-	log.Printf("Queued announcement: ID=%s, Type=%s, Priority=%d, Scheduled=%s", 
+
+	log.Printf("Queued announcement: ID=%s, Type=%s, Priority=%d, Scheduled=%s",
 		announcement.ID, announcement.Type, announcement.Priority, announcement.ScheduledAt.Format(time.RFC3339))
-	
+
 	return announcement, nil
 }
 
 // buildAudioSequence builds the sequence of audio files for an announcement
 func (am *AnnouncementManager) buildAudioSequence(announcementType AnnouncementType, parameters map[string]interface{}) ([]string, error) {
 	var audioFiles []string
-	
+
 	log.Printf("DEBUG buildAudioSequence: Type=%s, Parameters=%+v", announcementType, parameters)
-	
+
 	switch announcementType {
 	case TypeStation:
 		// Station announcement sequence: chime + train + direction + destination + track
@@ -190,21 +200,21 @@ func (am *AnnouncementManager) buildAudioSequence(announcementType AnnouncementT
 			fmt.Sprintf("%s/destination/%s.mp3", app.Config.MP3Dir, parameters["destination"]),
 			fmt.Sprintf("%s/track/%s.mp3", app.Config.MP3Dir, parameters["track_number"]),
 		}
-		
+
 	case TypeSafety:
 		// Safety announcement
 		language := parameters["language"].(string)
 		audioFiles = []string{
 			fmt.Sprintf("%s/safety/safety_%s.mp3", app.Config.MP3Dir, language),
 		}
-		
+
 	case TypePromo:
 		// Promotional announcement
 		file := parameters["file"].(string)
 		audioFiles = []string{
 			fmt.Sprintf("%s/promo/%s.mp3", app.Config.MP3Dir, file),
 		}
-		
+
 	case TypeEmergency:
 		// Emergency announcement (highest priority, audio files only)
 		if emergencyFile, ok := parameters["file"].(string); ok {
@@ -214,42 +224,59 @@ func (am *AnnouncementManager) buildAudioSequence(announcementType AnnouncementT
 		} else {
 			return nil, fmt.Errorf("emergency announcement requires 'file' parameter")
 		}
-		
+
 	case TypeLightning:
 		// Lightning announcement (emergency priority, lightning audio files)
 		condition, hasCondition := parameters["condition"].(string)
 		if !hasCondition {
 			return nil, fmt.Errorf("lightning announcement requires 'condition' parameter")
 		}
-		
+
 		log.Printf("DEBUG: Lightning announcement for condition: %s", condition)
-		
+
 		// Build lightning-specific audio sequence based on condition
 		switch strings.ToLower(condition) {
 		case "redalert":
 			audioFiles = []string{
-				fmt.Sprintf("%s/lightning/thor_red_alert.mp3", app.Config.MP3Dir),   // Horn first
-				fmt.Sprintf("%s/lightning/redalert.mp3", app.Config.MP3Dir),        // Then announcement
+				lightningAudioPath("thor_red_alert.mp3"),
+				lightningAudioPath("redalert.mp3"),
 			}
+		case "redalert_reminder":
+			if includeHorn, _ := parameters["include_horn"].(bool); includeHorn {
+				hornFile := "thor_red_alert.mp3"
+				if named, ok := parameters["horn_file"].(string); ok && named != "" {
+					hornFile = named
+				}
+				audioFiles = append(audioFiles, lightningAudioPath(hornFile))
+			}
+			reminderFile := "thor_repeat1.mp3"
+			if named, ok := parameters["audio_file"].(string); ok && named != "" {
+				reminderFile = named
+			}
+			audioFiles = append(audioFiles, lightningAudioPath(reminderFile))
 		case "allclear":
 			audioFiles = []string{
-				fmt.Sprintf("%s/lightning/thor_all_clear.mp3", app.Config.MP3Dir),  // Horn first
-				fmt.Sprintf("%s/lightning/all_clear.mp3", app.Config.MP3Dir),       // Then announcement
+				lightningAudioPath("thor_all_clear.mp3"),
+				lightningAudioPath("all_clear.mp3"),
 			}
 		case "warning":
 			audioFiles = []string{
-				fmt.Sprintf("%s/lightning/warning.mp3", app.Config.MP3Dir),         // Warning only
+				lightningAudioPath("warning.mp3"),
+			}
+		case "caution":
+			audioFiles = []string{
+				lightningAudioPath("thor_caution.mp3"),
 			}
 		default:
 			return nil, fmt.Errorf("unsupported lightning condition: %s", condition)
 		}
-		
+
 		log.Printf("DEBUG: Lightning audio sequence: %v", audioFiles)
-		
+
 	default:
 		return nil, fmt.Errorf("unsupported announcement type: %s", announcementType)
 	}
-	
+
 	return audioFiles, nil
 }
 
@@ -258,13 +285,13 @@ func (am *AnnouncementManager) processQueue() {
 	am.isRunning = true
 	ticker := time.NewTicker(100 * time.Millisecond) // Check queue every 100ms
 	defer ticker.Stop()
-	
+
 	for am.isRunning {
 		select {
 		case <-am.stopChan:
 			am.isRunning = false
 			return
-			
+
 		case <-ticker.C:
 			am.processNextAnnouncement()
 		}
@@ -275,41 +302,51 @@ func (am *AnnouncementManager) processQueue() {
 func (am *AnnouncementManager) processNextAnnouncement() {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	
+
 	// If paused, don't process any announcements
 	if am.isPaused {
 		return
 	}
-	
+
 	// If currently playing, don't start another
 	if am.playing != nil {
 		return
 	}
-	
+
 	// Check if there's anything in the queue
 	if am.queue.Len() == 0 {
 		return
 	}
-	
+
 	// Get the next announcement (highest priority, earliest scheduled time)
 	next := heap.Pop(am.queue).(*Announcement)
-	
+
+	if isRedAlertSuppressionActive() && !isAllowedDuringRedAlert(next.Type) {
+		next.Status = StatusCancelled
+		next.Error = "suppressed: THOR Guard Red Alert is active"
+		now := time.Now()
+		next.CompletedAt = &now
+		am.addToHistory(next)
+		log.Printf("Cancelled queued %s announcement %s — THOR Guard Red Alert is active", next.Type, next.ID)
+		return
+	}
+
 	// Check if it's time to play this announcement
 	if next.ScheduledAt.After(time.Now()) {
 		// Not time yet, put it back in the queue
 		heap.Push(am.queue, next)
 		return
 	}
-	
+
 	// Start playing the announcement
 	am.playing = next
 	next.Status = StatusPlaying
 	now := time.Now()
 	next.StartedAt = &now
-	
-	log.Printf("Starting announcement: ID=%s, Type=%s, Priority=%d", 
+
+	log.Printf("Starting announcement: ID=%s, Type=%s, Priority=%d",
 		next.ID, next.Type, next.Priority)
-	
+
 	// Play the announcement in a separate goroutine
 	go am.playAnnouncement(next)
 }
@@ -323,33 +360,33 @@ func (am *AnnouncementManager) playAnnouncement(announcement *Announcement) {
 	default:
 		// No pending cancellation
 	}
-	
+
 	startTime := time.Now()
-	
+
 	// Play the audio sequence
 	err := am.playAnnouncementAudio(announcement.AudioFiles)
-	
+
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	
+
 	// Update announcement status
 	now := time.Now()
 	announcement.CompletedAt = &now
 	announcement.Duration = now.Sub(startTime)
-	
+
 	if err != nil {
 		announcement.Status = StatusFailed
 		announcement.Error = err.Error()
 		log.Printf("Failed to play announcement: ID=%s, Error=%v", announcement.ID, err)
 	} else {
 		announcement.Status = StatusCompleted
-		log.Printf("Completed announcement: ID=%s, Duration=%s", 
+		log.Printf("Completed announcement: ID=%s, Duration=%s",
 			announcement.ID, announcement.Duration.String())
 	}
-	
+
 	// Move to history
 	am.addToHistory(announcement)
-	
+
 	// Clear currently playing
 	am.playing = nil
 }
@@ -359,15 +396,15 @@ func (am *AnnouncementManager) playAnnouncementAudio(audioFiles []string) error 
 	// Lock the global audio mutex to prevent any audio overlap
 	globalAudioMutex.Lock()
 	defer globalAudioMutex.Unlock()
-	
+
 	log.Printf("🔒 Audio mutex locked - starting announcement playback")
-	
+
 	for _, filePath := range audioFiles {
 		if !fileExists(filePath) {
 			log.Printf("Missing audio file: %s", filePath)
 			continue
 		}
-		
+
 		// Check for cancellation before playing each file
 		select {
 		case <-am.cancelChan:
@@ -376,7 +413,7 @@ func (am *AnnouncementManager) playAnnouncementAudio(audioFiles []string) error 
 		default:
 			// Continue with playback
 		}
-		
+
 		if err := playAudioWithCancellation(filePath, am.cancelChan); err != nil {
 			if err.Error() == "playback cancelled" {
 				log.Printf("🔓 Audio mutex unlocked - announcement cancelled during playback")
@@ -385,7 +422,7 @@ func (am *AnnouncementManager) playAnnouncementAudio(audioFiles []string) error 
 			log.Printf("🔓 Audio mutex unlocked due to error")
 			return fmt.Errorf("error playing %s: %v", filePath, err)
 		}
-		
+
 		// Small gap between audio files (with cancellation check)
 		select {
 		case <-am.cancelChan:
@@ -395,7 +432,7 @@ func (am *AnnouncementManager) playAnnouncementAudio(audioFiles []string) error 
 			// Continue
 		}
 	}
-	
+
 	log.Printf("🔓 Audio mutex unlocked - announcement playback complete")
 	return nil
 }
@@ -403,7 +440,7 @@ func (am *AnnouncementManager) playAnnouncementAudio(audioFiles []string) error 
 // addToHistory adds an announcement to the history and manages history size
 func (am *AnnouncementManager) addToHistory(announcement *Announcement) {
 	am.history = append(am.history, announcement)
-	
+
 	// Trim history if it exceeds maximum
 	if len(am.history) > am.maxHistory {
 		am.history = am.history[len(am.history)-am.maxHistory:]
@@ -414,38 +451,76 @@ func (am *AnnouncementManager) addToHistory(announcement *Announcement) {
 func (am *AnnouncementManager) GetQueueStatus() map[string]interface{} {
 	am.mutex.RLock()
 	defer am.mutex.RUnlock()
-	
+
 	queueItems := make([]*Announcement, len(*am.queue))
 	copy(queueItems, *am.queue)
-	
+
 	return map[string]interface{}{
-		"queue_length":    len(*am.queue),
+		"queue_length":      len(*am.queue),
 		"currently_playing": am.playing,
-		"queue_items":     queueItems,
-		"history_count":   len(am.history),
-		"is_running":      am.isRunning,
-		"is_paused":       am.isPaused,
+		"queue_items":       queueItems,
+		"history_count":     len(am.history),
+		"is_running":        am.isRunning,
+		"is_paused":         am.isPaused,
+		"red_alert_active":  isRedAlertActive(),
 	}
+}
+
+func isAllowedDuringRedAlert(announcementType AnnouncementType) bool {
+	return announcementType == TypeEmergency || announcementType == TypeLightning
+}
+
+// PreemptForRedAlert cancels everything queued or playing so a Red Alert can start immediately.
+func (am *AnnouncementManager) PreemptForRedAlert() {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+
+	cancelled := 0
+	for am.queue.Len() > 0 {
+		item := heap.Pop(am.queue).(*Announcement)
+		item.Status = StatusCancelled
+		item.Error = "preempted by THOR Guard Red Alert"
+		now := time.Now()
+		item.CompletedAt = &now
+		am.addToHistory(item)
+		cancelled++
+	}
+
+	if am.playing != nil {
+		select {
+		case am.cancelChan <- true:
+		default:
+		}
+		am.playing.Status = StatusCancelled
+		am.playing.Error = "preempted by THOR Guard Red Alert"
+		now := time.Now()
+		am.playing.CompletedAt = &now
+		am.addToHistory(am.playing)
+		am.playing = nil
+		cancelled++
+	}
+
+	log.Printf("THOR Guard Red Alert preempted %d announcement(s)", cancelled)
 }
 
 // GetHistory returns the announcement history
 func (am *AnnouncementManager) GetHistory(limit int) []*Announcement {
 	am.mutex.RLock()
 	defer am.mutex.RUnlock()
-	
+
 	if limit <= 0 || limit > len(am.history) {
 		limit = len(am.history)
 	}
-	
+
 	// Return the most recent items
 	start := len(am.history) - limit
 	if start < 0 {
 		start = 0
 	}
-	
+
 	result := make([]*Announcement, limit)
 	copy(result, am.history[start:])
-	
+
 	return result
 }
 
@@ -453,7 +528,7 @@ func (am *AnnouncementManager) GetHistory(limit int) []*Announcement {
 func (am *AnnouncementManager) CancelAnnouncement(id string) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	
+
 	// Find the announcement in the queue
 	for i, announcement := range *am.queue {
 		if announcement.ID == id {
@@ -462,13 +537,13 @@ func (am *AnnouncementManager) CancelAnnouncement(id string) error {
 				announcement.Status = StatusCancelled
 				now := time.Now()
 				announcement.CompletedAt = &now
-				
+
 				// Remove from queue
 				heap.Remove(am.queue, i)
-				
+
 				// Add to history
 				am.addToHistory(announcement)
-				
+
 				log.Printf("Cancelled announcement: ID=%s", id)
 				return nil
 			} else {
@@ -476,12 +551,12 @@ func (am *AnnouncementManager) CancelAnnouncement(id string) error {
 			}
 		}
 	}
-	
+
 	// Check if it's the currently playing announcement
 	if am.playing != nil && am.playing.ID == id {
 		return fmt.Errorf("cannot cancel currently playing announcement - use stop instead")
 	}
-	
+
 	return fmt.Errorf("announcement not found: %s", id)
 }
 
@@ -489,7 +564,7 @@ func (am *AnnouncementManager) CancelAnnouncement(id string) error {
 func (am *AnnouncementManager) Stop() {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	
+
 	if am.isRunning {
 		am.isRunning = false
 		am.stopChan <- true
@@ -501,7 +576,7 @@ func (am *AnnouncementManager) Stop() {
 func (am *AnnouncementManager) PauseQueue() {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	
+
 	am.isPaused = true
 	log.Printf("Announcement queue paused")
 }
@@ -510,7 +585,7 @@ func (am *AnnouncementManager) PauseQueue() {
 func (am *AnnouncementManager) ResumeQueue() {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	
+
 	am.isPaused = false
 	log.Printf("Announcement queue resumed")
 }
@@ -519,10 +594,10 @@ func (am *AnnouncementManager) ResumeQueue() {
 func (am *AnnouncementManager) StopCurrent() {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
-	
+
 	if am.playing != nil {
 		log.Printf("Stopping current announcement: %s", am.playing.ID)
-		
+
 		// Send cancellation signal (non-blocking)
 		select {
 		case am.cancelChan <- true:
@@ -530,7 +605,7 @@ func (am *AnnouncementManager) StopCurrent() {
 		default:
 			// Channel was full, but that's okay - cancellation is already pending
 		}
-		
+
 		am.playing.Status = StatusCancelled
 		am.addToHistory(am.playing)
 		am.playing = nil

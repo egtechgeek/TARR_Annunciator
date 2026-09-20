@@ -1,0 +1,3 @@
+# Local release artifacts (do not commit large binaries/tarballs)
+/releases/
+*.tar.gz

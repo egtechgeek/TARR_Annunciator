@@ -118,8 +118,8 @@ func initializeSystemVolume() {
 				int(vol*100), int(defaultMixerVolume*100))
 			app.Config.CurrentVolume = defaultMixerVolume
 			applied := applySystemMixerVolume(defaultMixerVolume)
-			if err := persistAudioSettings(defaultMixerVolume); err == nil {
-				applied.Persisted = true
+			if err := persistAudioSettings(defaultMixerVolume); err != nil {
+				log.Printf("Warning: could not persist volume preference: %v", err)
 			}
 			if applied.Available {
 				log.Printf("✓ Set ALSA/system mixer volume to %d%%", applied.Percent)

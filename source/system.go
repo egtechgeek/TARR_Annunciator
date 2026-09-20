@@ -19,6 +19,8 @@ type SystemInfo struct {
 	Uptime      string `json:"uptime"`
 	MemoryUsage string `json:"memory_usage"`
 	GoVersion   string `json:"go_version"`
+	AppVersion  string `json:"app_version"`
+	Installed   string `json:"installed_version"`
 	Platform    string `json:"platform"`
 	Arch        string `json:"arch"`
 }
@@ -46,6 +48,8 @@ func getSystemInfoHandler(c *gin.Context) {
 		Uptime:      getAppUptime(),
 		MemoryUsage: getMemoryUsage(),
 		GoVersion:   runtime.Version(),
+		AppVersion:  normalizeVersion(AppVersion),
+		Installed:   getInstalledVersion(),
 		Platform:    runtime.GOOS,
 		Arch:        runtime.GOARCH,
 	}
@@ -301,7 +305,7 @@ else
 fi
 
 log_msg "Restart script completed"
-`, workDir, execPath, workDir, workDir, execPath, execPath, execPath, execPath, execPath, execPath, execPath)
+`, workDir, execPath, workDir, workDir, execPath, execPath, execPath, execPath, execPath, execPath, execPath, execPath, execPath)
 	
 	// Write the restart script to a temporary location
 	scriptPath := "/tmp/tarr_restart.sh"

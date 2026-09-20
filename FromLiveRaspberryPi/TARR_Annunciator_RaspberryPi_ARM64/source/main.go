@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -138,12 +139,12 @@ type CronData struct {
 }
 
 type StationCronJob struct {
-	Enabled      bool   `json:"enabled"`
-	Cron         string `json:"cron"`
-	TrainNumber  string `json:"train_number"`
-	Direction    string `json:"direction"`
-	Destination  string `json:"destination"`
-	TrackNumber  string `json:"track_number"`
+	Enabled     bool   `json:"enabled"`
+	Cron        string `json:"cron"`
+	TrainNumber string `json:"train_number"`
+	Direction   string `json:"direction"`
+	Destination string `json:"destination"`
+	TrackNumber string `json:"track_number"`
 }
 
 type PromoCronJob struct {
@@ -155,7 +156,7 @@ type PromoCronJob struct {
 type SafetyCronJob struct {
 	Enabled   bool     `json:"enabled"`
 	Cron      string   `json:"cron"`
-	Language  string   `json:"language"`           // Legacy single language support
+	Language  string   `json:"language"`            // Legacy single language support
 	Languages []string `json:"languages,omitempty"` // New multi-language support
 	Delay     int      `json:"delay,omitempty"`     // Optional delay between languages in seconds (default: 2)
 }
@@ -171,13 +172,13 @@ var app *App
 
 func main() {
 	fmt.Println("Starting TARR Annunciator...")
-	
+
 	// Initialize paths first
 	baseDir, _ := os.Getwd()
 	jsonDir := filepath.Join(baseDir, "json")
 	mp3Dir := filepath.Join(baseDir, "static", "mp3")
 	logDir := filepath.Join(baseDir, "logs")
-	
+
 	// Initialize logging system
 	if err := initializeLogging(logDir); err != nil {
 		log.Printf("Warning: Failed to initialize file logging: %v", err)
@@ -220,6 +221,9 @@ func main() {
 		log.Println("✓ Audio system initialized successfully")
 	}
 
+	// Sync/restore ALSA (alsamixer) volume on Linux so reboot defaults don't stay quiet
+	initializeSystemVolume()
+
 	// Initialize announcement queue system
 	InitializeAnnouncementManager()
 	log.Println("✓ Announcement queue system initialized")
@@ -246,24 +250,24 @@ func main() {
 	// Setup graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	
+
 	go func() {
 		<-sigChan
 		log.Println("Received shutdown signal, cleaning up...")
-		
+
 		// Stop scheduler
 		if app.Scheduler != nil {
 			app.Scheduler.Stop()
 			log.Println("Scheduler stopped")
 		}
-		
+
 		// Stop lightning trigger
 		stopLightningTrigger()
 		log.Println("Lightning trigger stopped")
-		
+
 		// Close logging
 		closeLogging()
-		
+
 		os.Exit(0)
 	}()
 
@@ -302,7 +306,7 @@ func setupRouter(adminConfig *AdminConfig) {
 			return a * b
 		},
 	})
-	
+
 	// Load HTML templates
 	app.Router.LoadHTMLGlob("templates/*")
 	app.Router.Static("/static", "./static")
@@ -319,6 +323,7 @@ func setupWebRoutes() {
 	app.Router.POST("/play_safety_announcement", playSafetyHandler)
 	app.Router.GET("/scheduler_status", schedulerStatusHandler)
 	app.Router.GET("/audio_status", audioStatusHandler)
+	app.Router.GET("/lightning_status", publicLightningStatusHandler)
 
 	// Admin routes
 	app.Router.GET("/admin/login", adminLoginGetHandler)
@@ -330,37 +335,38 @@ func setupWebRoutes() {
 	// Audio control routes (admin only)
 	app.Router.GET("/audio/devices", requireAuth(), getAudioDevicesHandler)
 	app.Router.POST("/audio/devices", requireAuth(), setAudioDeviceHandler)
+	app.Router.GET("/audio/volume", requireAuth(), getVolumeHandler)
 	app.Router.POST("/audio/volume", requireAuth(), setVolumeHandler)
 	app.Router.POST("/audio/test", requireAuth(), testAudioHandler)
-	
+
 	// Credential management routes (admin only)
 	app.Router.GET("/admin/credentials", requireAuth(), getCredentialsHandler)
 	app.Router.POST("/admin/credentials", requireAuth(), updateCredentialsHandler)
-	
+
 	// User management routes (admin only)
 	app.Router.POST("/admin/users", requireAuth(), createUserHandler)
 	app.Router.PUT("/admin/users/:id", requireAuth(), updateUserHandler)
 	app.Router.DELETE("/admin/users/:id", requireAuth(), deleteUserHandler)
-	
+
 	// API Key management routes (admin only)
 	app.Router.POST("/admin/api-keys", requireAuth(), createAPIKeyHandler)
 	app.Router.PUT("/admin/api-keys/:id", requireAuth(), updateAPIKeyHandler)
 	app.Router.DELETE("/admin/api-keys/:id", requireAuth(), deleteAPIKeyHandler)
-	
+
 	// Track Layout Routes (Authenticated)
 	app.Router.GET("/admin/track-layout", requireAuth(), getTrackLayoutHandler)
 	app.Router.POST("/admin/track-layout", requireAuth(), postTrackLayoutHandler)
-	
+
 	// System Control Routes (Authenticated)
 	app.Router.GET("/admin/system/info", requireAuth(), getSystemInfoHandler)
 	app.Router.POST("/admin/system/restart", requireAuth(), restartApplicationHandler)
 	app.Router.POST("/admin/system/shutdown", requireAuth(), shutdownApplicationHandler)
-	
+
 	// Audio Management Routes (Authenticated)
 	app.Router.POST("/admin/audio/redetect", requireAuth(), redetectAudioDevicesHandler)
 	app.Router.POST("/admin/audio/system-override", requireAuth(), audioSystemOverrideHandler)
 	app.Router.GET("/admin/system/platform-info", requireAuth(), getPlatformInfoHandler)
-	
+
 	// Bluetooth Management Routes (Authenticated)
 	app.Router.POST("/admin/bluetooth/scan", requireAuth(), startBluetoothScanHandler)
 	app.Router.POST("/admin/bluetooth/scan/stop", requireAuth(), stopBluetoothScanHandler)
@@ -368,17 +374,19 @@ func setupWebRoutes() {
 	app.Router.GET("/admin/bluetooth/paired", requireAuth(), getPairedBluetoothDevicesHandler)
 	app.Router.POST("/admin/bluetooth/pair", requireAuth(), pairBluetoothDeviceHandler)
 	app.Router.POST("/admin/bluetooth/unpair", requireAuth(), unpairBluetoothDeviceHandler)
-	
+
 	// Queue management routes (admin only) - session authenticated versions
 	app.Router.GET("/api/queue/status", requireAuth(), apiGetQueueStatusHandler)
 	app.Router.GET("/api/queue/history", requireAuth(), apiGetQueueHistoryHandler)
 	app.Router.POST("/api/queue/cancel", requireAuth(), apiCancelAnnouncementHandler)
-	
+
 	// Lightning trigger management routes (admin only)
 	app.Router.GET("/admin/lightning/status", requireAuth(), getLightningTriggerStatusHandler)
 	app.Router.POST("/admin/lightning/config", requireAuth(), updateLightningTriggerConfigHandler)
 	app.Router.POST("/admin/lightning/test", requireAuth(), testLightningFetchHandler)
 	app.Router.POST("/admin/lightning/test-condition/:condition", requireAuth(), testLightningConditionHandler)
+	app.Router.POST("/admin/lightning/test-reminder", requireAuth(), testRedAlertReminderHandler)
+	app.Router.POST("/admin/lightning/reset", requireAuth(), resetLightningStateHandler)
 }
 
 func setupAPIRoutes() {
@@ -467,11 +475,11 @@ func requireAPIKey() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			
+
 			// Update last used time
 			apiKeyData.LastUsed = time.Now().Format(time.RFC3339)
 			saveAdminConfig(configPath, adminConfig)
-			
+
 			// Store API key info in context for permission checks
 			c.Set("api_key_data", apiKeyData)
 		}
@@ -490,12 +498,12 @@ func indexHandler(c *gin.Context) {
 	safetyLanguages := loadJSON("safety", []SafetyLanguage{}).([]SafetyLanguage)
 
 	c.HTML(http.StatusOK, "index.html", gin.H{
-		"trains":               trains,
-		"directions":           directions,
-		"destinations":         destinations,
-		"tracks":               tracks,
-		"promo_announcements":  promoAnnouncements,
-		"safety_languages":     safetyLanguages,
+		"trains":              trains,
+		"directions":          directions,
+		"destinations":        destinations,
+		"tracks":              tracks,
+		"promo_announcements": promoAnnouncements,
+		"safety_languages":    safetyLanguages,
 	})
 }
 
@@ -512,11 +520,11 @@ func playAnnouncementHandler(c *gin.Context) {
 		"destination":  destination,
 		"track_number": trackNumber,
 	}
-	
+
 	if announcementManager != nil {
 		announcement, err := announcementManager.QueueAnnouncement(TypeStation, PriorityNormal, parameters, time.Now())
 		if err != nil {
-			c.String(http.StatusInternalServerError, "Failed to queue station announcement: "+err.Error())
+			c.String(playQueueHTTPStatus(err), "Failed to queue station announcement: "+err.Error())
 			return
 		}
 		c.String(http.StatusOK, fmt.Sprintf("Station announcement queued successfully (ID: %s)", announcement.ID))
@@ -527,16 +535,16 @@ func playAnnouncementHandler(c *gin.Context) {
 
 func playPromoHandler(c *gin.Context) {
 	file := c.PostForm("file")
-	
+
 	// Queue the announcement through the proper queue system
 	parameters := map[string]interface{}{
 		"file": file,
 	}
-	
+
 	if announcementManager != nil {
 		announcement, err := announcementManager.QueueAnnouncement(TypePromo, PriorityLow, parameters, time.Now())
 		if err != nil {
-			c.String(http.StatusInternalServerError, "Failed to queue promo announcement: "+err.Error())
+			c.String(playQueueHTTPStatus(err), "Failed to queue promo announcement: "+err.Error())
 			return
 		}
 		c.String(http.StatusOK, fmt.Sprintf("Promo announcement queued successfully (ID: %s)", announcement.ID))
@@ -547,16 +555,16 @@ func playPromoHandler(c *gin.Context) {
 
 func playSafetyHandler(c *gin.Context) {
 	language := c.PostForm("language")
-	
+
 	// Queue the announcement through the proper queue system
 	parameters := map[string]interface{}{
 		"language": language,
 	}
-	
+
 	if announcementManager != nil {
 		announcement, err := announcementManager.QueueAnnouncement(TypeSafety, PriorityHigh, parameters, time.Now())
 		if err != nil {
-			c.String(http.StatusInternalServerError, "Failed to queue safety announcement: "+err.Error())
+			c.String(playQueueHTTPStatus(err), "Failed to queue safety announcement: "+err.Error())
 			return
 		}
 		c.String(http.StatusOK, fmt.Sprintf("Safety announcement in %s queued successfully (ID: %s)", language, announcement.ID))
@@ -586,12 +594,13 @@ func audioStatusHandler(c *gin.Context) {
 	mp3DirExists := dirExists(app.Config.MP3Dir)
 
 	c.JSON(http.StatusOK, gin.H{
-		"audio_available":        app.AudioEnabled,
-		"audio_backend":          "beep",
-		"current_volume":         app.Config.CurrentVolume,
-		"volume_percent":         int(app.Config.CurrentVolume * 100),
-		"chime_exists":          chimeExists,
-		"mp3_directory_exists":  mp3DirExists,
+		"audio_available":      app.AudioEnabled,
+		"audio_backend":        "beep",
+		"current_volume":       app.Config.CurrentVolume,
+		"volume_percent":       int(app.Config.CurrentVolume * 100),
+		"chime_exists":         chimeExists,
+		"mp3_directory_exists": mp3DirExists,
+		"system_mixer":         getSystemMixerStatus(),
 	})
 }
 
@@ -624,7 +633,7 @@ func adminLoginPostHandler(c *gin.Context) {
 			// Update last login time
 			user.LastLogin = time.Now().Format(time.RFC3339)
 			saveAdminConfig(configPath, adminConfig)
-			
+
 			session := sessions.Default(c)
 			session.Set("admin_logged_in", true)
 			session.Set("admin_user_id", user.ID)
@@ -649,7 +658,7 @@ func adminLogoutHandler(c *gin.Context) {
 func adminHandler(c *gin.Context) {
 	cronData := loadJSON("cron", CronData{}).(CronData)
 	cronDataJSON, _ := json.MarshalIndent(cronData, "", "    ")
-	
+
 	trains := loadJSON("trains", []Train{}).([]Train)
 	trainsAvailable := loadJSON("trains_available", []Train{}).([]Train)
 	directions := loadJSON("directions", []Direction{}).([]Direction)
@@ -678,12 +687,14 @@ func adminHandler(c *gin.Context) {
 		"destinations":           destinations,
 		"destinations_available": destinationsAvailable,
 		"tracks":                 tracks,
-		"promo_announcements":  promoAnnouncements,
-		"safety_languages":     safetyLanguages,
-		"emergencies":          emergencies,
-		"current_volume":       app.Config.CurrentVolume,
-		"audio_devices":        audioDevices,
-		"selected_audio_device": app.Config.SelectedAudioDevice,
+		"promo_announcements":    promoAnnouncements,
+		"safety_languages":       safetyLanguages,
+		"emergencies":            emergencies,
+		"current_volume":         app.Config.CurrentVolume,
+		"audio_devices":          audioDevices,
+		"selected_audio_device":  app.Config.SelectedAudioDevice,
+		"mixer_summary":          getSystemMixerStatus().Summary,
+		"mixer_help":             mixerHelpText(),
 	})
 }
 
@@ -694,9 +705,9 @@ func adminPostHandler(c *gin.Context) {
 	if err := json.Unmarshal([]byte(cronJSON), &cronData); err != nil {
 		cronDataDisplay := loadJSON("cron", CronData{}).(CronData)
 		cronDataJSON, _ := json.MarshalIndent(cronDataDisplay, "", "    ")
-		
+
 		c.HTML(http.StatusBadRequest, "admin.html", gin.H{
-			"error": fmt.Sprintf("Error parsing schedule: %v", err),
+			"error":     fmt.Sprintf("Error parsing schedule: %v", err),
 			"cron_data": string(cronDataJSON),
 		})
 		return
@@ -704,9 +715,9 @@ func adminPostHandler(c *gin.Context) {
 
 	if err := saveJSON("cron", cronData); err != nil {
 		cronDataJSON, _ := json.MarshalIndent(cronData, "", "    ")
-		
+
 		c.HTML(http.StatusInternalServerError, "admin.html", gin.H{
-			"error": fmt.Sprintf("Error saving schedule: %v", err),
+			"error":     fmt.Sprintf("Error saving schedule: %v", err),
 			"cron_data": string(cronDataJSON),
 		})
 		return
@@ -720,7 +731,7 @@ func adminPostHandler(c *gin.Context) {
 func getAudioDevicesHandler(c *gin.Context) {
 	devices := getAudioDevices()
 	c.JSON(http.StatusOK, gin.H{
-		"devices": devices,
+		"devices":        devices,
 		"current_device": app.Config.SelectedAudioDevice,
 	})
 }
@@ -756,11 +767,22 @@ func setAudioDeviceHandler(c *gin.Context) {
 	}
 
 	app.Config.SelectedAudioDevice = deviceID
+	applySystemMixerVolume(app.Config.CurrentVolume)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"device": selectedDevice,
+		"device":  selectedDevice,
 		"message": "Audio device set successfully",
+	})
+}
+
+func getVolumeHandler(c *gin.Context) {
+	status := getSystemMixerStatus()
+	c.JSON(http.StatusOK, gin.H{
+		"success":        true,
+		"volume":         app.Config.CurrentVolume,
+		"volume_percent": int(app.Config.CurrentVolume * 100),
+		"system_mixer":   status,
 	})
 }
 
@@ -778,11 +800,12 @@ func setVolumeHandler(c *gin.Context) {
 		volume = 1.0
 	}
 
-	app.Config.CurrentVolume = volume
+	status := applyVolumeChange(volume)
 	c.JSON(http.StatusOK, gin.H{
 		"success":        true,
 		"volume":         app.Config.CurrentVolume,
 		"volume_percent": int(app.Config.CurrentVolume * 100),
+		"system_mixer":   status,
 	})
 }
 
@@ -818,7 +841,7 @@ func loadAdminConfig(configPath string) (*AdminConfig, error) {
 
 func saveAdminConfig(configPath string, config *AdminConfig) error {
 	config.Metadata.LastModified = time.Now().Format(time.RFC3339)
-	
+
 	data, err := json.MarshalIndent(config, "", "    ")
 	if err != nil {
 		return err
@@ -829,11 +852,11 @@ func saveAdminConfig(configPath string, config *AdminConfig) error {
 
 func getDefaultAdminConfig() *AdminConfig {
 	config := &AdminConfig{}
-	
+
 	// Create default admin user
 	defaultUser := AdminUser{
 		ID:          "admin-001",
-		Username:    "admin", 
+		Username:    "admin",
 		Password:    "tarr2025",
 		Role:        "admin",
 		Enabled:     true,
@@ -842,12 +865,12 @@ func getDefaultAdminConfig() *AdminConfig {
 		Permissions: []string{"system_config", "user_management", "api_management", "audio_control", "announcements"},
 	}
 	config.AdminUsers = []AdminUser{defaultUser}
-	
+
 	// Create default API key
 	defaultAPIKey := APIKey{
 		ID:          "api-001",
 		Name:        "Default API Key",
-		Key:         "tarr-api-2025", 
+		Key:         "tarr-api-2025",
 		Enabled:     true,
 		Permanent:   false,
 		ExpiresAt:   "",
@@ -859,7 +882,7 @@ func getDefaultAdminConfig() *AdminConfig {
 	defaultAPIKey.RateLimit.RequestsPerHour = 1000
 	defaultAPIKey.RateLimit.Enabled = false
 	config.APIKeys = []APIKey{defaultAPIKey}
-	
+
 	// Security settings
 	config.Security.SessionTimeoutMinutes = 60
 	config.Security.RequireAdminLogin = true
@@ -871,13 +894,13 @@ func getDefaultAdminConfig() *AdminConfig {
 	config.Security.FailedLoginAttempts.MaxAttempts = 5
 	config.Security.FailedLoginAttempts.LockoutDurationMinutes = 15
 	config.Security.FailedLoginAttempts.Enabled = true
-	
+
 	// Metadata
 	config.Metadata.CreatedAt = time.Now().Format(time.RFC3339)
 	config.Metadata.LastModified = time.Now().Format(time.RFC3339)
 	config.Metadata.Version = "2.0"
 	config.Metadata.SchemaVersion = "multi-user"
-	
+
 	return config
 }
 
@@ -968,30 +991,30 @@ func getCredentialsHandler(c *gin.Context) {
 	safeAPIKeys := make([]gin.H, len(adminConfig.APIKeys))
 	for i, key := range adminConfig.APIKeys {
 		safeAPIKeys[i] = gin.H{
-			"id":         key.ID,
-			"name":       key.Name,
-			"key":        key.Key, // Include key for frontend masking
-			"enabled":    key.Enabled,
-			"permanent":  key.Permanent,
-			"expires_at": key.ExpiresAt,
-			"created_at": key.CreatedAt,
-			"created_by": key.CreatedBy,
-			"last_used":  key.LastUsed,
+			"id":          key.ID,
+			"name":        key.Name,
+			"key":         key.Key, // Include key for frontend masking
+			"enabled":     key.Enabled,
+			"permanent":   key.Permanent,
+			"expires_at":  key.ExpiresAt,
+			"created_at":  key.CreatedAt,
+			"created_by":  key.CreatedBy,
+			"last_used":   key.LastUsed,
 			"permissions": key.Permissions,
-			"rate_limit": key.RateLimit,
+			"rate_limit":  key.RateLimit,
 		}
 	}
 
 	// Return safe data
 	c.JSON(http.StatusOK, gin.H{
-		"admin_users":          safeUsers,
-		"api_keys":             safeAPIKeys,
-		"session_timeout":      adminConfig.Security.SessionTimeoutMinutes,
-		"require_admin_login":  adminConfig.Security.RequireAdminLogin,
-		"password_policy":      adminConfig.Security.PasswordPolicy,
+		"admin_users":           safeUsers,
+		"api_keys":              safeAPIKeys,
+		"session_timeout":       adminConfig.Security.SessionTimeoutMinutes,
+		"require_admin_login":   adminConfig.Security.RequireAdminLogin,
+		"password_policy":       adminConfig.Security.PasswordPolicy,
 		"failed_login_attempts": adminConfig.Security.FailedLoginAttempts,
-		"last_modified":        adminConfig.Metadata.LastModified,
-		"schema_version":       adminConfig.Metadata.SchemaVersion,
+		"last_modified":         adminConfig.Metadata.LastModified,
+		"schema_version":        adminConfig.Metadata.SchemaVersion,
 	})
 }
 
@@ -1251,8 +1274,8 @@ func createAPIKeyHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"success": true,
-		"message": "API key created successfully",
+		"success":    true,
+		"message":    "API key created successfully",
 		"api_key_id": newAPIKey.ID,
 	})
 }
@@ -1384,24 +1407,24 @@ func initializeLogging(logDir string) error {
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return fmt.Errorf("failed to create logs directory: %v", err)
 	}
-	
+
 	// Generate log filename with timestamp
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
 	logFileName := fmt.Sprintf("tarr-annunciator_%s.log", timestamp)
 	logFilePath := filepath.Join(logDir, logFileName)
-	
+
 	// Open log file
 	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %v", err)
 	}
-	
+
 	logFile = file
-	
+
 	// Create multi-writer to write to both console and file
 	logWriter = io.MultiWriter(os.Stdout, file)
 	log.SetOutput(logWriter)
-	
+
 	// Add log header
 	log.Printf("=== TARR Annunciator Started ===")
 	log.Printf("Version: Go Application")
@@ -1409,74 +1432,74 @@ func initializeLogging(logDir string) error {
 	log.Printf("Log file: %s", logFilePath)
 	log.Printf("Timestamp: %s", time.Now().Format("2006-01-02 15:04:05"))
 	log.Printf("=====================================")
-	
+
 	// Start log cleanup routine
 	go func() {
 		if err := cleanupOldLogs(logDir); err != nil {
 			log.Printf("Warning: Failed to cleanup old logs: %v", err)
 		}
-		
+
 		// Setup periodic cleanup (every 24 hours)
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
-		
+
 		for range ticker.C {
 			if err := cleanupOldLogs(logDir); err != nil {
 				log.Printf("Warning: Failed to cleanup old logs: %v", err)
 			}
 		}
 	}()
-	
+
 	return nil
 }
 
 // cleanupOldLogs removes log files older than 30 days
 func cleanupOldLogs(logDir string) error {
 	log.Printf("Starting log cleanup routine...")
-	
+
 	// Read directory contents
 	files, err := os.ReadDir(logDir)
 	if err != nil {
 		return fmt.Errorf("failed to read logs directory: %v", err)
 	}
-	
+
 	cutoffTime := time.Now().AddDate(0, 0, -30) // 30 days ago
 	deletedCount := 0
 	totalSize := int64(0)
-	
+
 	for _, file := range files {
 		// Only process .log files
 		if !strings.HasSuffix(file.Name(), ".log") {
 			continue
 		}
-		
+
 		// Get file info
 		info, err := file.Info()
 		if err != nil {
 			log.Printf("Warning: Could not get info for log file %s: %v", file.Name(), err)
 			continue
 		}
-		
+
 		totalSize += info.Size()
-		
+
 		// Check if file is older than 30 days
 		if info.ModTime().Before(cutoffTime) {
 			filePath := filepath.Join(logDir, file.Name())
 			if err := os.Remove(filePath); err != nil {
 				log.Printf("Warning: Could not delete old log file %s: %v", file.Name(), err)
 			} else {
-				log.Printf("Deleted old log file: %s (%.2f MB, %s old)", 
-					file.Name(), 
+				log.Printf("Deleted old log file: %s (%.2f MB, %s old)",
+					file.Name(),
 					float64(info.Size())/1024/1024,
 					time.Since(info.ModTime()).Round(24*time.Hour))
 				deletedCount++
 			}
 		}
 	}
-	
-	log.Printf("Log cleanup completed: %d files deleted, total log size: %.2f MB", 
+
+	log.Printf("Log cleanup completed: %d files deleted, total log size: %.2f MB",
 		deletedCount, float64(totalSize)/1024/1024)
-	
+
 	return nil
 }
 
@@ -1489,14 +1512,55 @@ func getLightningTriggerStatusHandler(c *gin.Context) {
 	})
 }
 
+func playQueueHTTPStatus(err error) int {
+	if errors.Is(err, ErrRedAlertSuppressed) {
+		return http.StatusConflict
+	}
+	return http.StatusInternalServerError
+}
+
+func publicLightningStatusHandler(c *gin.Context) {
+	status := getLightningTriggerStatus()
+	c.JSON(http.StatusOK, gin.H{
+		"red_alert_active": status["red_alert_active"],
+		"last_condition":   status["last_condition"],
+		"red_alert_since":  status["red_alert_since"],
+		"next_reminder":    status["next_reminder"],
+		"reminder_count":   status["reminder_count"],
+	})
+}
+
+func testRedAlertReminderHandler(c *gin.Context) {
+	if lightningTrigger == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Lightning trigger not available",
+		})
+		return
+	}
+	if !isRedAlertActive() {
+		c.JSON(http.StatusConflict, gin.H{
+			"status":  "error",
+			"message": "Red Alert is not active. Trigger a Red Alert first, then play a reminder.",
+		})
+		return
+	}
+	lightningTrigger.playRedAlertReminder()
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Red Alert reminder queued",
+	})
+}
+
 func updateLightningTriggerConfigHandler(c *gin.Context) {
 	var config struct {
-		URL           string `json:"url"`
-		FetchInterval int    `json:"fetch_interval"`
-		Timeout       int    `json:"timeout"`
-		Enabled       bool   `json:"enabled"`
+		URL            string          `json:"url"`
+		FetchInterval  int             `json:"fetch_interval"`
+		Timeout        int             `json:"timeout"`
+		Enabled        bool            `json:"enabled"`
+		RedAlertPolicy *RedAlertPolicy `json:"red_alert_policy,omitempty"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&config); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "error",
@@ -1504,7 +1568,7 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Validate inputs
 	if config.URL == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -1513,7 +1577,7 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	if config.FetchInterval < 30 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "error",
@@ -1521,7 +1585,7 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	if config.Timeout < 5 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "error",
@@ -1529,7 +1593,7 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Update lightning trigger configuration
 	if lightningTrigger != nil {
 		if err := lightningTrigger.UpdateConfig(config.URL, config.FetchInterval, config.Timeout); err != nil {
@@ -1539,10 +1603,20 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 			})
 			return
 		}
-		
+
 		// Update enabled state
 		lightningTrigger.Enabled = config.Enabled
-		
+
+		if config.RedAlertPolicy != nil {
+			if err := applyRedAlertPolicy(*config.RedAlertPolicy); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"status": "error",
+					"error":  "Failed to save Red Alert policy: " + err.Error(),
+				})
+				return
+			}
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "Lightning trigger configuration updated successfully",
@@ -1571,32 +1645,32 @@ func testLightningFetchHandler(c *gin.Context) {
 		URL     string `json:"url"`
 		Timeout int    `json:"timeout"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&config); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "error",
-			"message":  "Invalid request format: " + err.Error(),
+			"status":  "error",
+			"message": "Invalid request format: " + err.Error(),
 		})
 		return
 	}
-	
+
 	if config.URL == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "error",
-			"message":  "URL is required",
+			"status":  "error",
+			"message": "URL is required",
 		})
 		return
 	}
-	
+
 	if config.Timeout == 0 {
 		config.Timeout = 30 // Default timeout
 	}
-	
+
 	// Create HTTP client with timeout
 	client := &http.Client{
 		Timeout: time.Duration(config.Timeout) * time.Second,
 	}
-	
+
 	// Fetch XML
 	resp, err := client.Get(config.URL)
 	if err != nil {
@@ -1607,7 +1681,7 @@ func testLightningFetchHandler(c *gin.Context) {
 		return
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "error",
@@ -1615,7 +1689,7 @@ func testLightningFetchHandler(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Read response body
 	xmlData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -1625,7 +1699,7 @@ func testLightningFetchHandler(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Convert XML from UTF-16 to UTF-8 if needed
 	xmlStr, err := convertXMLEncodingTest(xmlData)
 	if err != nil {
@@ -1635,21 +1709,21 @@ func testLightningFetchHandler(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Debug: Log XML preview for debugging
 	xmlPreview := xmlStr
 	if len(xmlStr) > 1000 {
 		xmlPreview = xmlStr[:1000] + "..."
 	}
 	log.Printf("Test Lightning XML preview (converted): %s", xmlPreview)
-	
+
 	// Check for lightningalert tag
 	startTag := "<lightningalert>"
 	endTag := "</lightningalert>"
-	
+
 	startIndex := strings.Index(xmlStr, startTag)
 	var lightningAlert string
-	
+
 	if startIndex != -1 {
 		startIndex += len(startTag)
 		endIndex := strings.Index(xmlStr[startIndex:], endTag)
@@ -1666,14 +1740,14 @@ func testLightningFetchHandler(c *gin.Context) {
 			log.Printf("Test Lightning: No lightningalert tag found")
 		}
 	}
-	
+
 	if lightningAlert != "" {
 		c.JSON(http.StatusOK, gin.H{
-			"status":           "success",
-			"message":          "Test successful! Lightning alert tag found in XML.",
-			"lightningalert":   lightningAlert,
-			"xml_size":         len(xmlData),
-			"response_status":  resp.Status,
+			"status":          "success",
+			"message":         "Test successful! Lightning alert tag found in XML.",
+			"lightningalert":  lightningAlert,
+			"xml_size":        len(xmlData),
+			"response_status": resp.Status,
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
@@ -1699,7 +1773,7 @@ func convertXMLEncodingTest(xmlData []byte) (string, error) {
 			return decodeUTF16BETest(xmlData[2:])
 		}
 	}
-	
+
 	// Check if it looks like UTF-16 by checking for null bytes in even positions
 	xmlStr := string(xmlData)
 	if len(xmlData) > 20 && strings.Contains(xmlStr[:100], "\x00") {
@@ -1709,7 +1783,7 @@ func convertXMLEncodingTest(xmlData []byte) (string, error) {
 			return decoded, nil
 		}
 	}
-	
+
 	// Already UTF-8 or ASCII
 	return string(xmlData), nil
 }
@@ -1719,12 +1793,12 @@ func decodeUTF16LETest(data []byte) (string, error) {
 	if len(data)%2 != 0 {
 		return "", fmt.Errorf("odd length data for UTF-16")
 	}
-	
+
 	u16s := make([]uint16, len(data)/2)
 	for i := 0; i < len(u16s); i++ {
 		u16s[i] = uint16(data[i*2]) | uint16(data[i*2+1])<<8
 	}
-	
+
 	runes := utf16.Decode(u16s)
 	return string(runes), nil
 }
@@ -1734,23 +1808,23 @@ func decodeUTF16BETest(data []byte) (string, error) {
 	if len(data)%2 != 0 {
 		return "", fmt.Errorf("odd length data for UTF-16")
 	}
-	
+
 	u16s := make([]uint16, len(data)/2)
 	for i := 0; i < len(u16s); i++ {
 		u16s[i] = uint16(data[i*2])<<8 | uint16(data[i*2+1])
 	}
-	
+
 	runes := utf16.Decode(u16s)
 	return string(runes), nil
 }
 
 // Test lightning condition for debugging
-// API Test lightning condition handler  
+// API Test lightning condition handler
 func apiTestLightningConditionHandler(c *gin.Context) {
 	condition := c.Param("condition")
-	
+
 	// Validate condition
-	validConditions := []string{"RedAlert", "AllClear", "Warning", "Unknown"}
+	validConditions := []string{"RedAlert", "AllClear", "Warning", "Caution", "Unknown"}
 	valid := false
 	for _, v := range validConditions {
 		if strings.EqualFold(condition, v) {
@@ -1759,21 +1833,20 @@ func apiTestLightningConditionHandler(c *gin.Context) {
 			break
 		}
 	}
-	
+
 	if !valid {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid condition. Valid options: RedAlert, AllClear, Warning, Unknown",
+			"error": "Invalid condition. Valid options: RedAlert, AllClear, Warning, Caution, Unknown",
 		})
 		return
 	}
-	
+
 	if lightningTrigger != nil {
 		log.Printf("API: Manual %s test triggered", condition)
-		// Call the test function
-		lightningTrigger.TestCondition(condition)
+		message, ok := lightningTrigger.TestCondition(condition)
 		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": fmt.Sprintf("%s test triggered", condition),
+			"success":   ok,
+			"message":   message,
 			"condition": condition,
 		})
 	} else {
@@ -1785,9 +1858,9 @@ func apiTestLightningConditionHandler(c *gin.Context) {
 
 func testLightningConditionHandler(c *gin.Context) {
 	condition := c.Param("condition")
-	
+
 	// Validate condition
-	validConditions := []string{"RedAlert", "AllClear", "Warning", "Unknown"}
+	validConditions := []string{"RedAlert", "AllClear", "Warning", "Caution", "Unknown"}
 	valid := false
 	for _, v := range validConditions {
 		if strings.EqualFold(condition, v) {
@@ -1796,30 +1869,49 @@ func testLightningConditionHandler(c *gin.Context) {
 			break
 		}
 	}
-	
+
 	if !valid {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "error",
-			"message": "Invalid condition. Valid options: RedAlert, AllClear, Warning, Unknown",
+			"status":  "error",
+			"message": "Invalid condition. Valid options: RedAlert, AllClear, Warning, Caution, Unknown",
 		})
 		return
 	}
-	
+
 	if lightningTrigger != nil {
 		log.Printf("DEBUG: Manual %s test triggered", condition)
-		// Call the test function
-		lightningTrigger.TestCondition(condition)
+		message, ok := lightningTrigger.TestCondition(condition)
+		status := "success"
+		if !ok {
+			status = "warning"
+		}
 		c.JSON(http.StatusOK, gin.H{
-			"status": "success",
-			"message": fmt.Sprintf("%s test triggered", condition),
+			"status":    status,
+			"message":   message,
 			"condition": condition,
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
-			"status": "error",
+			"status":  "error",
 			"message": "Lightning trigger not available",
 		})
 	}
+}
+
+func resetLightningStateHandler(c *gin.Context) {
+	if lightningTrigger == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Lightning trigger not available",
+		})
+		return
+	}
+	lightningTrigger.ResetState()
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "THOR Guard cached state reset",
+		"data":    getLightningTriggerStatus(),
+	})
 }
 
 // closeLogging properly closes the log file

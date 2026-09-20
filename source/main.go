@@ -234,6 +234,14 @@ func main() {
 	// NTP/time sync and operating-hours gate for scheduled announcements
 	initializeTimeAndHours()
 
+	// Additive schema migrations (never overwrite existing settings)
+	fromVer := getInstalledVersion()
+	if err := runSchemaMigrations(fromVer); err != nil {
+		log.Printf("Warning: schema migrations failed: %v", err)
+	} else if err := writeInstallVersion(AppVersion, "startup"); err != nil {
+		log.Printf("Warning: could not update install_version.json: %v", err)
+	}
+
 	// Initialize announcement queue system
 	InitializeAnnouncementManager()
 	log.Println("✓ Announcement queue system initialized")
@@ -371,6 +379,10 @@ func setupWebRoutes() {
 	app.Router.GET("/admin/system/info", requireAuth(), getSystemInfoHandler)
 	app.Router.POST("/admin/system/restart", requireAuth(), restartApplicationHandler)
 	app.Router.POST("/admin/system/shutdown", requireAuth(), shutdownApplicationHandler)
+
+	app.Router.GET("/admin/updates/status", requireAuth(), getUpdateStatusHandler)
+	app.Router.GET("/admin/updates/check", requireAuth(), checkUpdatesHandler)
+	app.Router.POST("/admin/updates/install", requireAuth(), installUpdateHandler)
 
 	// Audio Management Routes (Authenticated)
 	app.Router.POST("/admin/audio/redetect", requireAuth(), redetectAudioDevicesHandler)
@@ -1429,7 +1441,7 @@ func initializeLogging(logDir string) error {
 	log.SetOutput(logWriter)
 
 	log.Printf("=== TARR Annunciator Started ===")
-	log.Printf("Version: Go Application")
+	log.Printf("Version: %s (installed record: %s)", AppVersion, getInstalledVersion())
 	log.Printf("Platform: %s/%s", runtime.GOOS, runtime.GOARCH)
 	log.Printf("Log file: %s", file.Path())
 	log.Printf("Log rotation: max %d MB per file, keep %d files, delete after %d days",

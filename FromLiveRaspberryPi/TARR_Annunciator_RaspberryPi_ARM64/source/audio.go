@@ -13,6 +13,22 @@ import (
 	"github.com/faiface/beep/speaker"
 )
 
+func applyPlaybackVolume(streamer beep.Streamer) *effects.Volume {
+	softwareVolume := effectiveSoftwareVolume()
+	volume := &effects.Volume{
+		Streamer: streamer,
+		Base:     2,
+		Volume:   0,
+		Silent:   false,
+	}
+	if softwareVolume <= 0.0 {
+		volume.Silent = true
+	} else {
+		volume.Volume = (softwareVolume - 1.0) * 5
+	}
+	return volume
+}
+
 // Audio playback functions
 func playAudio(filePath string) error {
 	if !app.AudioEnabled {
@@ -25,7 +41,8 @@ func playAudio(filePath string) error {
 		return fmt.Errorf("audio file not found: %s", filePath)
 	}
 
-	log.Printf("Playing audio: %s (Volume: %d%%)", filePath, int(app.Config.CurrentVolume*100))
+	softwareVolume := effectiveSoftwareVolume()
+	log.Printf("Playing audio: %s (Volume: %d%%, software gain: %d%%)", filePath, int(app.Config.CurrentVolume*100), int(softwareVolume*100))
 
 	// Open the file
 	file, err := os.Open(filePath)
@@ -43,23 +60,7 @@ func playAudio(filePath string) error {
 
 	// Resample if necessary
 	resampled := beep.Resample(4, format.SampleRate, beep.SampleRate(44100), streamer)
-
-	// Apply volume
-	volume := &effects.Volume{
-		Streamer: resampled,
-		Base:     2,
-		Volume:   0, // Will be set below
-		Silent:   false,
-	}
-	
-	// Convert linear volume (0.0-1.0) to logarithmic scale
-	if app.Config.CurrentVolume <= 0.0 {
-		volume.Silent = true
-	} else {
-		// Convert to decibels: 20 * log10(volume)
-		// But since beep uses base 2, we need different calculation
-		volume.Volume = (app.Config.CurrentVolume - 1.0) * 5 // Approximate conversion
-	}
+	volume := applyPlaybackVolume(resampled)
 
 	// Create a done channel to wait for playback completion
 	done := make(chan bool)
@@ -85,7 +86,8 @@ func playAudioWithCancellation(filePath string, cancelChan chan bool) error {
 		return fmt.Errorf("audio file not found: %s", filePath)
 	}
 
-	log.Printf("Playing audio: %s (Volume: %d%%)", filePath, int(app.Config.CurrentVolume*100))
+	softwareVolume := effectiveSoftwareVolume()
+	log.Printf("Playing audio: %s (Volume: %d%%, software gain: %d%%)", filePath, int(app.Config.CurrentVolume*100), int(softwareVolume*100))
 
 	// Open the file
 	file, err := os.Open(filePath)
@@ -103,23 +105,7 @@ func playAudioWithCancellation(filePath string, cancelChan chan bool) error {
 
 	// Resample if necessary
 	resampled := beep.Resample(4, format.SampleRate, beep.SampleRate(44100), streamer)
-
-	// Apply volume
-	volume := &effects.Volume{
-		Streamer: resampled,
-		Base:     2,
-		Volume:   0, // Will be set below
-		Silent:   false,
-	}
-	
-	// Convert linear volume (0.0-1.0) to logarithmic scale
-	if app.Config.CurrentVolume <= 0.0 {
-		volume.Silent = true
-	} else {
-		// Convert to decibels: 20 * log10(volume)
-		// But since beep uses base 2, we need different calculation
-		volume.Volume = (app.Config.CurrentVolume - 1.0) * 5 // Approximate conversion
-	}
+	volume := applyPlaybackVolume(resampled)
 
 	// Create a done channel to wait for playback completion
 	done := make(chan bool)
@@ -158,7 +144,7 @@ func playAudioSequence(filePaths []string) {
 func playStationAnnouncement(trainNumber, direction, destination, trackNumber string) {
 	// DEPRECATED: This function now uses the announcement queue system
 	log.Printf("⚠️  DEPRECATED: playStationAnnouncement called - routing through queue system")
-	
+
 	// Route through queue system with normal priority
 	parameters := map[string]interface{}{
 		"train_number": trainNumber,
@@ -166,14 +152,14 @@ func playStationAnnouncement(trainNumber, direction, destination, trackNumber st
 		"destination":  destination,
 		"track_number": trackNumber,
 	}
-	
+
 	if announcementManager != nil {
 		announcementManager.QueueAnnouncement(TypeStation, PriorityNormal, parameters, time.Now())
 	} else {
 		log.Printf("⚠️  Announcement manager not initialized - falling back to direct audio")
 		globalAudioMutex.Lock()
 		defer globalAudioMutex.Unlock()
-		
+
 		audioSequence := []string{
 			filepath.Join(app.Config.MP3Dir, "chime.mp3"),
 			filepath.Join(app.Config.MP3Dir, "train", trainNumber+".mp3"),
@@ -188,19 +174,19 @@ func playStationAnnouncement(trainNumber, direction, destination, trackNumber st
 func playPromo(file string) {
 	// DEPRECATED: This function now uses the announcement queue system
 	log.Printf("⚠️  DEPRECATED: playPromo called - routing through queue system")
-	
+
 	// Route through queue system with low priority
 	parameters := map[string]interface{}{
 		"file": file,
 	}
-	
+
 	if announcementManager != nil {
 		announcementManager.QueueAnnouncement(TypePromo, PriorityLow, parameters, time.Now())
 	} else {
 		log.Printf("⚠️  Announcement manager not initialized - falling back to direct audio")
 		globalAudioMutex.Lock()
 		defer globalAudioMutex.Unlock()
-		
+
 		promoFile := filepath.Join(app.Config.MP3Dir, "promo", file+".mp3")
 		if err := playAudio(promoFile); err != nil {
 			log.Printf("Error playing promo: %v", err)
@@ -211,19 +197,19 @@ func playPromo(file string) {
 func playSafety(language string) {
 	// DEPRECATED: This function now uses the announcement queue system
 	log.Printf("⚠️  DEPRECATED: playSafety called - routing through queue system")
-	
+
 	// Route through queue system with high priority (safety is important)
 	parameters := map[string]interface{}{
 		"language": language,
 	}
-	
+
 	if announcementManager != nil {
 		announcementManager.QueueAnnouncement(TypeSafety, PriorityHigh, parameters, time.Now())
 	} else {
 		log.Printf("⚠️  Announcement manager not initialized - falling back to direct audio")
 		globalAudioMutex.Lock()
 		defer globalAudioMutex.Unlock()
-		
+
 		safetyFile := filepath.Join(app.Config.MP3Dir, "safety", "safety_"+language+".mp3")
 		if err := playAudio(safetyFile); err != nil {
 			log.Printf("Error playing safety announcement: %v", err)

@@ -111,8 +111,10 @@
                         <input type="range" class="form-range" id="volume-slider" min="0" max="100" value="{{printf "%.0f" (mul .current_volume 100)}}">
                         <div class="d-flex justify-content-between">
                             <small class="text-muted">0%</small>
+                            <small class="text-muted" id="mixer-status">{{.mixer_summary}}</small>
                             <small class="text-muted">100%</small>
                         </div>
+                        <p class="form-text mb-0" id="mixer-help">{{.mixer_help}}</p>
                     </div>
 
                     <!-- Audio Device Selection -->
@@ -576,6 +578,46 @@
                                     <div id="lightning-config-message" class="mt-2"></div>
                                 </div>
                             </div>
+
+                            <div class="card mt-3 border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <h5 class="card-title mb-0">THOR Guard Red Alert Policy</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">When Red Alert is active, critical safety audio takes priority until All Clear is received.</p>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="red-alert-preempt" checked>
+                                        <label class="form-check-label" for="red-alert-preempt">Cancel queued and playing announcements when Red Alert is triggered</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="red-alert-suppress" checked>
+                                        <label class="form-check-label" for="red-alert-suppress">Ignore station, promo, safety, and scheduled announcements until All Clear</label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="red-alert-reminder-enabled" checked>
+                                        <label class="form-check-label" for="red-alert-reminder-enabled">Play a Red Alert reminder on a repeating interval</label>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="red-alert-reminder-interval" class="form-label">Reminder interval (minutes)</label>
+                                            <input type="number" class="form-control" id="red-alert-reminder-interval" min="1" max="120" value="5">
+                                        </div>
+                                        <div class="col-md-8 mb-3">
+                                            <label for="red-alert-reminder-file" class="form-label">Reminder MP3</label>
+                                            <input class="form-control" list="reminder-file-options" id="red-alert-reminder-file" placeholder="thor_repeat1.mp3" value="thor_repeat1.mp3">
+                                            <datalist id="reminder-file-options"></datalist>
+                                            <div class="form-text">File in <code>static/mp3/lightning/</code>. Type a custom filename if needed.</div>
+                                        </div>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="red-alert-reminder-horn">
+                                        <label class="form-check-label" for="red-alert-reminder-horn">Play horn (<code>thor_red_alert.mp3</code>) before each reminder</label>
+                                    </div>
+                                    <button type="button" class="btn btn-danger" id="save-red-alert-policy">💾 Save Red Alert Policy</button>
+                                    <button type="button" class="btn btn-outline-danger" id="test-red-alert-reminder">🔔 Play Reminder Now</button>
+                                    <div id="red-alert-policy-message" class="mt-2"></div>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="col-md-4">
@@ -587,26 +629,37 @@
                                     <div class="mb-2">
                                         <strong>🔴 Red Alert:</strong>
                                         <small class="text-muted d-block">Extreme danger - immediate shelter required</small>
-                                        <small class="text-muted d-block">🔊 Preceded by: <code>redalert.mp3</code></small>
+                                        <small class="text-muted d-block">Cancels the queue and blocks non-emergency announcements until All Clear.</small>
+                                        <button type="button" class="btn btn-sm btn-danger mt-1" id="test-condition-redalert">Test Red Alert</button>
                                     </div>
                                     <div class="mb-2">
                                         <strong>🟡 Warning:</strong>
                                         <small class="text-muted d-block">Lightning activity detected - use caution</small>
+                                        <button type="button" class="btn btn-sm btn-warning mt-1" id="test-condition-warning">Test Warning</button>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>🟠 Caution:</strong>
+                                        <small class="text-muted d-block">Developing lightning risk — announcement only, no lock</small>
+                                        <button type="button" class="btn btn-sm btn-outline-warning mt-1" id="test-condition-caution">Test Caution</button>
                                     </div>
                                     <div class="mb-2">
                                         <strong>🟢 All Clear:</strong>
-                                        <small class="text-muted d-block">Lightning threat has passed</small>
-                                        <small class="text-muted d-block">🔊 Preceded by: <code>allclear.mp3</code></small>
+                                        <small class="text-muted d-block">Sounds only if the previous condition was Red Alert, then releases the lock</small>
+                                        <button type="button" class="btn btn-sm btn-success mt-1" id="test-condition-allclear">Test All Clear</button>
+                                    </div>
+                                    <div class="mb-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="reset-lightning-state">♻️ Reset THOR Guard State</button>
+                                        <small class="text-muted d-block">Clears the cached condition, Red Alert lock, and reminder timer</small>
                                     </div>
                                     
                                     <hr>
                                     
                                     <h6>System Information</h6>
                                     <p class="small text-muted">
-                                        The system monitors XML data for a <code>&lt;lightningalert&gt;</code> tag and plays appropriate announcements when conditions change.
+                                        The system monitors XML data for a <code>&lt;lightningalert&gt;</code> tag and plays announcements when conditions change.
                                     </p>
                                     <p class="small text-muted">
-                                        Audio files are configured in <code>lightning.json</code> and announcements are played only once per condition change.
+                                        During Red Alert, a reminder repeats on the configured interval until All Clear. Emergency and lightning/weather announcements are still allowed.
                                     </p>
                                 </div>
                             </div>
@@ -790,11 +843,20 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showAudioMessage('Volume updated successfully', 'success');
+                    const mixer = data.system_mixer || {};
+                    const mixerNote = mixer.summary ? ` (${mixer.summary})` : '';
+                    showAudioMessage('Volume updated successfully' + mixerNote, 'success');
                     document.getElementById('current-volume').textContent = data.volume_percent + '%';
+                    const mixerStatus = document.getElementById('mixer-status');
+                    if (mixerStatus && mixer.summary) {
+                        mixerStatus.textContent = mixer.summary;
+                    }
                 } else {
                     showAudioMessage('Failed to update volume', 'danger');
                 }
+            })
+            .catch(function() {
+                showAudioMessage('Failed to update volume', 'danger');
             });
         });
 
@@ -2109,15 +2171,45 @@
                     statusHtml += `<p><strong>Last Condition Change:</strong> ${status.last_condition_time || 'Never'}</p>`;
                     statusHtml += `<p><strong>Timeout:</strong> ${status.timeout || 30} seconds</p>`;
                     statusHtml += '</div>';
-                    
                     statusHtml += '</div>';
+
+                    if (status.red_alert_active) {
+                        statusHtml += '<div class="alert alert-danger mt-3 mb-0">';
+                        statusHtml += '<strong>THOR GUARD RED ALERT ACTIVE</strong>';
+                        statusHtml += `<div>Since: ${status.red_alert_since || 'now'}</div>`;
+                        statusHtml += `<div>Reminders played: ${status.reminder_count || 0}</div>`;
+                        statusHtml += `<div>Next reminder: ${status.next_reminder || 'pending'}</div>`;
+                        if (status.last_reminder) {
+                            statusHtml += `<div>Last reminder: ${status.last_reminder}</div>`;
+                        }
+                        statusHtml += '</div>';
+                    }
+                    
                     content.innerHTML = statusHtml;
                     
-                    // Update form with current values
-                    document.getElementById('lightning-url').value = status.url || 'https://broward.thormobile4.net/tp/FL0115.xml';
-                    document.getElementById('lightning-interval').value = status.fetch_interval || 30;
-                    document.getElementById('lightning-timeout').value = status.timeout || 30;
-                    document.getElementById('lightning-enabled').checked = status.enabled || false;
+                    // Update form with current values unless the operator is editing them
+                    setValueIfNotFocused('lightning-url', status.url || 'https://broward.thormobile4.net/tp/FL0115.xml');
+                    setValueIfNotFocused('lightning-interval', status.fetch_interval || 30);
+                    setValueIfNotFocused('lightning-timeout', status.timeout || 30);
+                    setCheckedIfNotFocused('lightning-enabled', status.enabled || false);
+
+                    const policy = status.red_alert_policy || {};
+                    setCheckedIfNotFocused('red-alert-preempt', policy.preempt_queue !== false);
+                    setCheckedIfNotFocused('red-alert-suppress', policy.suppress_non_emergency !== false);
+                    setCheckedIfNotFocused('red-alert-reminder-enabled', policy.reminder_enabled !== false);
+                    setValueIfNotFocused('red-alert-reminder-interval', policy.reminder_interval_minutes || 5);
+                    setValueIfNotFocused('red-alert-reminder-file', policy.reminder_audio_file || 'thor_repeat1.mp3');
+                    setCheckedIfNotFocused('red-alert-reminder-horn', !!policy.reminder_include_horn);
+
+                    const datalist = document.getElementById('reminder-file-options');
+                    if (datalist) {
+                        datalist.innerHTML = '';
+                        (status.available_reminder_files || []).forEach(function(fileName) {
+                            const option = document.createElement('option');
+                            option.value = fileName;
+                            datalist.appendChild(option);
+                        });
+                    }
                 } else {
                     content.innerHTML = '<p class="text-danger">Error loading lightning trigger status</p>';
                 }
@@ -2132,9 +2224,131 @@
             switch (condition?.toLowerCase()) {
                 case 'redalert': return 'bg-danger';
                 case 'warning': return 'bg-warning';
+                case 'caution': return 'bg-info';
                 case 'allclear': return 'bg-success';
                 default: return 'bg-secondary';
             }
+        }
+
+        function setValueIfNotFocused(id, value) {
+            const el = document.getElementById(id);
+            if (!el || document.activeElement === el) {
+                return;
+            }
+            el.value = value;
+        }
+
+        function setCheckedIfNotFocused(id, checked) {
+            const el = document.getElementById(id);
+            if (!el || document.activeElement === el) {
+                return;
+            }
+            el.checked = checked;
+        }
+
+        function getRedAlertPolicyFromForm() {
+            return {
+                preempt_queue: document.getElementById('red-alert-preempt').checked,
+                suppress_non_emergency: document.getElementById('red-alert-suppress').checked,
+                reminder_enabled: document.getElementById('red-alert-reminder-enabled').checked,
+                reminder_interval_minutes: parseInt(document.getElementById('red-alert-reminder-interval').value, 10) || 5,
+                reminder_audio_file: (document.getElementById('red-alert-reminder-file').value || 'thor_repeat1.mp3').trim(),
+                reminder_include_horn: document.getElementById('red-alert-reminder-horn').checked,
+                horn_audio_file: 'thor_red_alert.mp3'
+            };
+        }
+
+        function saveRedAlertPolicy() {
+            const formData = {
+                url: document.getElementById('lightning-url').value,
+                fetch_interval: parseInt(document.getElementById('lightning-interval').value, 10),
+                timeout: parseInt(document.getElementById('lightning-timeout').value, 10),
+                enabled: document.getElementById('lightning-enabled').checked,
+                red_alert_policy: getRedAlertPolicyFromForm()
+            };
+
+            fetch('/admin/lightning/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showRedAlertPolicyMessage('Red Alert policy saved', 'success');
+                    loadLightningTriggerStatus();
+                } else {
+                    showRedAlertPolicyMessage(`Failed to save policy: ${data.error}`, 'danger');
+                }
+            })
+            .catch(error => {
+                showRedAlertPolicyMessage(`Error saving policy: ${error.message}`, 'danger');
+            });
+        }
+
+        function testLightningCondition(condition) {
+            fetch('/admin/lightning/test-condition/' + condition, {
+                method: 'POST',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const ok = data.status === 'success' || data.success;
+                const warning = data.status === 'warning';
+                const type = ok ? 'success' : (warning ? 'warning' : 'danger');
+                const prefix = ok ? '✅ ' : (warning ? '⚠️ ' : '❌ ');
+                showLightningMessage(prefix + (data.message || data.error || condition), type);
+                loadLightningTriggerStatus();
+            })
+            .catch(error => {
+                showLightningMessage(`Test failed: ${error.message}`, 'danger');
+            });
+        }
+
+        function resetLightningState() {
+            fetch('/admin/lightning/reset', {
+                method: 'POST',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const ok = data.status === 'success';
+                showLightningMessage((ok ? '✅ ' : '❌ ') + (data.message || data.error || 'Reset failed'), ok ? 'success' : 'danger');
+                loadLightningTriggerStatus();
+            })
+            .catch(error => {
+                showLightningMessage(`Reset failed: ${error.message}`, 'danger');
+            });
+        }
+
+        function testRedAlertReminder() {
+            fetch('/admin/lightning/test-reminder', {
+                method: 'POST',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const ok = data.status === 'success';
+                showRedAlertPolicyMessage((ok ? '✅ ' : '❌ ') + (data.message || data.error), ok ? 'success' : 'danger');
+                loadLightningTriggerStatus();
+            })
+            .catch(error => {
+                showRedAlertPolicyMessage(`Reminder test failed: ${error.message}`, 'danger');
+            });
+        }
+
+        function showRedAlertPolicyMessage(message, type) {
+            const messageDiv = document.getElementById('red-alert-policy-message');
+            if (!messageDiv) {
+                return;
+            }
+            messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
         }
         
         function updateLightningTriggerConfig(event) {
@@ -2144,7 +2358,8 @@
                 url: document.getElementById('lightning-url').value,
                 fetch_interval: parseInt(document.getElementById('lightning-interval').value),
                 timeout: parseInt(document.getElementById('lightning-timeout').value),
-                enabled: document.getElementById('lightning-enabled').checked
+                enabled: document.getElementById('lightning-enabled').checked,
+                red_alert_policy: getRedAlertPolicyFromForm()
             };
             
             fetch('/admin/lightning/config', {
@@ -2213,6 +2428,13 @@
         // Lightning Event Listeners
         document.getElementById('lightning-config-form').addEventListener('submit', updateLightningTriggerConfig);
         document.getElementById('test-lightning-fetch').addEventListener('click', testLightningFetch);
+        document.getElementById('save-red-alert-policy').addEventListener('click', saveRedAlertPolicy);
+        document.getElementById('test-red-alert-reminder').addEventListener('click', testRedAlertReminder);
+        document.getElementById('test-condition-redalert').addEventListener('click', function() { testLightningCondition('RedAlert'); });
+        document.getElementById('test-condition-warning').addEventListener('click', function() { testLightningCondition('Warning'); });
+        document.getElementById('test-condition-caution').addEventListener('click', function() { testLightningCondition('Caution'); });
+        document.getElementById('test-condition-allclear').addEventListener('click', function() { testLightningCondition('AllClear'); });
+        document.getElementById('reset-lightning-state').addEventListener('click', resetLightningState);
 
         // Event Listeners
         document.getElementById('restart-app-btn').addEventListener('click', restartApplication);

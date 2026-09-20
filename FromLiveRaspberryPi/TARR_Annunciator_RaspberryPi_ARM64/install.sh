@@ -1,7 +1,13 @@
 #!/bin/bash
 
+# NOTE: This script installs an optional systemd unit. The current Raspberry Pi
+# deployment method is GNU Screen + autologin + ~/start_tarr_annunciator.sh.
+# For a new Pi matching the live units, run: ./install_raspberry_pi.sh instead.
+# Admin restart / in-app updates expect the screen-based setup.
+
 echo "=========================================="
 echo "TARR Annunciator - Raspberry Pi Installer"
+echo "(legacy systemd path — prefer install_raspberry_pi.sh)"
 echo "=========================================="
 
 # Colors for output

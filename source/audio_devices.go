@@ -883,8 +883,8 @@ func getDarwinAudioDevices() []AudioDevice {
 func setDarwinAudioDevice(deviceID string) error {
 	// macOS audio device setting would require more complex implementation
 	// possibly using AppleScript or AudioUnit APIs
-	log.Printf("macOS audio device selection not yet implemented")
-	return fmt.Errorf("macOS audio device selection not yet implemented")
+	log.Printf("macOS audio device selection not yet implemented (requested %s)", deviceID)
+	return fmt.Errorf("macOS audio device selection not yet implemented (device %s)", deviceID)
 }
 
 // ============== UTILITY FUNCTIONS ==============

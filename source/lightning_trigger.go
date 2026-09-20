@@ -516,24 +516,20 @@ func (t *LightningTrigger) playLightningAnnouncement(condition string) {
 			if strings.Contains(strings.ToLower(announcement.ID), "redalert") ||
 				strings.Contains(strings.ToLower(announcement.ID), "red_alert") {
 				selectedAnnouncement = announcement
-				break
 			}
 		case "warning":
 			if strings.Contains(strings.ToLower(announcement.ID), "warning") &&
 				!strings.Contains(strings.ToLower(announcement.ID), "red") {
 				selectedAnnouncement = announcement
-				break
 			}
 		case "caution":
 			if strings.Contains(strings.ToLower(announcement.ID), "caution") {
 				selectedAnnouncement = announcement
-				break
 			}
 		case "allclear":
 			if strings.Contains(strings.ToLower(announcement.ID), "allclear") ||
 				strings.Contains(strings.ToLower(announcement.ID), "all_clear") {
 				selectedAnnouncement = announcement
-				break
 			}
 		}
 

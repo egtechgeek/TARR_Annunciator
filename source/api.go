@@ -25,6 +25,8 @@ func apiStatusHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":                "online",
+		"app_version":           normalizeVersion(AppVersion),
+		"installed_version":     getInstalledVersion(),
 		"audio_available":       app.AudioEnabled,
 		"audio_backend":         "beep",
 		"api_enabled":           app.Config.APIEnabled,
