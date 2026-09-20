@@ -97,12 +97,12 @@
             
             <div class="endpoint method-get">
                 <h4><span class="badge bg-success badge-method">GET</span> /api/audio/volume</h4>
-                <p>Get current volume setting</p>
+                <p>Get current volume setting, including ALSA/system mixer status on Linux</p>
             </div>
 
             <div class="endpoint method-post">
                 <h4><span class="badge bg-primary badge-method">POST</span> /api/audio/volume</h4>
-                <p>Set audio volume (0.0-1.0 or 0-100)</p>
+                <p>Set audio volume (0.0-1.0 or 0-100). On Raspberry Pi / Linux this also sets ALSA mixer levels (alsamixer) and restores them on startup.</p>
                 <div class="code-block">
                     <strong>Request Body (JSON):</strong>
                     <pre><code>{

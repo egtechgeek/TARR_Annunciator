@@ -1,6 +1,5 @@
 {
     "lightning_announcements": [
-	
         {
             "id": "THOR_RedAlert",
             "name": "THOR Red Alert",
@@ -19,6 +18,16 @@
             "audio_file": "thor_warning.mp3",
             "tts_text": "THOR Warning: Lightning activity detected by monitoring system. Exercise caution and be prepared to seek shelter.",
             "priority": 8,
+            "enabled": true
+        },
+        {
+            "id": "THOR_Caution",
+            "name": "THOR Caution",
+            "description": "THOR system caution - lightning risk developing",
+            "category": "system_alert",
+            "audio_file": "thor_caution.mp3",
+            "tts_text": "THOR Caution: Lightning monitoring system reports developing weather risk. Remain aware of changing conditions.",
+            "priority": 6,
             "enabled": true
         },
         {
@@ -41,13 +50,31 @@
             "priority": 7,
             "enabled": true
         }
-        
     ],
+    "red_alert_policy": {
+        "preempt_queue": true,
+        "suppress_non_emergency": true,
+        "reminder_enabled": true,
+        "reminder_interval_minutes": 5,
+        "reminder_audio_file": "thor_repeat1.mp3",
+        "reminder_include_horn": false,
+        "horn_audio_file": "thor_red_alert.mp3"
+    },
     "metadata": {
         "version": "1.1",
         "last_updated": "2025-09-01T16:40:00Z",
         "total_announcements": 20,
-        "categories": ["detection", "proximity", "warning", "all_clear", "emergency", "escalation", "safety", "incident", "system_alert"],
+        "categories": [
+            "detection",
+            "proximity",
+            "warning",
+            "all_clear",
+            "emergency",
+            "escalation",
+            "safety",
+            "incident",
+            "system_alert"
+        ],
         "safety_notes": [
             "Lightning can strike up to 10 miles away from a thunderstorm",
             "The 30-30 rule: Seek shelter when thunder follows lightning by 30 seconds or less, stay sheltered for 30 minutes after last thunder",

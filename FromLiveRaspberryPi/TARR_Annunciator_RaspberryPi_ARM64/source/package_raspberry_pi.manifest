@@ -1,0 +1,217 @@
+# Raspberry Pi Package Manifest
+# Use this file to create Raspberry Pi installation packages
+
+# Package Information
+PACKAGE_NAME_ARM64="TARR_Annunciator_RaspberryPi_ARM64"
+PACKAGE_NAME_ARM32="TARR_Annunciator_RaspberryPi_ARM32" 
+PACKAGE_NAME_ARMV6="TARR_Annunciator_RaspberryPi_ARMv6"
+VERSION="1.0.0"
+EXECUTABLE_NAME="tarr-annunciator"
+
+# Required Files (relative paths from project root)
+FILES=(
+    # Main executable (architecture-specific)
+    # ARM64: "dist/raspberry-pi/tarr-annunciator"
+    # ARM32: "dist/raspberry-pi-32/tarr-annunciator"  
+    # ARMv6: "dist/raspberry-pi-zero/tarr-annunciator"
+    
+    # Raspberry Pi specific scripts
+    "install_raspberry_pi.sh"
+    "run_raspberry_pi.sh"
+    
+    # Standard scripts and build system
+    "build_linux.sh"
+    "test_crossplatform.sh"
+    "Makefile"
+    
+    # Documentation (Pi-focused)
+    "README_RaspberryPi.md"
+    "README_CrossPlatform.md"
+    
+    # Configuration files
+    "json/admin_config.json"
+    "json/cron.json" 
+    "json/destinations.json"
+    "json/directions.json"
+    "json/promo.json"
+    "json/safety.json"
+    "json/tracks.json"
+    "json/trains.json"
+    
+    # Web templates
+    "templates/admin.html"
+    "templates/admin_login.html"
+    "templates/api_docs.html"
+    "templates/index.html"
+    
+    # Audio files
+    "static/mp3/chime.mp3"
+    "static/mp3/destination/goodwin_station.mp3"
+    "static/mp3/destination/hialeah.mp3"
+    "static/mp3/destination/picnic_station.mp3"
+    "static/mp3/destination/tradewinds_central_station.mp3"
+    "static/mp3/destination/yard.mp3"
+    "static/mp3/direction/eastbound.mp3"
+    "static/mp3/direction/westbound.mp3"
+    "static/mp3/promo/promo_english.mp3"
+    "static/mp3/safety/safety_announcement.mp3"
+    "static/mp3/safety/safety_english.mp3"
+    "static/mp3/safety/safety_english2.mp3"
+    "static/mp3/safety/safety_portuguese.mp3"
+    "static/mp3/safety/safety_russian.mp3"
+    "static/mp3/safety/safety_spanish.mp3"
+    "static/mp3/safety/safety_tts.txt"
+    "static/mp3/track/1.mp3"
+    "static/mp3/track/2.mp3"
+    "static/mp3/track/express.mp3"
+    "static/mp3/train/1.mp3"
+    "static/mp3/train/2006.mp3"
+    "static/mp3/train/2199.mp3"
+    "static/mp3/train/27.mp3"
+    "static/mp3/train/347.mp3"
+    "static/mp3/train/415.mp3"
+    "static/mp3/train/428.mp3"
+    "static/mp3/train/4900.mp3"
+    "static/mp3/train/573.mp3"
+    "static/mp3/train/774.mp3"
+    "static/mp3/train/815.mp3"
+    "static/mp3/train/9.mp3"
+    "static/mp3/train/944.mp3"
+)
+
+# Directories to create (empty)
+DIRECTORIES=(
+    "logs"
+)
+
+# Architecture-specific file mappings
+ARM64_MAPPINGS=(
+    "dist/raspberry-pi/tarr-annunciator:tarr-annunciator"
+    "run_raspberry_pi.sh:run.sh"
+)
+
+ARM32_MAPPINGS=(
+    "dist/raspberry-pi-32/tarr-annunciator:tarr-annunciator"
+    "run_raspberry_pi.sh:run.sh"
+)
+
+ARMV6_MAPPINGS=(
+    "dist/raspberry-pi-zero/tarr-annunciator:tarr-annunciator"
+    "run_raspberry_pi.sh:run.sh"
+)
+
+# Executable permissions needed
+EXECUTABLES=(
+    "tarr-annunciator"
+    "install_raspberry_pi.sh"
+    "run.sh"
+    "build_linux.sh"
+    "test_crossplatform.sh"
+)
+
+# Package format
+PACKAGE_FORMAT="tar.gz"
+PACKAGE_FILENAME_ARM64="${PACKAGE_NAME_ARM64}.tar.gz"
+PACKAGE_FILENAME_ARM32="${PACKAGE_NAME_ARM32}.tar.gz"
+PACKAGE_FILENAME_ARMV6="${PACKAGE_NAME_ARMV6}.tar.gz"
+
+# Raspberry Pi compatibility matrix
+PI_COMPATIBILITY=(
+    "ARM64: Raspberry Pi 4, Pi 5, Pi Zero 2W"
+    "ARM32: Raspberry Pi 2, Pi 3, Pi 3B+"
+    "ARMv6: Raspberry Pi 1, Pi Zero, Pi Zero W"
+)
+
+# Dependencies to document
+DEPENDENCIES=(
+    "Raspberry Pi OS (Bullseye or later recommended)"
+    "Audio enabled in /boot/config.txt (dtparam=audio=on)"
+    "ALSA utilities (usually pre-installed)"
+    "PulseAudio (optional but recommended)"
+    "amixer (for Pi audio control)"
+)
+
+# Installation notes
+INSTALL_NOTES="
+Quick Install:
+1. Extract: tar -xzf TARR_Annunciator_RaspberryPi_*.tar.gz
+2. cd TARR_Annunciator_RaspberryPi_*
+3. Run installer: ./install_raspberry_pi.sh
+4. Follow prompts for audio setup
+5. Access at http://pi-ip-address:8080
+
+Manual Install:
+1. Extract package
+2. chmod +x *.sh tarr-annunciator
+3. Run: ./run.sh
+4. Configure audio if needed
+
+Raspberry Pi Audio Configuration:
+- Auto output: amixer cset numid=3 0
+- Headphone: amixer cset numid=3 1  
+- HDMI: amixer cset numid=3 2
+
+Systemd Service:
+- Service file included in installer
+- Enable: sudo systemctl enable tarr-annunciator
+- Start: sudo systemctl start tarr-annunciator
+- Logs: journalctl -u tarr-annunciator -f
+"
+
+# Raspberry Pi specific systemd service
+SYSTEMD_SERVICE_PI="
+[Unit]
+Description=TARR Annunciator Train Announcement System (Raspberry Pi)
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/tarr-annunciator
+ExecStart=/home/pi/tarr-annunciator/tarr-annunciator
+Restart=always
+RestartSec=5
+Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
+
+[Install]
+WantedBy=multi-user.target
+"
+
+# Package build commands
+BUILD_COMMANDS=(
+    "# ARM64 (Pi 4/5)"
+    "make build-raspberry-pi"
+    ""
+    "# ARM32 (Pi 2/3)"  
+    "make build-raspberry-pi-32"
+    ""
+    "# ARMv6 (Pi Zero/1)"
+    "make build-raspberry-pi-zero"
+)
+
+# Audio system checks
+AUDIO_CHECKS=(
+    "lsmod | grep snd_bcm2835    # BCM2835 module loaded"
+    "aplay -l                    # List audio devices"
+    "amixer cget numid=3         # Current audio output"
+    "pactl list short sinks      # PulseAudio sinks"
+)
+
+# Hardware-specific optimizations
+HARDWARE_NOTES="
+Raspberry Pi 5/4:
+- Best performance, full feature support
+- Recommended for multiple simultaneous announcements
+- Supports USB audio devices
+
+Raspberry Pi 3/2:  
+- Good performance for standard usage
+- May have slight delays with complex schedules
+- HDMI audio fully supported
+
+Raspberry Pi Zero/1:
+- Basic functionality supported
+- Recommended for simple/occasional usage
+- Consider USB sound card for better audio quality
+- May need performance tuning for complex schedules
+"

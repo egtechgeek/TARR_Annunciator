@@ -1,0 +1,649 @@
+2026/09/19 19:38:38 === TARR Annunciator Started ===
+2026/09/19 19:38:38 Version: Go Application
+2026/09/19 19:38:38 Platform: windows/amd64
+2026/09/19 19:38:38 Log file: C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\data\logs\tarr-annunciator_2026-09-19_19-38-38.log
+2026/09/19 19:38:38 Timestamp: 2026-09-19 19:38:38
+2026/09/19 19:38:38 =====================================
+2026/09/19 19:38:38 Starting log cleanup routine...
+2026/09/19 19:38:38 Log cleanup completed: 0 files deleted, total log size: 0.05 MB
+2026/09/19 19:38:38 ✓ Audio system initialized successfully
+2026/09/19 19:38:38 Announcement manager initialized with queuing system
+2026/09/19 19:38:38 ✓ Announcement queue system initialized
+2026/09/19 19:38:38 ✓ Loaded lightning configuration with 5 announcements
+2026/09/19 19:38:38   - Red Alert policy: preempt=true suppress=true reminder=true every 5m file=thor_repeat1.mp3
+2026/09/19 19:38:38 ✓ Lightning trigger system initialized and started
+2026/09/19 19:38:38   - Monitoring URL: https://broward.thormobile4.net/tp/FL0115.xml
+2026/09/19 19:38:38   - Fetch interval: 30 seconds
+2026/09/19 19:38:38 Lightning trigger 'Lightning Alert Monitor' started with 30 second interval
+2026/09/19 19:38:38 Updating scheduler...
+2026/09/19 19:38:38 Scheduled: */5 * * * * - [english spanish] (multi-language, 2s delay)
+2026/09/19 19:38:38 Scheduler updated with 1 active jobs.
+2026/09/19 19:38:38 Starting TARR Annunciator Go Server...
+2026/09/19 19:38:38 Audio system: Available
+2026/09/19 19:38:38 Access the application at: http://localhost:8080
+2026/09/19 19:38:38 Admin interface at: http://localhost:8080/admin
+2026/09/19 19:38:38 Lightning XML saved to: xml\FL0115.xml (2670 bytes)
+2026/09/19 19:38:38 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B16001SFL011569.</rawstring>
+    <localtime>12:37:27 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>S</chiprevision>
+    <revisionfield>1S</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 19:38:38 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 19:38:38 Lightning alert status: Unknown
+2026/09/19 19:38:38 Lightning condition changed from 'Reset' to 'Unknown'
+2026/09/19 19:38:38 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 19:39:01 DEBUG: About to load emergencies JSON...
+2026/09/19 19:39:01 DEBUG: loadJSON returned, type assertion complete
+2026/09/19 19:39:03 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/19 19:39:03 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/19 19:39:03 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/19 19:39:03 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/19 19:39:03 DEBUG: Emergency 4: All Clear (all_clear)
+2026/09/19 19:39:08 Lightning XML saved to: xml\FL0115.xml (2676 bytes)
+2026/09/19 19:39:08 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160032FL01154A.</rawstring>
+    <localtime>12:37:58 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>2</chiprevision>
+    <revisionfield>32</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 19:39:08 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 19:39:08 Lightning alert status: Unknown
+2026/09/19 19:39:08 Lightning condition changed from 'Reset' to 'Unknown'
+2026/09/19 19:39:08 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 19:39:38 Lightning XML saved to: xml\FL0115.xml (2692 bytes)
+2026/09/19 19:39:38 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360041FL01153C.</rawstring>
+    <localtime>12:38:27 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>1</chiprevision>
+    <revisionfield>41</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 19:39:38 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 19:39:38 Lightning alert status: AllClear
+2026/09/19 19:39:38 Lightning condition changed from 'Reset' to 'AllClear'
+2026/09/19 19:39:38 AllClear condition ignored - previous condition was 'Reset' (not RedAlert)
+2026/09/19 19:40:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 19:40:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 19:40:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 19:40:00 Queued announcement: ID=ann_1789861200_2, Type=safety, Priority=3, Scheduled=2026-09-19T19:40:00-04:00
+2026/09/19 19:40:00 Multi-language safety announcement queued successfully: english (ID: ann_1789861200_2, sequence: 1/2)
+2026/09/19 19:40:00 Starting announcement: ID=ann_1789861200_2, Type=safety, Priority=3
+2026/09/19 19:40:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 19:40:00 Playing audio: C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\data\static\mp3/safety/safety_english.mp3 (Volume: 70%, software gain: 70%)
+2026/09/19 19:40:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 19:40:02 Queued announcement: ID=ann_1789861202_3, Type=safety, Priority=3, Scheduled=2026-09-19T19:40:02-04:00
+2026/09/19 19:40:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789861202_3, sequence: 2/2)
+2026/09/19 19:40:08 Lightning XML saved to: xml\FL0115.xml (2676 bytes)
+2026/09/19 19:40:08 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160074FL011550.</rawstring>
+    <localtime>12:38:58 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>4</chiprevision>
+    <revisionfield>74</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 19:40:08 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 19:40:08 Lightning alert status: Unknown
+2026/09/19 19:40:08 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 19:40:08 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 19:40:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 19:40:34 Completed announcement: ID=ann_1789861200_2, Duration=34.7579143s
+2026/09/19 19:40:34 Starting announcement: ID=ann_1789861202_3, Type=safety, Priority=3
+2026/09/19 19:40:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 19:40:34 Playing audio: C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\data\static\mp3/safety/safety_spanish.mp3 (Volume: 70%, software gain: 70%)
+2026/09/19 19:40:38 Lightning XML saved to: xml\FL0115.xml (2676 bytes)
+2026/09/19 19:40:38 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E01000710000030B160032FL01154A.</rawstring>
+    <localtime>12:39:28 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>2</chiprevision>
+    <revisionfield>32</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 19:40:38 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 19:40:38 Lightning alert status: Unknown
+2026/09/19 19:40:38 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 19:40:38 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 19:41:08 Lightning XML saved to: xml\FL0115.xml (2692 bytes)
+2026/09/19 19:41:08 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E010007200000301360041FL01153C.</rawstring>
+    <localtime>12:39:57 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>1</chiprevision>
+    <revisionfield>41</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 19:41:08 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 19:41:08 Lightning alert status: AllClear
+2026/09/19 19:41:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 19:41:13 Completed announcement: ID=ann_1789861202_3, Duration=38.3439369s
+2026/09/19 19:42:00 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": read tcp 192.168.0.218:65250->184.168.22.44:443: wsarecv: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+2026/09/19 19:42:08 Lightning XML saved to: xml\FL0115.xml (2686 bytes)
+2026/09/19 19:42:08 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000720000030136001SFL01155B.</rawstring>
+    <localtime>12:40:58 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>S</chiprevision>
+    <revisionfield>1S</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 19:42:08 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 19:42:08 Lightning alert status: AllClear
+2026/09/19 19:42:38 Lightning XML saved to: xml\FL0115.xml (2672 bytes)
+2026/09/19 19:42:38 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E01000710000030B16002EFL01155C.</rawstring>
+    <localtime>12:41:27 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>E</chiprevision>
+    <revisionfield>2E</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 19:42:38 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 19:42:38 Lightning alert status: Unknown
+2026/09/19 19:42:38 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 19:42:38 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 19:43:08 Lightning XML saved to: xml\FL0115.xml (2692 bytes)
+2026/09/19 19:43:08 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360050FL01153C.</rawstring>
+    <localtime>12:41:58 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>50</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 19:43:08 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 19:43:08 Lightning alert status: AllClear
+2026/09/19 19:43:38 Lightning XML saved to: xml\FL0115.xml (2676 bytes)
+2026/09/19 19:43:38 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160060FL01154B.</rawstring>
+    <localtime>12:42:27 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>60</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 19:43:38 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 19:43:38 Lightning alert status: Unknown
+2026/09/19 19:43:38 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 19:43:38 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 19:44:05 Updating scheduler...
+2026/09/19 19:44:05 Scheduled: */3 * * * * - [english spanish] (multi-language, 2s delay)
+2026/09/19 19:44:05 Scheduler updated with 1 active jobs.
+2026/09/19 19:44:05 DEBUG: About to load emergencies JSON...
+2026/09/19 19:44:05 DEBUG: loadJSON returned, type assertion complete
+2026/09/19 19:44:07 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/19 19:44:07 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/19 19:44:07 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/19 19:44:07 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/19 19:44:07 DEBUG: Emergency 4: All Clear (all_clear)
+2026/09/19 19:44:08 Lightning XML saved to: xml\FL0115.xml (2670 bytes)
+2026/09/19 19:44:08 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B16001SFL011569.</rawstring>
+    <localtime>12:42:57 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>S</chiprevision>
+    <revisionfield>1S</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 19:44:08 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 19:44:08 Lightning alert status: Unknown
+2026/09/19 19:44:08 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 19:44:08 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 19:44:26 Lightning trigger 'Lightning Alert Monitor' stopped
+2026/09/19 19:44:26 Lightning trigger configuration updated - URL: https://broward.thormobile4.net/tp/FL0115.xml, Interval: 60s
+2026/09/19 19:44:26 Lightning trigger 'Lightning Alert Monitor' started with 60 second interval
+2026/09/19 19:44:26 Lightning XML saved to: xml\FL0115.xml (2676 bytes)
+2026/09/19 19:44:26 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160050FL01154A.</rawstring>
+    <localtime>12:43:16 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>50</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 19:44:26 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 19:44:26 Lightning alert status: Unknown
+2026/09/19 19:44:26 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 19:44:26 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 19:45:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 19:45:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 19:45:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 19:45:00 Queued announcement: ID=ann_1789861500_4, Type=safety, Priority=3, Scheduled=2026-09-19T19:45:00-04:00
+2026/09/19 19:45:00 Multi-language safety announcement queued successfully: english (ID: ann_1789861500_4, sequence: 1/2)
+2026/09/19 19:45:00 Starting announcement: ID=ann_1789861500_4, Type=safety, Priority=3
+2026/09/19 19:45:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 19:45:00 Playing audio: C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\data\static\mp3/safety/safety_english.mp3 (Volume: 70%, software gain: 70%)
+2026/09/19 19:45:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 19:45:02 Queued announcement: ID=ann_1789861502_5, Type=safety, Priority=3, Scheduled=2026-09-19T19:45:02-04:00
+2026/09/19 19:45:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789861502_5, sequence: 2/2)
+2026/09/19 19:45:26 Lightning XML saved to: xml\FL0115.xml (2686 bytes)
+2026/09/19 19:45:26 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000720000030136001SFL01155B.</rawstring>
+    <localtime>12:44:15 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>S</chiprevision>
+    <revisionfield>1S</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 19:45:26 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 19:45:26 Lightning alert status: AllClear
+2026/09/19 19:45:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 19:45:34 Completed announcement: ID=ann_1789861500_4, Duration=34.7762186s
+2026/09/19 19:45:34 Starting announcement: ID=ann_1789861502_5, Type=safety, Priority=3
+2026/09/19 19:45:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 19:45:34 Playing audio: C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\data\static\mp3/safety/safety_spanish.mp3 (Volume: 70%, software gain: 70%)
+2026/09/19 19:46:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 19:46:13 Completed announcement: ID=ann_1789861502_5, Duration=38.3780681s
+2026/09/19 19:46:26 Lightning XML saved to: xml\FL0115.xml (2692 bytes)
+2026/09/19 19:46:26 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360050FL01153C.</rawstring>
+    <localtime>12:45:15 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>50</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 19:46:26 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 19:46:26 Lightning alert status: AllClear
+2026/09/19 19:47:26 Lightning XML saved to: xml\FL0115.xml (2688 bytes)
+2026/09/19 19:47:26 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000720000030136002EFL01154E.</rawstring>
+    <localtime>12:46:16 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>E</chiprevision>
+    <revisionfield>2E</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 19:47:26 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 19:47:26 Lightning alert status: AllClear
+2026/09/19 19:48:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 19:48:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 19:48:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 19:48:00 Queued announcement: ID=ann_1789861680_6, Type=safety, Priority=3, Scheduled=2026-09-19T19:48:00-04:00
+2026/09/19 19:48:00 Multi-language safety announcement queued successfully: english (ID: ann_1789861680_6, sequence: 1/2)
+2026/09/19 19:48:00 Starting announcement: ID=ann_1789861680_6, Type=safety, Priority=3
+2026/09/19 19:48:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 19:48:00 Playing audio: C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\data\static\mp3/safety/safety_english.mp3 (Volume: 70%, software gain: 70%)
+2026/09/19 19:48:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 19:48:02 Queued announcement: ID=ann_1789861682_7, Type=safety, Priority=3, Scheduled=2026-09-19T19:48:02-04:00
+2026/09/19 19:48:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789861682_7, sequence: 2/2)
+2026/09/19 19:48:26 Lightning XML saved to: xml\FL0115.xml (2692 bytes)
+2026/09/19 19:48:26 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360074FL011542.</rawstring>
+    <localtime>12:47:16 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>4</chiprevision>
+    <revisionfield>74</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 19:48:26 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 19:48:26 Lightning alert status: AllClear
+2026/09/19 19:48:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 19:48:34 Completed announcement: ID=ann_1789861680_6, Duration=34.7805949s
+2026/09/19 19:48:34 Starting announcement: ID=ann_1789861682_7, Type=safety, Priority=3
+2026/09/19 19:48:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 19:48:34 Playing audio: C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\data\static\mp3/safety/safety_spanish.mp3 (Volume: 70%, software gain: 70%)
+2026/09/19 19:48:47 Received shutdown signal, cleaning up...
+2026/09/19 19:48:47 Scheduler stopped
+2026/09/19 19:48:47 Lightning trigger stopped
+2026/09/19 19:48:47 === TARR Annunciator Shutting Down ===
+2026/09/19 19:48:47 Timestamp: 2026-09-19 19:48:47
+2026/09/19 19:48:47 =======================================

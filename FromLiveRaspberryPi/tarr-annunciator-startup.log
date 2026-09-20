@@ -1,0 +1,192 @@
+[2025-08-28 18:13:29] === TARR Annunciator Startup Script ===
+[2025-08-28 18:13:29] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-28 18:13:29] Waiting for audio system to initialize...
+[2025-08-28 18:13:34] Creating new screen session: tarr-annunciator
+[2025-08-28 18:13:34] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-28 18:13:36] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-28 18:13:36] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-28 18:13:36] TARR Annunciator startup completed
+[2025-08-28 18:23:02] === TARR Annunciator Startup Script ===
+[2025-08-28 18:23:02] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-28 18:23:02] Waiting for audio system to initialize...
+[2025-08-28 18:23:07] Creating new screen session: tarr-annunciator
+[2025-08-28 18:23:07] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-28 18:23:09] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-28 18:23:09] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-28 18:23:09] TARR Annunciator startup completed
+[2025-08-28 18:37:21] === TARR Annunciator Startup Script ===
+[2025-08-28 18:37:21] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-28 18:37:21] Waiting for audio system to initialize...
+[2025-08-28 18:37:26] Creating new screen session: tarr-annunciator
+[2025-08-28 18:37:26] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-28 18:37:28] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-28 18:37:28] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-28 18:37:28] TARR Annunciator startup completed
+[2025-08-28 19:35:13] === TARR Annunciator Startup Script ===
+[2025-08-28 19:35:13] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-28 19:35:13] Waiting for audio system to initialize...
+[2025-08-28 19:35:18] Creating new screen session: tarr-annunciator
+[2025-08-28 19:35:18] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-28 19:35:20] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-28 19:35:20] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-28 19:35:20] TARR Annunciator startup completed
+[2025-08-28 19:38:19] === TARR Annunciator Startup Script ===
+[2025-08-28 19:38:19] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-28 19:38:19] Waiting for audio system to initialize...
+[2025-08-28 19:38:24] Creating new screen session: tarr-annunciator
+[2025-08-28 19:38:24] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-28 19:38:26] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-28 19:38:26] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-28 19:38:26] TARR Annunciator startup completed
+[2025-08-28 19:40:04] === TARR Annunciator Startup Script ===
+[2025-08-28 19:40:04] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-28 19:40:04] Waiting for audio system to initialize...
+[2025-08-28 19:40:09] Creating new screen session: tarr-annunciator
+[2025-08-28 19:40:09] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-28 19:40:11] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-28 19:40:11] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-28 19:40:11] TARR Annunciator startup completed
+[2025-08-29 10:14:52] === TARR Annunciator Startup Script ===
+[2025-08-29 10:14:52] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-29 10:14:52] Waiting for audio system to initialize...
+[2025-08-29 10:14:57] Creating new screen session: tarr-annunciator
+[2025-08-29 10:14:57] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-29 10:14:59] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-29 10:14:59] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-29 10:14:59] TARR Annunciator startup completed
+[2025-08-29 10:32:08] === TARR Annunciator Startup Script ===
+[2025-08-29 10:32:08] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-29 10:32:08] Waiting for audio system to initialize...
+[2025-08-29 10:32:13] Creating new screen session: tarr-annunciator
+[2025-08-29 10:32:13] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-29 10:32:15] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-29 10:32:15] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-29 10:32:15] TARR Annunciator startup completed
+[2025-08-29 11:13:36] === TARR Annunciator Startup Script ===
+[2025-08-29 11:13:36] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-29 11:13:36] Waiting for audio system to initialize...
+[2025-08-29 11:13:41] Creating new screen session: tarr-annunciator
+[2025-08-29 11:13:41] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-29 11:13:43] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-29 11:13:43] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-29 11:13:43] TARR Annunciator startup completed
+[2025-08-29 11:30:01] === TARR Annunciator Startup Script ===
+[2025-08-29 11:30:01] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-29 11:30:01] Waiting for audio system to initialize...
+[2025-08-29 11:30:06] Creating new screen session: tarr-annunciator
+[2025-08-29 11:30:06] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-29 11:30:08] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-29 11:30:08] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-29 11:30:08] TARR Annunciator startup completed
+[2025-08-29 11:32:56] === TARR Annunciator Startup Script ===
+[2025-08-29 11:32:56] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-29 11:32:56] Waiting for audio system to initialize...
+[2025-08-29 11:33:01] Creating new screen session: tarr-annunciator
+[2025-08-29 11:33:01] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-29 11:33:03] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-29 11:33:03] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-29 11:33:03] TARR Annunciator startup completed
+[2025-08-30 17:53:34] === TARR Annunciator Startup Script ===
+[2025-08-30 17:53:34] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-08-30 17:53:34] Waiting for audio system to initialize...
+[2025-08-30 17:53:39] Creating new screen session: tarr-annunciator
+[2025-08-30 17:53:39] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-08-30 17:53:41] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-08-30 17:53:41] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-08-30 17:53:41] TARR Annunciator startup completed
+[2025-09-02 10:43:07] === TARR Annunciator Startup Script ===
+[2025-09-02 10:43:07] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-02 10:43:07] Waiting for audio system to initialize...
+[2025-09-02 10:43:12] Creating new screen session: tarr-annunciator
+[2025-09-02 10:43:12] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-02 10:43:14] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-02 10:43:14] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-02 10:43:14] TARR Annunciator startup completed
+[2025-09-02 22:06:57] === TARR Annunciator Startup Script ===
+[2025-09-02 22:06:57] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-02 22:06:58] Waiting for audio system to initialize...
+[2025-09-02 22:07:03] Creating new screen session: tarr-annunciator
+[2025-09-02 22:07:03] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-02 22:07:05] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-02 22:07:05] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-02 22:07:05] TARR Annunciator startup completed
+[2025-09-03 13:01:04] === TARR Annunciator Startup Script ===
+[2025-09-03 13:01:04] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-03 13:01:04] Waiting for audio system to initialize...
+[2025-09-03 13:01:09] Creating new screen session: tarr-annunciator
+[2025-09-03 13:01:09] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-03 13:01:11] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-03 13:01:11] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-03 13:01:11] TARR Annunciator startup completed
+[2025-09-03 13:10:55] === TARR Annunciator Startup Script ===
+[2025-09-03 13:10:55] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-03 13:10:55] Waiting for audio system to initialize...
+[2025-09-03 13:11:00] Creating new screen session: tarr-annunciator
+[2025-09-03 13:11:00] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-03 13:11:02] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-03 13:11:02] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-03 13:11:02] TARR Annunciator startup completed
+[2025-09-03 13:53:58] === TARR Annunciator Startup Script ===
+[2025-09-03 13:53:58] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-03 13:53:58] Waiting for audio system to initialize...
+[2025-09-03 13:54:03] Creating new screen session: tarr-annunciator
+[2025-09-03 13:54:03] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-03 13:54:05] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-03 13:54:05] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-03 13:54:05] TARR Annunciator startup completed
+[2025-09-03 14:01:45] === TARR Annunciator Startup Script ===
+[2025-09-03 14:01:45] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-03 14:01:45] Waiting for audio system to initialize...
+[2025-09-03 14:01:50] Creating new screen session: tarr-annunciator
+[2025-09-03 14:01:50] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-03 14:01:52] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-03 14:01:52] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-03 14:01:52] TARR Annunciator startup completed
+[2025-09-03 14:09:34] === TARR Annunciator Startup Script ===
+[2025-09-03 14:09:34] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-03 14:09:34] Waiting for audio system to initialize...
+[2025-09-03 14:09:39] Creating new screen session: tarr-annunciator
+[2025-09-03 14:09:39] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-03 14:09:41] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-03 14:09:41] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-03 14:09:41] TARR Annunciator startup completed
+[2025-09-03 14:47:38] === TARR Annunciator Startup Script ===
+[2025-09-03 14:47:38] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-03 14:47:38] Waiting for audio system to initialize...
+[2025-09-03 14:47:43] Creating new screen session: tarr-annunciator
+[2025-09-03 14:47:43] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-03 14:47:45] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-03 14:47:45] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-03 14:47:45] TARR Annunciator startup completed
+[2025-09-03 15:09:27] === TARR Annunciator Startup Script ===
+[2025-09-03 15:09:27] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-03 15:09:27] Waiting for audio system to initialize...
+[2025-09-03 15:09:32] Creating new screen session: tarr-annunciator
+[2025-09-03 15:09:32] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-03 15:09:34] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-03 15:09:34] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-03 15:09:34] TARR Annunciator startup completed
+[2025-09-04 13:08:13] === TARR Annunciator Startup Script ===
+[2025-09-04 13:08:13] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-04 13:08:13] Waiting for audio system to initialize...
+[2025-09-04 13:08:18] Creating new screen session: tarr-annunciator
+[2025-09-04 13:08:18] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-04 13:08:20] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-04 13:08:20] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-04 13:08:20] TARR Annunciator startup completed
+[2025-09-04 13:33:44] === TARR Annunciator Startup Script ===
+[2025-09-04 13:33:44] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-04 13:33:44] Waiting for audio system to initialize...
+[2025-09-04 13:33:49] Creating new screen session: tarr-annunciator
+[2025-09-04 13:33:49] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-04 13:33:51] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-04 13:33:51] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-04 13:33:51] TARR Annunciator startup completed
+[2025-09-04 23:42:44] === TARR Annunciator Startup Script ===
+[2025-09-04 23:42:44] Starting TARR Annunciator in Screen session: tarr-annunciator
+[2025-09-04 23:42:44] Waiting for audio system to initialize...
+[2025-09-04 23:42:49] Creating new screen session: tarr-annunciator
+[2025-09-04 23:42:49] Working directory: /home/pi/TARR_Annunciator_RaspberryPi_ARM64
+[2025-09-04 23:42:51] SUCCESS: Screen session 'tarr-annunciator' created successfully
+[2025-09-04 23:42:51] Use 'screen -r tarr-annunciator' to attach to the session
+[2025-09-04 23:42:51] TARR Annunciator startup completed

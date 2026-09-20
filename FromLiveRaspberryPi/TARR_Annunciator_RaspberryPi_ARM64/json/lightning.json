@@ -1,0 +1,57 @@
+{
+    "lightning_announcements": [
+	
+        {
+            "id": "THOR_RedAlert",
+            "name": "THOR Red Alert",
+            "description": "THOR system red alert - highest lightning danger",
+            "category": "system_alert",
+            "audio_file": "thor_red_alert.mp3",
+            "tts_text": "THOR RED ALERT: Extreme lightning danger detected. All personnel must take immediate shelter. Suspend all outdoor activities immediately.",
+            "priority": 10,
+            "enabled": true
+        },
+        {
+            "id": "THOR_Warning",
+            "name": "THOR Warning",
+            "description": "THOR system warning - elevated lightning risk",
+            "category": "system_alert",
+            "audio_file": "thor_warning.mp3",
+            "tts_text": "THOR Warning: Lightning activity detected by monitoring system. Exercise caution and be prepared to seek shelter.",
+            "priority": 8,
+            "enabled": true
+        },
+        {
+            "id": "THOR_AllClear",
+            "name": "THOR All Clear",
+            "description": "THOR system all clear - lightning threat reduced",
+            "category": "system_alert",
+            "audio_file": "thor_all_clear.mp3",
+            "tts_text": "THOR All Clear: Lightning threat has diminished. Normal operations may resume with continued monitoring.",
+            "priority": 9,
+            "enabled": true
+        },
+        {
+            "id": "THOR_Unknown",
+            "name": "THOR Unknown Status",
+            "description": "THOR system unknown status - system connectivity issue",
+            "category": "system_alert",
+            "audio_file": "thor_unknown.mp3",
+            "tts_text": "THOR System Alert: Lightning monitoring system status unknown. Exercise extreme caution until system connectivity is restored.",
+            "priority": 7,
+            "enabled": true
+        }
+        
+    ],
+    "metadata": {
+        "version": "1.1",
+        "last_updated": "2025-09-01T16:40:00Z",
+        "total_announcements": 20,
+        "categories": ["detection", "proximity", "warning", "all_clear", "emergency", "escalation", "safety", "incident", "system_alert"],
+        "safety_notes": [
+            "Lightning can strike up to 10 miles away from a thunderstorm",
+            "The 30-30 rule: Seek shelter when thunder follows lightning by 30 seconds or less, stay sheltered for 30 minutes after last thunder",
+            "Avoid elevated areas, metal objects, and electronic equipment during lightning activity"
+        ]
+    }
+}

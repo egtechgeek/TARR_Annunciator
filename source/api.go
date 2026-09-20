@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,22 +11,29 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func apiQueueHTTPStatus(err error) int {
+	if errors.Is(err, ErrRedAlertSuppressed) {
+		return http.StatusConflict
+	}
+	return http.StatusInternalServerError
+}
+
 // API Status Handler
 func apiStatusHandler(c *gin.Context) {
 	platformInfo := getPlatformInfo()
 	devices := getAudioDevices()
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"status":               "online",
-		"audio_available":      app.AudioEnabled,
-		"audio_backend":        "beep",
-		"api_enabled":          app.Config.APIEnabled,
-		"scheduler_running":    true,
-		"volume":              int(app.Config.CurrentVolume * 100),
+		"status":                "online",
+		"audio_available":       app.AudioEnabled,
+		"audio_backend":         "beep",
+		"api_enabled":           app.Config.APIEnabled,
+		"scheduler_running":     true,
+		"volume":                int(app.Config.CurrentVolume * 100),
 		"selected_audio_device": app.Config.SelectedAudioDevice,
-		"available_devices":    len(devices),
-		"platform":            platformInfo,
-		"timestamp":           time.Now().Format(time.RFC3339),
+		"available_devices":     len(devices),
+		"platform":              platformInfo,
+		"timestamp":             time.Now().Format(time.RFC3339),
 	})
 }
 
@@ -37,7 +45,7 @@ func apiDocsHandler(c *gin.Context) {
 // Station Announcement API
 func apiStationAnnouncementHandler(c *gin.Context) {
 	var data map[string]interface{}
-	
+
 	// Handle both JSON and form data
 	if c.ContentType() == "application/json" {
 		if err := c.ShouldBindJSON(&data); err != nil {
@@ -72,7 +80,7 @@ func apiStationAnnouncementHandler(c *gin.Context) {
 	// Get priority from request or default to normal
 	priorityStr := c.DefaultPostForm("priority", "normal")
 	priority := ParsePriority(priorityStr)
-	
+
 	// Get scheduled time (default to immediate)
 	scheduledAt := time.Now()
 	if delayStr := c.PostForm("delay"); delayStr != "" {
@@ -88,12 +96,13 @@ func apiStationAnnouncementHandler(c *gin.Context) {
 		"destination":  destination,
 		"track_number": trackNumber,
 	}
-	
+
 	announcement, err := announcementManager.QueueAnnouncement(TypeStation, priority, parameters, scheduledAt)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   fmt.Sprintf("Failed to queue announcement: %v", err),
+		c.JSON(apiQueueHTTPStatus(err), gin.H{
+			"success":          false,
+			"error":            fmt.Sprintf("Failed to queue announcement: %v", err),
+			"red_alert_active": isRedAlertActive(),
 		})
 		return
 	}
@@ -119,7 +128,7 @@ func apiStationAnnouncementHandler(c *gin.Context) {
 // Safety Announcement API
 func apiSafetyAnnouncementHandler(c *gin.Context) {
 	var data map[string]interface{}
-	
+
 	// Handle both JSON and form data
 	if c.ContentType() == "application/json" {
 		if err := c.ShouldBindJSON(&data); err != nil {
@@ -162,7 +171,7 @@ func apiSafetyAnnouncementHandler(c *gin.Context) {
 	// Get priority from request or default to high (safety is important)
 	priorityStr := c.DefaultPostForm("priority", "high")
 	priority := ParsePriority(priorityStr)
-	
+
 	// Get scheduled time (default to immediate)
 	scheduledAt := time.Now()
 	if delayStr := c.PostForm("delay"); delayStr != "" {
@@ -175,12 +184,13 @@ func apiSafetyAnnouncementHandler(c *gin.Context) {
 	parameters := map[string]interface{}{
 		"language": language.(string),
 	}
-	
+
 	announcement, err := announcementManager.QueueAnnouncement(TypeSafety, priority, parameters, scheduledAt)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   fmt.Sprintf("Failed to queue announcement: %v", err),
+		c.JSON(apiQueueHTTPStatus(err), gin.H{
+			"success":          false,
+			"error":            fmt.Sprintf("Failed to queue announcement: %v", err),
+			"red_alert_active": isRedAlertActive(),
 		})
 		return
 	}
@@ -203,7 +213,7 @@ func apiSafetyAnnouncementHandler(c *gin.Context) {
 // Promo Announcement API
 func apiPromoAnnouncementHandler(c *gin.Context) {
 	var data map[string]interface{}
-	
+
 	// Handle both JSON and form data
 	if c.ContentType() == "application/json" {
 		if err := c.ShouldBindJSON(&data); err != nil {
@@ -246,7 +256,7 @@ func apiPromoAnnouncementHandler(c *gin.Context) {
 	// Get priority from request or default to low (promos are typically low priority)
 	priorityStr := c.DefaultPostForm("priority", "low")
 	priority := ParsePriority(priorityStr)
-	
+
 	// Get scheduled time (default to immediate)
 	scheduledAt := time.Now()
 	if delayStr := c.PostForm("delay"); delayStr != "" {
@@ -259,12 +269,13 @@ func apiPromoAnnouncementHandler(c *gin.Context) {
 	parameters := map[string]interface{}{
 		"file": file.(string),
 	}
-	
+
 	announcement, err := announcementManager.QueueAnnouncement(TypePromo, priority, parameters, scheduledAt)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   fmt.Sprintf("Failed to queue announcement: %v", err),
+		c.JSON(apiQueueHTTPStatus(err), gin.H{
+			"success":          false,
+			"error":            fmt.Sprintf("Failed to queue announcement: %v", err),
+			"red_alert_active": isRedAlertActive(),
 		})
 		return
 	}
@@ -289,12 +300,13 @@ func apiGetVolumeHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"volume":         app.Config.CurrentVolume,
 		"volume_percent": int(app.Config.CurrentVolume * 100),
+		"system_mixer":   getSystemMixerStatus(),
 	})
 }
 
 func apiSetVolumeHandler(c *gin.Context) {
 	var data map[string]interface{}
-	
+
 	// Handle both JSON and form data
 	if c.ContentType() == "application/json" {
 		if err := c.ShouldBindJSON(&data); err != nil {
@@ -344,12 +356,13 @@ func apiSetVolumeHandler(c *gin.Context) {
 		volume = 1.0
 	}
 
-	app.Config.CurrentVolume = volume
+	status := applyVolumeChange(volume)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":        true,
 		"volume":         app.Config.CurrentVolume,
 		"volume_percent": int(app.Config.CurrentVolume * 100),
+		"system_mixer":   status,
 	})
 }
 
@@ -357,14 +370,14 @@ func apiSetVolumeHandler(c *gin.Context) {
 func apiGetAudioDevicesHandler(c *gin.Context) {
 	devices := getAudioDevices()
 	c.JSON(http.StatusOK, gin.H{
-		"devices": devices,
+		"devices":        devices,
 		"current_device": app.Config.SelectedAudioDevice,
 	})
 }
 
 func apiSetAudioDeviceHandler(c *gin.Context) {
 	var data map[string]interface{}
-	
+
 	// Handle both JSON and form data
 	if c.ContentType() == "application/json" {
 		if err := c.ShouldBindJSON(&data); err != nil {
@@ -412,10 +425,11 @@ func apiSetAudioDeviceHandler(c *gin.Context) {
 	}
 
 	app.Config.SelectedAudioDevice = deviceIDStr
+	applySystemMixerVolume(app.Config.CurrentVolume)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"device": selectedDevice,
+		"device":  selectedDevice,
 		"message": "Audio device set successfully",
 	})
 }
@@ -424,13 +438,13 @@ func apiSetAudioDeviceHandler(c *gin.Context) {
 func apiPlatformInfoHandler(c *gin.Context) {
 	platformInfo := getPlatformInfo()
 	devices := getAudioDevices()
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"platform_info":     platformInfo,
-		"audio_devices":     devices,
-		"current_device":    app.Config.SelectedAudioDevice,
-		"audio_backend":     "beep (faiface/beep)",
-		"cross_platform":    true,
+		"platform_info":  platformInfo,
+		"audio_devices":  devices,
+		"current_device": app.Config.SelectedAudioDevice,
+		"audio_backend":  "beep (faiface/beep)",
+		"cross_platform": true,
 	})
 }
 
@@ -445,13 +459,13 @@ func apiGetConfigHandler(c *gin.Context) {
 	emergencies := loadJSON("emergencies", []Emergency{}).([]Emergency)
 
 	c.JSON(http.StatusOK, gin.H{
-		"trains":               trains,
-		"directions":           directions,
-		"destinations":         destinations,
-		"tracks":               tracks,
-		"promo_announcements":  promoAnnouncements,
-		"safety_languages":     safetyLanguages,
-		"emergencies":          emergencies,
+		"trains":              trains,
+		"directions":          directions,
+		"destinations":        destinations,
+		"tracks":              tracks,
+		"promo_announcements": promoAnnouncements,
+		"safety_languages":    safetyLanguages,
+		"emergencies":         emergencies,
 	})
 }
 
@@ -463,7 +477,7 @@ func apiGetScheduleHandler(c *gin.Context) {
 
 func apiPostScheduleHandler(c *gin.Context) {
 	var data map[string]interface{}
-	
+
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
@@ -528,7 +542,6 @@ func apiGetQueueHistoryHandler(c *gin.Context) {
 	})
 }
 
-
 func apiCancelAnnouncementHandler(c *gin.Context) {
 	if announcementManager == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Announcement manager not initialized"})
@@ -536,7 +549,7 @@ func apiCancelAnnouncementHandler(c *gin.Context) {
 	}
 
 	var data map[string]interface{}
-	
+
 	// Handle both JSON and form data
 	if c.ContentType() == "application/json" {
 		if err := c.ShouldBindJSON(&data); err != nil {
@@ -578,7 +591,7 @@ func apiEmergencyAnnouncementHandler(c *gin.Context) {
 	}
 
 	var data map[string]interface{}
-	
+
 	// Handle both JSON and form data
 	if c.ContentType() == "application/json" {
 		if err := c.ShouldBindJSON(&data); err != nil {
@@ -624,7 +637,7 @@ func apiEmergencyAnnouncementHandler(c *gin.Context) {
 	parameters := map[string]interface{}{
 		"file": file.(string),
 	}
-	
+
 	announcement, err := announcementManager.QueueAnnouncement(TypeEmergency, PriorityEmergency, parameters, time.Now())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -638,14 +651,14 @@ func apiEmergencyAnnouncementHandler(c *gin.Context) {
 		"success": true,
 		"message": fmt.Sprintf("Emergency announcement '%s' queued with highest priority", selectedEmergency.Name),
 		"announcement": gin.H{
-			"id":          announcement.ID,
-			"type":        "emergency",
-			"priority":    "emergency",
-			"status":      string(announcement.Status),
-			"file":        file,
-			"name":        selectedEmergency.Name,
-			"description": selectedEmergency.Description,
-			"category":    selectedEmergency.Category,
+			"id":           announcement.ID,
+			"type":         "emergency",
+			"priority":     "emergency",
+			"status":       string(announcement.Status),
+			"file":         file,
+			"name":         selectedEmergency.Name,
+			"description":  selectedEmergency.Description,
+			"category":     selectedEmergency.Category,
 			"scheduled_at": announcement.ScheduledAt.Format(time.RFC3339),
 		},
 		"timestamp": time.Now().Format(time.RFC3339),
@@ -663,7 +676,7 @@ func apiPauseAnnouncementsHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"error": "Announcement manager not initialized",
+			"error":   "Announcement manager not initialized",
 		})
 	}
 }
@@ -678,7 +691,7 @@ func apiResumeAnnouncementsHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"error": "Announcement manager not initialized",
+			"error":   "Announcement manager not initialized",
 		})
 	}
 }
@@ -693,7 +706,7 @@ func apiStopCurrentAnnouncementHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"error": "Announcement manager not initialized",
+			"error":   "Announcement manager not initialized",
 		})
 	}
 }
@@ -703,27 +716,27 @@ func getTrackLayoutHandler(c *gin.Context) {
 	// Load current selections
 	selectedTrains := loadJSON("trains", []Train{}).([]Train)
 	selectedDestinations := loadJSON("destinations", []Destination{}).([]Destination)
-	
+
 	// Convert to the expected format
 	selectedTrainsList := make([]map[string]string, 0)
 	selectedDestinationsList := make([]map[string]string, 0)
-	
+
 	for _, train := range selectedTrains {
 		selectedTrainsList = append(selectedTrainsList, map[string]string{
-			"id": train.ID,
+			"id":   train.ID,
 			"name": train.Name,
 		})
 	}
-	
+
 	for _, destination := range selectedDestinations {
 		selectedDestinationsList = append(selectedDestinationsList, map[string]string{
-			"id": destination.ID,
+			"id":   destination.ID,
 			"name": destination.Name,
 		})
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"selected_trains": selectedTrainsList,
+		"selected_trains":       selectedTrainsList,
 		"selected_destinations": selectedDestinationsList,
 	})
 }
@@ -733,68 +746,68 @@ func postTrackLayoutHandler(c *gin.Context) {
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error": "Invalid JSON data",
+			"error":   "Invalid JSON data",
 		})
 		return
 	}
-	
+
 	// Extract selected trains and destinations
 	selectedTrainsData, ok1 := data["selected_trains"].([]interface{})
 	selectedDestinationsData, ok2 := data["selected_destinations"].([]interface{})
-	
+
 	if !ok1 || !ok2 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error": "Missing or invalid selected_trains or selected_destinations",
+			"error":   "Missing or invalid selected_trains or selected_destinations",
 		})
 		return
 	}
-	
+
 	// Convert to Train and Destination structs
 	var selectedTrains []Train
 	var selectedDestinations []Destination
-	
+
 	for _, trainData := range selectedTrainsData {
 		trainMap := trainData.(map[string]interface{})
 		selectedTrains = append(selectedTrains, Train{
-			ID: trainMap["id"].(string),
+			ID:   trainMap["id"].(string),
 			Name: trainMap["name"].(string),
 		})
 	}
-	
+
 	for _, destData := range selectedDestinationsData {
 		destMap := destData.(map[string]interface{})
 		selectedDestinations = append(selectedDestinations, Destination{
-			ID: destMap["id"].(string),
+			ID:   destMap["id"].(string),
 			Name: destMap["name"].(string),
 		})
 	}
-	
+
 	// Save to JSON files
 	trainsWrapper := struct {
 		Trains []Train `json:"trains"`
 	}{Trains: selectedTrains}
-	
+
 	destinationsWrapper := struct {
 		Destinations []Destination `json:"destinations"`
 	}{Destinations: selectedDestinations}
-	
+
 	if err := saveJSON("trains", trainsWrapper); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"error": "Failed to save trains configuration",
+			"error":   "Failed to save trains configuration",
 		})
 		return
 	}
-	
+
 	if err := saveJSON("destinations", destinationsWrapper); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"error": "Failed to save destinations configuration",
+			"error":   "Failed to save destinations configuration",
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Track layout configuration saved successfully",
@@ -809,7 +822,7 @@ func joinStrings(strs []string, sep string) string {
 	if len(strs) == 1 {
 		return strs[0]
 	}
-	
+
 	result := strs[0]
 	for i := 1; i < len(strs); i++ {
 		result += sep + strs[i]
