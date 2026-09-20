@@ -1,0 +1,1181 @@
+2026/09/19 20:23:34 === TARR Annunciator Started ===
+2026/09/19 20:23:34 Version: Go Application
+2026/09/19 20:23:34 Platform: linux/arm64
+2026/09/19 20:23:34 Log file: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/logs/tarr-annunciator_2026-09-19_20-23-34.log
+2026/09/19 20:23:34 Timestamp: 2026-09-19 20:23:34
+2026/09/19 20:23:34 =====================================
+2026/09/19 20:23:34 Starting log cleanup routine...
+2026/09/19 20:23:34 Log cleanup completed: 0 files deleted, total log size: 107.89 MB
+2026/09/19 20:23:34 ✓ Audio system initialized successfully
+2026/09/19 20:23:34 Announcement manager initialized with queuing system
+2026/09/19 20:23:34 ✓ Announcement queue system initialized
+2026/09/19 20:23:34 ✓ Loaded lightning configuration with 5 announcements
+2026/09/19 20:23:34 ✓ Lightning trigger system initialized and started
+2026/09/19 20:23:34   - Monitoring URL: https://broward.thormobile4.net/tp/FL0115.xml
+2026/09/19 20:23:34   - Fetch interval: 30 seconds
+2026/09/19 20:23:34 Lightning trigger 'Lightning Alert Monitor' started with 30 second interval
+2026/09/19 20:23:34 Updating scheduler...
+2026/09/19 20:23:34 Scheduled: */3 * * * * - [english spanish] (multi-language, 2s delay)
+2026/09/19 20:23:34 Scheduler updated with 1 active jobs.
+2026/09/19 20:23:34 Starting TARR Annunciator Go Server...
+2026/09/19 20:23:34 Audio system: Available
+2026/09/19 20:23:34 Access the application at: http://localhost:8080
+2026/09/19 20:23:34 Admin interface at: http://localhost:8080/admin
+2026/09/19 20:23:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:23:51 DEBUG: About to load emergencies JSON...
+2026/09/19 20:23:51 DEBUG: loadJSON returned, type assertion complete
+2026/09/19 20:23:51 Detected platform: raspberrypi
+2026/09/19 20:23:51 Using Pi-optimized audio detection
+2026/09/19 20:23:51 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:23:51 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:23:51 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:23:51 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:23:51 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/19 20:23:51 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/19 20:23:51 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/19 20:23:51 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/19 20:23:51 DEBUG: Emergency 4: All Clear (all_clear)
+2026/09/19 20:23:52 Loaded 0 paired Bluetooth devices
+2026/09/19 20:23:52 Detected platform: raspberrypi
+2026/09/19 20:23:52 Using Pi-optimized audio detection
+2026/09/19 20:23:52 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:23:52 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:23:52 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:23:52 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:24:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:24:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:24:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:24:00 Queued announcement: ID=ann_1789863840_2, Type=safety, Priority=3, Scheduled=2026-09-19T20:24:00-04:00
+2026/09/19 20:24:00 Multi-language safety announcement queued successfully: english (ID: ann_1789863840_2, sequence: 1/2)
+2026/09/19 20:24:00 Starting announcement: ID=ann_1789863840_2, Type=safety, Priority=3
+2026/09/19 20:24:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:24:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:24:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:24:02 Queued announcement: ID=ann_1789863842_3, Type=safety, Priority=3, Scheduled=2026-09-19T20:24:02-04:00
+2026/09/19 20:24:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789863842_3, sequence: 2/2)
+2026/09/19 20:24:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:24:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:24:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:24:34 Completed announcement: ID=ann_1789863840_2, Duration=34.786728012s
+2026/09/19 20:24:34 Starting announcement: ID=ann_1789863842_3, Type=safety, Priority=3
+2026/09/19 20:24:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:24:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:25:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:25:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:25:13 Completed announcement: ID=ann_1789863842_3, Duration=38.388007019s
+2026/09/19 20:25:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:26:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:26:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:27:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:27:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:27:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:27:00 Queued announcement: ID=ann_1789864020_4, Type=safety, Priority=3, Scheduled=2026-09-19T20:27:00-04:00
+2026/09/19 20:27:00 Multi-language safety announcement queued successfully: english (ID: ann_1789864020_4, sequence: 1/2)
+2026/09/19 20:27:00 Starting announcement: ID=ann_1789864020_4, Type=safety, Priority=3
+2026/09/19 20:27:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:27:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:27:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:27:02 Queued announcement: ID=ann_1789864022_5, Type=safety, Priority=3, Scheduled=2026-09-19T20:27:02-04:00
+2026/09/19 20:27:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789864022_5, sequence: 2/2)
+2026/09/19 20:27:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:27:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:27:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:27:34 Completed announcement: ID=ann_1789864020_4, Duration=34.803575616s
+2026/09/19 20:27:34 Starting announcement: ID=ann_1789864022_5, Type=safety, Priority=3
+2026/09/19 20:27:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:27:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:28:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:28:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:28:13 Completed announcement: ID=ann_1789864022_5, Duration=38.388453396s
+2026/09/19 20:28:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:29:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:29:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:30:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:30:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:30:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:30:00 Queued announcement: ID=ann_1789864200_6, Type=safety, Priority=3, Scheduled=2026-09-19T20:30:00-04:00
+2026/09/19 20:30:00 Multi-language safety announcement queued successfully: english (ID: ann_1789864200_6, sequence: 1/2)
+2026/09/19 20:30:00 Starting announcement: ID=ann_1789864200_6, Type=safety, Priority=3
+2026/09/19 20:30:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:30:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:30:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:30:02 Queued announcement: ID=ann_1789864202_7, Type=safety, Priority=3, Scheduled=2026-09-19T20:30:02-04:00
+2026/09/19 20:30:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789864202_7, sequence: 2/2)
+2026/09/19 20:30:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:30:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:30:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:30:34 Completed announcement: ID=ann_1789864200_6, Duration=34.773868474s
+2026/09/19 20:30:34 Starting announcement: ID=ann_1789864202_7, Type=safety, Priority=3
+2026/09/19 20:30:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:30:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:31:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:31:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:31:13 Completed announcement: ID=ann_1789864202_7, Duration=38.367590207s
+2026/09/19 20:31:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:32:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:32:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:33:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:33:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:33:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:33:00 Queued announcement: ID=ann_1789864380_8, Type=safety, Priority=3, Scheduled=2026-09-19T20:33:00-04:00
+2026/09/19 20:33:00 Multi-language safety announcement queued successfully: english (ID: ann_1789864380_8, sequence: 1/2)
+2026/09/19 20:33:00 Starting announcement: ID=ann_1789864380_8, Type=safety, Priority=3
+2026/09/19 20:33:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:33:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:33:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:33:02 Queued announcement: ID=ann_1789864382_9, Type=safety, Priority=3, Scheduled=2026-09-19T20:33:02-04:00
+2026/09/19 20:33:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789864382_9, sequence: 2/2)
+2026/09/19 20:33:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:33:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:33:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:33:34 Completed announcement: ID=ann_1789864380_8, Duration=34.7859982s
+2026/09/19 20:33:34 Starting announcement: ID=ann_1789864382_9, Type=safety, Priority=3
+2026/09/19 20:33:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:33:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:33:47 DEBUG: About to load emergencies JSON...
+2026/09/19 20:33:47 DEBUG: loadJSON returned, type assertion complete
+2026/09/19 20:33:47 Detected platform: raspberrypi
+2026/09/19 20:33:47 Using Pi-optimized audio detection
+2026/09/19 20:33:47 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:33:47 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:33:47 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:33:47 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:33:47 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/19 20:33:47 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/19 20:33:47 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/19 20:33:47 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/19 20:33:47 DEBUG: Emergency 4: All Clear (all_clear)
+2026/09/19 20:33:48 Loaded 0 paired Bluetooth devices
+2026/09/19 20:33:48 Detected platform: raspberrypi
+2026/09/19 20:33:48 Using Pi-optimized audio detection
+2026/09/19 20:33:48 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:33:48 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:33:48 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:33:48 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:33:54 DEBUG: About to load emergencies JSON...
+2026/09/19 20:33:54 DEBUG: loadJSON returned, type assertion complete
+2026/09/19 20:33:54 Detected platform: raspberrypi
+2026/09/19 20:33:54 Using Pi-optimized audio detection
+2026/09/19 20:33:54 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:33:54 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:33:54 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:33:54 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:33:54 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/19 20:33:54 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/19 20:33:54 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/19 20:33:54 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/19 20:33:54 DEBUG: Emergency 4: All Clear (all_clear)
+2026/09/19 20:33:55 Loaded 0 paired Bluetooth devices
+2026/09/19 20:33:55 Detected platform: raspberrypi
+2026/09/19 20:33:55 Using Pi-optimized audio detection
+2026/09/19 20:33:55 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:33:55 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:33:55 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:33:55 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:34:04 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:34:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:34:13 Completed announcement: ID=ann_1789864382_9, Duration=38.383404118s
+2026/09/19 20:34:34 Lightning trigger fetch error: Get "https://broward.thormobile4.net/tp/FL0115.xml": dial tcp 184.168.22.44:443: connect: no route to host
+2026/09/19 20:34:39 Lightning trigger 'Lightning Alert Monitor' stopped
+2026/09/19 20:34:39 Lightning trigger configuration updated - URL: https://broward.thormobile4.net/tp/FL0115.xml, Interval: 60s
+2026/09/19 20:34:39 Lightning trigger 'Lightning Alert Monitor' started with 60 second interval
+2026/09/19 20:34:40 Lightning XML saved to: xml/FL0115.xml (2692 bytes)
+2026/09/19 20:34:40 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360041FL01153C.</rawstring>
+    <localtime>01:33:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>1</chiprevision>
+    <revisionfield>41</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:34:40 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:34:40 Lightning alert status: AllClear
+2026/09/19 20:34:40 Lightning condition changed from 'Reset' to 'AllClear'
+2026/09/19 20:34:40 AllClear condition ignored - previous condition was 'Reset' (not RedAlert or Warning)
+2026/09/19 20:35:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:35:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160074FL011550.</rawstring>
+    <localtime>01:34:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>4</chiprevision>
+    <revisionfield>74</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:35:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:35:39 Lightning alert status: Unknown
+2026/09/19 20:35:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:35:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:36:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:36:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:36:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:36:00 Queued announcement: ID=ann_1789864560_10, Type=safety, Priority=3, Scheduled=2026-09-19T20:36:00-04:00
+2026/09/19 20:36:00 Multi-language safety announcement queued successfully: english (ID: ann_1789864560_10, sequence: 1/2)
+2026/09/19 20:36:00 Starting announcement: ID=ann_1789864560_10, Type=safety, Priority=3
+2026/09/19 20:36:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:36:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:36:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:36:02 Queued announcement: ID=ann_1789864562_11, Type=safety, Priority=3, Scheduled=2026-09-19T20:36:02-04:00
+2026/09/19 20:36:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789864562_11, sequence: 2/2)
+2026/09/19 20:36:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:36:34 Completed announcement: ID=ann_1789864560_10, Duration=34.789749378s
+2026/09/19 20:36:34 Starting announcement: ID=ann_1789864562_11, Type=safety, Priority=3
+2026/09/19 20:36:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:36:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:36:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:36:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160041FL01154A.</rawstring>
+    <localtime>01:35:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>1</chiprevision>
+    <revisionfield>41</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:36:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:36:39 Lightning alert status: Unknown
+2026/09/19 20:36:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:36:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:37:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:37:13 Completed announcement: ID=ann_1789864562_11, Duration=38.393900491s
+2026/09/19 20:37:39 Lightning XML saved to: xml/FL0115.xml (2672 bytes)
+2026/09/19 20:37:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E01000710000030B16002EFL01155C.</rawstring>
+    <localtime>01:36:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>E</chiprevision>
+    <revisionfield>2E</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:37:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:37:39 Lightning alert status: Unknown
+2026/09/19 20:37:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:37:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:38:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:38:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E01000710000030B160060FL01154B.</rawstring>
+    <localtime>01:37:30 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>60</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:38:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:38:39 Lightning alert status: Unknown
+2026/09/19 20:38:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:38:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:39:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:39:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:39:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:39:00 Queued announcement: ID=ann_1789864740_12, Type=safety, Priority=3, Scheduled=2026-09-19T20:39:00-04:00
+2026/09/19 20:39:00 Multi-language safety announcement queued successfully: english (ID: ann_1789864740_12, sequence: 1/2)
+2026/09/19 20:39:00 Starting announcement: ID=ann_1789864740_12, Type=safety, Priority=3
+2026/09/19 20:39:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:39:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:39:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:39:02 Queued announcement: ID=ann_1789864742_13, Type=safety, Priority=3, Scheduled=2026-09-19T20:39:02-04:00
+2026/09/19 20:39:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789864742_13, sequence: 2/2)
+2026/09/19 20:39:18 DEBUG: About to load emergencies JSON...
+2026/09/19 20:39:18 DEBUG: loadJSON returned, type assertion complete
+2026/09/19 20:39:18 Detected platform: raspberrypi
+2026/09/19 20:39:18 Using Pi-optimized audio detection
+2026/09/19 20:39:18 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:39:18 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:39:18 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:39:18 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:39:18 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/19 20:39:18 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/19 20:39:18 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/19 20:39:18 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/19 20:39:18 DEBUG: Emergency 4: All Clear (all_clear)
+2026/09/19 20:39:19 Detected platform: raspberrypi
+2026/09/19 20:39:19 Using Pi-optimized audio detection
+2026/09/19 20:39:19 Loaded 0 paired Bluetooth devices
+2026/09/19 20:39:19 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:39:19 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:39:19 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:39:19 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:39:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:39:34 Completed announcement: ID=ann_1789864740_12, Duration=34.800774219s
+2026/09/19 20:39:34 Starting announcement: ID=ann_1789864742_13, Type=safety, Priority=3
+2026/09/19 20:39:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:39:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:39:38 DEBUG: About to load emergencies JSON...
+2026/09/19 20:39:38 DEBUG: loadJSON returned, type assertion complete
+2026/09/19 20:39:38 Detected platform: raspberrypi
+2026/09/19 20:39:38 Using Pi-optimized audio detection
+2026/09/19 20:39:38 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:39:38 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:39:38 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:39:38 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:39:38 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/19 20:39:38 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/19 20:39:38 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/19 20:39:38 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/19 20:39:38 DEBUG: Emergency 4: All Clear (all_clear)
+2026/09/19 20:39:39 Loaded 0 paired Bluetooth devices
+2026/09/19 20:39:39 Detected platform: raspberrypi
+2026/09/19 20:39:39 Using Pi-optimized audio detection
+2026/09/19 20:39:39 No devices found with native PipeWire, trying PulseAudio compatibility
+2026/09/19 20:39:39 PipeWire processes detected, using PulseAudio compatibility layer
+2026/09/19 20:39:39 PulseAudio compatibility layer output: 69	alsa_output.platform-fe00b840.mailbox.stereo-fallback	PipeWire	s16le 2ch 48000Hz	RUNNING
+2026/09/19 20:39:39 Found 1 PipeWire devices on Pi platform
+2026/09/19 20:39:39 Lightning XML saved to: xml/FL0115.xml (2688 bytes)
+2026/09/19 20:39:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000720000030136002EFL01154E.</rawstring>
+    <localtime>01:38:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>E</chiprevision>
+    <revisionfield>2E</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:39:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:39:39 Lightning alert status: AllClear
+2026/09/19 20:40:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:40:13 Completed announcement: ID=ann_1789864742_13, Duration=38.384564954s
+2026/09/19 20:40:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:40:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160050FL01154A.</rawstring>
+    <localtime>01:39:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>50</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:40:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:40:39 Lightning alert status: Unknown
+2026/09/19 20:40:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:40:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:41:39 Lightning XML saved to: xml/FL0115.xml (2672 bytes)
+2026/09/19 20:41:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B16002EFL01155C.</rawstring>
+    <localtime>01:40:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>E</chiprevision>
+    <revisionfield>2E</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:41:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:41:39 Lightning alert status: Unknown
+2026/09/19 20:41:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:41:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:42:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:42:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:42:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:42:00 Queued announcement: ID=ann_1789864920_14, Type=safety, Priority=3, Scheduled=2026-09-19T20:42:00-04:00
+2026/09/19 20:42:00 Multi-language safety announcement queued successfully: english (ID: ann_1789864920_14, sequence: 1/2)
+2026/09/19 20:42:00 Starting announcement: ID=ann_1789864920_14, Type=safety, Priority=3
+2026/09/19 20:42:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:42:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:42:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:42:02 Queued announcement: ID=ann_1789864922_15, Type=safety, Priority=3, Scheduled=2026-09-19T20:42:02-04:00
+2026/09/19 20:42:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789864922_15, sequence: 2/2)
+2026/09/19 20:42:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:42:34 Completed announcement: ID=ann_1789864920_14, Duration=34.771580842s
+2026/09/19 20:42:34 Starting announcement: ID=ann_1789864922_15, Type=safety, Priority=3
+2026/09/19 20:42:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:42:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:42:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:42:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160060FL01154B.</rawstring>
+    <localtime>01:41:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>60</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:42:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:42:39 Lightning alert status: Unknown
+2026/09/19 20:42:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:42:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:43:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:43:13 Completed announcement: ID=ann_1789864922_15, Duration=38.370523688s
+2026/09/19 20:43:39 Lightning XML saved to: xml/FL0115.xml (2688 bytes)
+2026/09/19 20:43:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000720000030136002EFL01154E.</rawstring>
+    <localtime>01:42:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>E</chiprevision>
+    <revisionfield>2E</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:43:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:43:39 Lightning alert status: AllClear
+2026/09/19 20:44:39 Lightning XML saved to: xml/FL0115.xml (2692 bytes)
+2026/09/19 20:44:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E010007200000301360074FL011542.</rawstring>
+    <localtime>01:43:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>4</chiprevision>
+    <revisionfield>74</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:44:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:44:39 Lightning alert status: AllClear
+2026/09/19 20:45:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:45:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:45:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:45:00 Queued announcement: ID=ann_1789865100_16, Type=safety, Priority=3, Scheduled=2026-09-19T20:45:00-04:00
+2026/09/19 20:45:00 Multi-language safety announcement queued successfully: english (ID: ann_1789865100_16, sequence: 1/2)
+2026/09/19 20:45:00 Starting announcement: ID=ann_1789865100_16, Type=safety, Priority=3
+2026/09/19 20:45:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:45:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:45:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:45:02 Queued announcement: ID=ann_1789865102_17, Type=safety, Priority=3, Scheduled=2026-09-19T20:45:02-04:00
+2026/09/19 20:45:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789865102_17, sequence: 2/2)
+2026/09/19 20:45:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:45:34 Completed announcement: ID=ann_1789865100_16, Duration=34.781761429s
+2026/09/19 20:45:34 Starting announcement: ID=ann_1789865102_17, Type=safety, Priority=3
+2026/09/19 20:45:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:45:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:45:39 Lightning XML saved to: xml/FL0115.xml (2692 bytes)
+2026/09/19 20:45:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360041FL01153C.</rawstring>
+    <localtime>01:44:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>1</chiprevision>
+    <revisionfield>41</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:45:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:45:39 Lightning alert status: AllClear
+2026/09/19 20:46:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:46:13 Completed announcement: ID=ann_1789865102_17, Duration=38.377285631s
+2026/09/19 20:46:39 Lightning XML saved to: xml/FL0115.xml (2686 bytes)
+2026/09/19 20:46:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E01000720000030136001SFL01155B.</rawstring>
+    <localtime>01:45:30 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>S</chiprevision>
+    <revisionfield>1S</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:46:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:46:39 Lightning alert status: AllClear
+2026/09/19 20:47:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:47:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E01000710000030B160041FL01154A.</rawstring>
+    <localtime>01:46:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>1</chiprevision>
+    <revisionfield>41</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:47:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:47:39 Lightning alert status: Unknown
+2026/09/19 20:47:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:47:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:48:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:48:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:48:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:48:00 Queued announcement: ID=ann_1789865280_18, Type=safety, Priority=3, Scheduled=2026-09-19T20:48:00-04:00
+2026/09/19 20:48:00 Multi-language safety announcement queued successfully: english (ID: ann_1789865280_18, sequence: 1/2)
+2026/09/19 20:48:00 Starting announcement: ID=ann_1789865280_18, Type=safety, Priority=3
+2026/09/19 20:48:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:48:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:48:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:48:02 Queued announcement: ID=ann_1789865282_19, Type=safety, Priority=3, Scheduled=2026-09-19T20:48:02-04:00
+2026/09/19 20:48:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789865282_19, sequence: 2/2)
+2026/09/19 20:48:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:48:34 Completed announcement: ID=ann_1789865280_18, Duration=34.790887469s
+2026/09/19 20:48:34 Starting announcement: ID=ann_1789865282_19, Type=safety, Priority=3
+2026/09/19 20:48:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:48:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:48:39 Lightning XML saved to: xml/FL0115.xml (2670 bytes)
+2026/09/19 20:48:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2001E01000710000030B16001SFL011569.</rawstring>
+    <localtime>01:47:30 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>S</chiprevision>
+    <revisionfield>1S</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:48:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:48:39 Lightning alert status: Unknown
+2026/09/19 20:48:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:48:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:49:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:49:13 Completed announcement: ID=ann_1789865282_19, Duration=38.388901976s
+2026/09/19 20:49:39 Lightning XML saved to: xml/FL0115.xml (2692 bytes)
+2026/09/19 20:49:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360041FL01153C.</rawstring>
+    <localtime>01:48:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>1</chiprevision>
+    <revisionfield>41</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:49:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:49:39 Lightning alert status: AllClear
+2026/09/19 20:50:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:50:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160074FL011550.</rawstring>
+    <localtime>01:49:28 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>4</chiprevision>
+    <revisionfield>74</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:50:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:50:39 Lightning alert status: Unknown
+2026/09/19 20:50:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:50:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:51:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:51:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:51:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:51:00 Queued announcement: ID=ann_1789865460_20, Type=safety, Priority=3, Scheduled=2026-09-19T20:51:00-04:00
+2026/09/19 20:51:00 Multi-language safety announcement queued successfully: english (ID: ann_1789865460_20, sequence: 1/2)
+2026/09/19 20:51:00 Starting announcement: ID=ann_1789865460_20, Type=safety, Priority=3
+2026/09/19 20:51:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:51:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:51:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:51:02 Queued announcement: ID=ann_1789865462_21, Type=safety, Priority=3, Scheduled=2026-09-19T20:51:02-04:00
+2026/09/19 20:51:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789865462_21, sequence: 2/2)
+2026/09/19 20:51:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:51:34 Completed announcement: ID=ann_1789865460_20, Duration=34.798769709s
+2026/09/19 20:51:34 Starting announcement: ID=ann_1789865462_21, Type=safety, Priority=3
+2026/09/19 20:51:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:51:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:51:39 Lightning XML saved to: xml/FL0115.xml (2692 bytes)
+2026/09/19 20:51:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360060FL01153D.</rawstring>
+    <localtime>01:50:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>60</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:51:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:51:39 Lightning alert status: AllClear
+2026/09/19 20:52:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:52:13 Completed announcement: ID=ann_1789865462_21, Duration=38.398312527s
+2026/09/19 20:52:39 Lightning XML saved to: xml/FL0115.xml (2692 bytes)
+2026/09/19 20:52:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360032FL01153C.</rawstring>
+    <localtime>01:51:30 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>2</chiprevision>
+    <revisionfield>32</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:52:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:52:39 Lightning alert status: AllClear
+2026/09/19 20:53:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:53:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160060FL01154B.</rawstring>
+    <localtime>01:52:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>60</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:53:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:53:39 Lightning alert status: Unknown
+2026/09/19 20:53:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:53:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
+2026/09/19 20:54:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:54:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:54:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:54:00 Queued announcement: ID=ann_1789865640_22, Type=safety, Priority=3, Scheduled=2026-09-19T20:54:00-04:00
+2026/09/19 20:54:00 Multi-language safety announcement queued successfully: english (ID: ann_1789865640_22, sequence: 1/2)
+2026/09/19 20:54:00 Starting announcement: ID=ann_1789865640_22, Type=safety, Priority=3
+2026/09/19 20:54:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:54:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:54:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:54:02 Queued announcement: ID=ann_1789865642_23, Type=safety, Priority=3, Scheduled=2026-09-19T20:54:02-04:00
+2026/09/19 20:54:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789865642_23, sequence: 2/2)
+2026/09/19 20:54:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:54:34 Completed announcement: ID=ann_1789865640_22, Duration=34.764694276s
+2026/09/19 20:54:34 Starting announcement: ID=ann_1789865642_23, Type=safety, Priority=3
+2026/09/19 20:54:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:54:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:54:39 Lightning XML saved to: xml/FL0115.xml (2688 bytes)
+2026/09/19 20:54:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000720000030136002EFL01154E.</rawstring>
+    <localtime>01:53:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>E</chiprevision>
+    <revisionfield>2E</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:54:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:54:39 Lightning alert status: AllClear
+2026/09/19 20:55:13 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:55:13 Completed announcement: ID=ann_1789865642_23, Duration=38.36272753s
+2026/09/19 20:55:39 Lightning XML saved to: xml/FL0115.xml (2692 bytes)
+2026/09/19 20:55:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360060FL01153D.</rawstring>
+    <localtime>01:54:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>60</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:55:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:55:39 Lightning alert status: AllClear
+2026/09/19 20:56:39 Lightning XML saved to: xml/FL0115.xml (2692 bytes)
+2026/09/19 20:56:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F010007200000301360032FL01153C.</rawstring>
+    <localtime>01:55:30 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>NotPerformed</testresult>
+    <testcode>0</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>2</chiprevision>
+    <revisionfield>32</revisionfield>
+    <switch>Back</switch>
+    <switchvalue>3</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>AllClear</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energy...
+2026/09/19 20:56:39 Lightning: Successfully extracted value: 'AllClear'
+2026/09/19 20:56:39 Lightning alert status: AllClear
+2026/09/19 20:57:00 🕐 Scheduled multi-language safety announcement triggered: [english spanish]
+2026/09/19 20:57:00 Queued 2 safety announcements in sequence with 2 second intervals
+2026/09/19 20:57:00 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:english]
+2026/09/19 20:57:00 Queued announcement: ID=ann_1789865820_24, Type=safety, Priority=3, Scheduled=2026-09-19T20:57:00-04:00
+2026/09/19 20:57:00 Multi-language safety announcement queued successfully: english (ID: ann_1789865820_24, sequence: 1/2)
+2026/09/19 20:57:00 Starting announcement: ID=ann_1789865820_24, Type=safety, Priority=3
+2026/09/19 20:57:00 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:57:00 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_english.mp3 (Volume: 70%)
+2026/09/19 20:57:02 DEBUG buildAudioSequence: Type=safety, Parameters=map[language:spanish]
+2026/09/19 20:57:02 Queued announcement: ID=ann_1789865822_25, Type=safety, Priority=3, Scheduled=2026-09-19T20:57:02-04:00
+2026/09/19 20:57:02 Multi-language safety announcement queued successfully: spanish (ID: ann_1789865822_25, sequence: 2/2)
+2026/09/19 20:57:34 🔓 Audio mutex unlocked - announcement playback complete
+2026/09/19 20:57:34 Completed announcement: ID=ann_1789865820_24, Duration=34.767610312s
+2026/09/19 20:57:34 Starting announcement: ID=ann_1789865822_25, Type=safety, Priority=3
+2026/09/19 20:57:34 🔒 Audio mutex locked - starting announcement playback
+2026/09/19 20:57:34 Playing audio: /home/pi/TARR_Annunciator_RaspberryPi_ARM64/static/mp3/safety/safety_spanish.mp3 (Volume: 70%)
+2026/09/19 20:57:39 Lightning XML saved to: xml/FL0115.xml (2676 bytes)
+2026/09/19 20:57:39 Lightning XML preview (converted): <?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<loadmovie>
+  <moviename>ThorNet</moviename>
+  <thordata>
+    <displayname>Tradewinds Park</displayname>
+    <rawstring>;2000F01000710000030B160060FL01154B.</rawstring>
+    <localtime>01:56:29 AM 09/20/2026</localtime>
+    <emergencystate>None</emergencystate>
+    <sirenstate>NotAvailable</sirenstate>
+    <testresult>Pass</testresult>
+    <testcode>B</testcode>
+    <testfailcount>0</testfailcount>
+    <unitname>L75</unitname>
+    <unitcode>7</unitcode>
+    <range>15</range>
+    <stringrevision>2</stringrevision>
+    <chiprevision>0</chiprevision>
+    <revisionfield>60</revisionfield>
+    <switch>Front</switch>
+    <switchvalue>1</switchvalue>
+    <isatminingsite>False</isatminingsite>
+    <isoldunit>False</isoldunit>
+    <uniqueid>FL0115</uniqueid>
+    <lightningalert>Unknown</lightningalert>
+    <ad>0</ad>
+    <di>0.0</di>
+    <lhl>0</lhl>
+    <fcc>3</fcc>
+    <fccrate>0</fccrate>
+    <energypolarity...
+2026/09/19 20:57:39 Lightning: Successfully extracted value: 'Unknown'
+2026/09/19 20:57:39 Lightning alert status: Unknown
+2026/09/19 20:57:39 Lightning condition changed from 'AllClear' to 'Unknown'
+2026/09/19 20:57:39 Lightning status 'Unknown' - treating as XML error, ignoring condition change
