@@ -1,285 +1,123 @@
-# TARR Annunciator Legacy Version
+# TARR Annunciator
 
--Designed to be run on a Raspberry Pi 4b	<br>
--ALWAYS review through shell scripts before running them!	<br>
--You will encounter errors if you attempt to run install.sh more than once	<br>
--Update.sh will poll the repository for updated files, and copy them into the install directory.	<br>
+Train announcement system for **Raspberry Pi** (64-bit / `linux/arm64`). Built in Go with a web Admin UI, ALSA/PipeWire audio, Screen-based auto-start, and in-app updates from GitHub Releases.
 
-## Prerequisites 
+**Target hardware:** Raspberry Pi 4 (or similar) running 64-bit Raspberry Pi OS.
 
--Pi audio output set to 3.5mm	<br>
--Pi advanced audio set to pulseaudio
-<br>
+---
 
-# TARR Annunciator Enhanced Versions (win64 & deb-arm)
+## One-click install
 
-# TARR Annunciator - Cross-Platform Go Version
-
-A cross-platform train announcement system built with Go, supporting Windows, Linux, and macOS.
-
-## 🌍 Platform Support
-
-### ✅ Windows
-- **Audio Backend**: faiface/beep with native Windows speaker support
-- **Device Detection**: AudioDeviceCmdlets PowerShell module (with WMI fallback)
-- **Device Switching**: Full support via AudioDeviceCmdlets
-- **Requirements**: Windows 7+ (PowerShell recommended)
-
-### ✅ Linux
-- **Audio Backend**: faiface/beep with ALSA/PulseAudio support
-- **Device Detection**: PulseAudio (`pactl`) and ALSA (`aplay`) support
-- **Device Switching**: PulseAudio full support, ALSA manual configuration
-- **Requirements**: PulseAudio or ALSA
-
-### ⚠️ macOS (Basic Support)
-- **Audio Backend**: faiface/beep with Core Audio
-- **Device Detection**: Basic system detection
-- **Device Switching**: Not yet implemented
-- **Requirements**: macOS 10.12+
-
-## 🚀 Quick Start
-
-### Build for Current Platform
-```bash
-# Using make (recommended)
-make build
-
-# Or using go directly
-go build -o tarr-annunciator .
-```
-
-### Cross-Platform Builds
-```bash
-# Build for all platforms
-make build-all
-
-# Or specific platforms
-make build-windows    # Creates dist/windows/tarr-annunciator.exe
-make build-linux      # Creates dist/linux/tarr-annunciator  
-make build-darwin     # Creates dist/darwin/tarr-annunciator
-```
-
-### Platform-Specific Scripts
-
-#### Windows
-```cmd
-REM Build
-build_windows.bat
-
-REM Run
-run_windows_go.bat
-```
-
-#### Linux
-```bash
-# Build
-chmod +x build_linux.sh
-./build_linux.sh
-
-# Run
-chmod +x run_linux.sh
-./run_linux.sh
-```
-
-## 📱 Features
-
-### 🔊 Cross-Platform Audio
-- **Volume Control**: Real-time volume adjustment (0-100%)
-- **Device Selection**: Platform-appropriate audio device enumeration
-- **Audio Testing**: Built-in audio test functionality
-
-### 🌐 Web Interface
-- **Admin Panel**: `/admin` - Full configuration interface
-- **Main Interface**: `/` - Public announcement interface  
-- **API Documentation**: `/api/docs` - Complete API reference
-
-### 📡 REST API
-- **Cross-Platform Status**: `GET /api/platform` - Platform and audio system info
-- **Device Management**: `GET/POST /api/audio/devices` - List and set audio devices
-- **Volume Control**: `GET/POST /api/audio/volume` - Get and set volume
-- **Announcements**: Station, safety, and promo announcement triggers
-
-## 🔧 Platform-Specific Setup
-
-### Windows Setup
-
-1. **Optional**: Install AudioDeviceCmdlets for advanced audio device control:
-   ```powershell
-   Install-Module -Name AudioDeviceCmdlets -Force
-   ```
-
-2. **Build and run**:
-   ```cmd
-   build_windows.bat
-   run_windows_go.bat
-   ```
-
-### Linux Setup
-
-1. **Ensure audio system is available**:
-   ```bash
-   # For PulseAudio (recommended)
-   sudo apt install pulseaudio-utils  # Ubuntu/Debian
-   sudo yum install pulseaudio-utils   # RHEL/CentOS
-   
-   # For ALSA (fallback)  
-   sudo apt install alsa-utils         # Ubuntu/Debian
-   sudo yum install alsa-utils         # RHEL/CentOS
-   ```
-
-2. **Build and run**:
-   ```bash
-   chmod +x build_linux.sh run_linux.sh
-   ./build_linux.sh
-   ./run_linux.sh
-   ```
-
-### macOS Setup
-
-1. **Build and run**:
-   ```bash
-   make build
-   ./tarr-annunciator
-   ```
-
-## 🎛️ Audio System Details
-
-### Windows Audio
-- **Primary**: AudioDeviceCmdlets PowerShell module
-  - Full device enumeration and switching
-  - Requires: `Install-Module AudioDeviceCmdlets`
-- **Fallback**: WMI (Windows Management Instrumentation)
-  - Basic device detection
-  - No device switching capability
-
-### Linux Audio
-- **Primary**: PulseAudio
-  - Full device enumeration via `pactl list sinks`
-  - Device switching via `pactl set-default-sink`
-  - Automatic default device detection
-- **Fallback**: ALSA
-  - Device enumeration via `aplay -l`
-  - Manual configuration required for device switching
-  - Edit `~/.asoundrc` or `/etc/asound.conf`
-
-### macOS Audio
-- **Current**: Basic Core Audio support
-- **Planned**: Enhanced device enumeration and switching
-
-## 🌐 API Endpoints
-
-### Platform Information
-```bash
-# Get platform and audio system info
-curl http://localhost:8080/api/platform
-
-# Response includes:
-{
-  "platform_info": {
-    "platform": "linux",
-    "arch": "amd64", 
-    "pulse_available": true,
-    "alsa_available": true
-  },
-  "audio_devices": [...],
-  "current_device": "device_id",
-  "cross_platform": true
-}
-```
-
-### Audio Device Management
-```bash
-# List available audio devices
-curl http://localhost:8080/api/audio/devices \
-  -H "X-API-Key: #########"
-
-# Set audio device
-curl -X POST http://localhost:8080/api/audio/devices \
-  -H "X-API-Key: #########" \
-  -H "Content-Type: application/json" \
-  -d '{"device_id": "pulse_sink_name"}'
-```
-
-## 🛠️ Development
-
-### Project Structure
-```
-tarr-annunciator/
-├── main.go              # Main application entry
-├── audio_devices.go     # Cross-platform audio device management  
-├── audio.go             # Audio playback using faiface/beep
-├── api.go               # REST API handlers
-├── utils.go             # Utility functions
-├── Makefile             # Cross-platform build system
-├── build_windows.bat    # Windows build script
-├── build_linux.sh       # Linux build script
-├── run_linux.sh         # Linux run script
-└── templates/           # HTML templates
-    ├── admin.html       # Admin interface with platform info
-    ├── index.html       # Main interface
-    └── api_docs.html    # API documentation
-```
-
-### Adding Platform Support
-
-1. **Add platform detection** in `audio_devices.go`:
-   ```go
-   case "your_platform":
-       return getYourPlatformAudioDevices()
-   ```
-
-2. **Implement device functions**:
-   ```go
-   func getYourPlatformAudioDevices() []AudioDevice { ... }
-   func setYourPlatformAudioDevice(deviceID string) error { ... }
-   ```
-
-3. **Update platform info** in `getPlatformInfo()`:
-   ```go
-   case "your_platform":
-       // Add platform-specific capability detection
-   ```
-
-## 🐛 Troubleshooting
-
-### Windows Issues
-- **AudioDeviceCmdlets not found**: Install with `Install-Module AudioDeviceCmdlets`
-- **PowerShell execution policy**: Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-
-### Linux Issues  
-- **No audio devices found**: Install `pulseaudio-utils` or `alsa-utils`
-- **PulseAudio not running**: Start with `pulseaudio --start`
-- **Permission issues**: Add user to `audio` group: `sudo usermod -a -G audio $USER`
-
-### Cross-Platform Issues
-- **Build failures**: Ensure Go 1.21+ is installed
-- **Audio not working**: Check platform-specific audio system is running
-- **Device switching not working**: See platform-specific requirements above
-
-## 📋 System Requirements
-
-- **Go**: 1.21 or higher
-- **Memory**: 50MB RAM
-- **Disk**: 20MB for executable + audio files
-- **Network**: Port 8080 (configurable)
-
-## 🔗 Useful Commands
+On the Pi, as user `pi` (**not root**):
 
 ```bash
-# Development
-make deps          # Download dependencies
-make fmt           # Format code  
-make vet           # Vet code
-make clean         # Clean build artifacts
-
-# Platform detection
-./tarr-annunciator --platform-info  # (if implemented)
-
-# Audio testing
-curl -X POST http://localhost:8080/audio/test \
-  -H "Cookie: session=admin_session"
+curl -fsSL https://github.com/egtechgeek/TARR_Annunciator/releases/download/one-click-installer/install_raspberry_pi.sh | bash
 ```
 
-## 📄 License
+If `curl` is unavailable:
 
-This project is part of the TARR (Train Announcement Railroad Radio) system and follows the same licensing terms as the main project.
+```bash
+wget -qO- https://github.com/egtechgeek/TARR_Annunciator/releases/download/one-click-installer/install_raspberry_pi.sh | bash
+```
+
+The installer will:
+
+1. Install system dependencies (ALSA, Screen, optional PipeWire/Bluetooth)
+2. Download the latest thin Pi package from GitHub Releases
+3. Install into `~/TARR_Annunciator_RaspberryPi_ARM64`
+4. Create Screen auto-start and helper scripts in `~`
+
+After install:
+
+| Action | Command |
+|--------|---------|
+| Start | `~/tarr-start.sh` |
+| Stop | `~/tarr-stop.sh` |
+| Restart | `~/tarr-restart.sh` |
+| Attach to session | `~/tarr-view.sh` or `screen -r tarr-annunciator` |
+
+**Web UI:** [http://localhost:8080](http://localhost:8080) · **Admin:** [http://localhost:8080/admin](http://localhost:8080/admin)
+
+> Review the installer script before piping to `bash` if your environment requires it. Private repos: set `GITHUB_TOKEN` before running.
+
+---
+
+## Features
+
+- Station, safety, promo, emergency, and lightning announcements
+- Priority announcement queue
+- Web Admin for trains, destinations, audio devices, volume, operating hours
+- ALSA volume / device persistence
+- Log rotation
+- In-app **Check for Updates** / install from GitHub Releases (after first deploy)
+
+---
+
+## Updates (after first install)
+
+1. Open **Admin → Updates**
+2. **Check for Updates**
+3. **Download and Install** when a newer release is available
+
+The updater downloads a slim tarball, verifies the binary checksum, applies additive JSON migrations (does not overwrite operator settings), swaps `tarr-annunciator`, and restarts the Screen session.
+
+Install path stays `~/TARR_Annunciator_RaspberryPi_ARM64` so start/stop scripts keep working.
+
+---
+
+## Requirements
+
+- Raspberry Pi OS **64-bit** (`aarch64`)
+- Network access to GitHub Releases (for install and updates)
+- Audio output configured (3.5mm, HDMI, or USB as preferred)
+- Port **8080** available for the web UI
+
+---
+
+## Manual helpers (installed by the one-click script)
+
+Scripts live in the home directory:
+
+```bash
+~/tarr-start.sh
+~/tarr-stop.sh
+~/tarr-restart.sh
+~/tarr-view.sh
+~/start_tarr_annunciator.sh   # used by auto-start / .bashrc
+```
+
+Application directory:
+
+```text
+~/TARR_Annunciator_RaspberryPi_ARM64/
+  tarr-annunciator
+  templates/
+  static/
+  json/
+  logs/
+```
+
+---
+
+## Packaging & releases (maintainers)
+
+How to build thin Pi packages, publish semver releases, and refresh the one-click installer asset:
+
+See [`docs/PI_RELEASE_PACKAGING.md`](docs/PI_RELEASE_PACKAGING.md).
+
+---
+
+## API
+
+With the app running:
+
+- Docs: [http://localhost:8080/api/docs](http://localhost:8080/api/docs)
+- Platform: `GET /api/platform`
+
+Authenticated Admin/API calls use the API key or session configured in Admin.
+
+---
+
+## License
+
+Part of the TARR (Train Announcement Railroad Radio) system.
