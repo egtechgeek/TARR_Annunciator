@@ -24,16 +24,16 @@ import (
 const (
 	githubOwner = "egtechgeek"
 	githubRepo  = "TARR_Annunciator"
-	updateUA    = "TARR-Annunciator-Updater/1.1"
+	updateUA    = "TARR-Annunciator-Updater/1.1.1"
 )
 
 type updatePackageMeta struct {
-	SchemaVersion  int    `json:"schema_version"`
-	AppVersion     string `json:"app_version"`
-	Platform       string `json:"platform"`
-	Arch           string `json:"arch"`
-	MinAppVersion  string `json:"min_app_version"`
-	Binary         struct {
+	SchemaVersion int    `json:"schema_version"`
+	AppVersion    string `json:"app_version"`
+	Platform      string `json:"platform"`
+	Arch          string `json:"arch"`
+	MinAppVersion string `json:"min_app_version"`
+	Binary        struct {
 		Path   string `json:"path"`
 		SHA256 string `json:"sha256"`
 	} `json:"binary"`
@@ -52,13 +52,15 @@ type remoteUpdateInfo struct {
 	PublishedAt  string `json:"published_at"`
 	UpdateAvail  bool   `json:"update_available"`
 	LocalVersion string `json:"local_version"`
+	Prerelease   bool   `json:"prerelease"`
+	IsLatest     bool   `json:"is_latest,omitempty"`
 }
 
 type updateJobState struct {
 	mu      sync.Mutex
-	Status  string   `json:"status"` // idle, checking, available, downloading, applying, restarting, done, error
-	Message string   `json:"message"`
-	Log     []string `json:"log"`
+	Status  string            `json:"status"` // idle, checking, available, downloading, applying, restarting, done, error
+	Message string            `json:"message"`
+	Log     []string          `json:"log"`
 	Remote  *remoteUpdateInfo `json:"remote,omitempty"`
 }
 
@@ -77,9 +79,9 @@ func (s *updateJobState) set(status, msg string) {
 }
 
 type updateJobSnapshot struct {
-	Status  string           `json:"status"`
-	Message string           `json:"message"`
-	Log     []string         `json:"log"`
+	Status  string            `json:"status"`
+	Message string            `json:"message"`
+	Log     []string          `json:"log"`
 	Remote  *remoteUpdateInfo `json:"remote,omitempty"`
 }
 
@@ -108,29 +110,47 @@ func getUpdateStatusHandler(c *gin.Context) {
 }
 
 func checkUpdatesHandler(c *gin.Context) {
-	if runtime.GOOS == "windows" {
-		// Still allow check for testing discovery; install may be blocked later on non-linux.
-	}
 	updateJob.set("checking", "Checking GitHub Releases for updates…")
-	info, err := fetchLatestPiRelease()
+	releases, err := listPiReleases()
 	if err != nil {
 		updateJob.set("error", err.Error())
 		c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": err.Error(), "version": versionStatusMap()})
 		return
 	}
-	updateJob.mu.Lock()
-	updateJob.Remote = info
-	updateJob.mu.Unlock()
-	if info.UpdateAvail {
-		updateJob.set("available", fmt.Sprintf("Update available: %s → %s", info.LocalVersion, info.AppVersion))
-	} else {
-		updateJob.set("idle", fmt.Sprintf("Up to date at %s", info.LocalVersion))
+
+	var latest *remoteUpdateInfo
+	for i := range releases {
+		if !releases[i].Prerelease {
+			latest = &releases[i]
+			releases[i].IsLatest = true
+			break
+		}
 	}
+	if latest == nil && len(releases) > 0 {
+		latest = &releases[0]
+		releases[0].IsLatest = true
+	}
+
+	if latest != nil {
+		updateJob.mu.Lock()
+		cp := *latest
+		updateJob.Remote = &cp
+		updateJob.mu.Unlock()
+		if latest.UpdateAvail {
+			updateJob.set("available", fmt.Sprintf("Newer release available: %s → %s (select a version to install)", latest.LocalVersion, latest.AppVersion))
+		} else {
+			updateJob.set("idle", fmt.Sprintf("Running %s — %d release(s) listed", latest.LocalVersion, len(releases)))
+		}
+	} else {
+		updateJob.set("idle", "No Pi thin packages found on GitHub Releases")
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"version": versionStatusMap(),
-		"remote":  info,
-		"job":     updateJob.snapshot(),
+		"success":  true,
+		"version":  versionStatusMap(),
+		"remote":   latest,
+		"releases": releases,
+		"job":      updateJob.snapshot(),
 	})
 }
 
@@ -149,19 +169,40 @@ func installUpdateHandler(c *gin.Context) {
 		return
 	}
 
-	info := snap.Remote
-	if info == nil || !info.UpdateAvail || info.DownloadURL == "" {
-		var err error
-		info, err = fetchLatestPiRelease()
+	var reqBody struct {
+		TagName string `json:"tag_name"`
+	}
+	_ = c.ShouldBindJSON(&reqBody)
+	tagName := strings.TrimSpace(reqBody.TagName)
+
+	var info *remoteUpdateInfo
+	var err error
+	if tagName != "" {
+		info, err = fetchPiReleaseByTag(tagName)
 		if err != nil {
 			c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": err.Error()})
 			return
 		}
-		if !info.UpdateAvail {
-			c.JSON(http.StatusOK, gin.H{"success": true, "message": "Already up to date", "remote": info})
+		// Explicit selection: allow install even if same or older (operator choice / pin / rollback)
+		info.UpdateAvail = true
+	} else {
+		info = snap.Remote
+		if info == nil || info.DownloadURL == "" {
+			info, err = fetchLatestPiRelease()
+			if err != nil {
+				c.JSON(http.StatusBadGateway, gin.H{"success": false, "error": err.Error()})
+				return
+			}
+		}
+		if normalizeVersion(info.AppVersion) == normalizeVersion(AppVersion) {
+			c.JSON(http.StatusOK, gin.H{"success": true, "message": "Already running this version", "remote": info})
 			return
 		}
 	}
+
+	updateJob.mu.Lock()
+	updateJob.Remote = info
+	updateJob.mu.Unlock()
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"success": true,
@@ -200,56 +241,54 @@ func installUpdateHandler(c *gin.Context) {
 	}(info)
 }
 
-func fetchLatestPiRelease() (*remoteUpdateInfo, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", githubOwner, githubRepo)
+type githubReleaseJSON struct {
+	TagName     string `json:"tag_name"`
+	Name        string `json:"name"`
+	Body        string `json:"body"`
+	Draft       bool   `json:"draft"`
+	Prerelease  bool   `json:"prerelease"`
+	PublishedAt string `json:"published_at"`
+	Assets      []struct {
+		Name               string `json:"name"`
+		BrowserDownloadURL string `json:"browser_download_url"`
+	} `json:"assets"`
+}
+
+func githubAPIGet(url string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", updateUA)
 	req.Header.Set("Accept", "application/vnd.github+json")
+	if tok := strings.TrimSpace(os.Getenv("GITHUB_TOKEN")); tok != "" {
+		req.Header.Set("Authorization", "Bearer "+tok)
+	}
+	client := &http.Client{Timeout: 45 * time.Second}
+	return client.Do(req)
+}
 
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("GitHub Releases request failed: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return nil, fmt.Errorf("GitHub Releases returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
-	}
-
-	var release struct {
-		TagName     string `json:"tag_name"`
-		Name        string `json:"name"`
-		Body        string `json:"body"`
-		PublishedAt string `json:"published_at"`
-		Assets      []struct {
-			Name               string `json:"name"`
-			BrowserDownloadURL string `json:"browser_download_url"`
-		} `json:"assets"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return nil, err
-	}
-
-	var assetName, downloadURL string
+func piAssetFromRelease(release githubReleaseJSON) (assetName, downloadURL string) {
 	for _, a := range release.Assets {
 		name := a.Name
 		if strings.HasPrefix(name, "TARR_Annunciator_Pi_arm64_") && strings.HasSuffix(name, ".tar.gz") {
-			assetName = name
-			downloadURL = a.BrowserDownloadURL
-			break
+			return name, a.BrowserDownloadURL
 		}
 	}
-	if downloadURL == "" {
-		return nil, fmt.Errorf("latest release %s has no TARR_Annunciator_Pi_arm64_*.tar.gz asset", release.TagName)
-	}
+	return "", ""
+}
 
+func remoteInfoFromRelease(release githubReleaseJSON) (*remoteUpdateInfo, error) {
+	if release.Draft {
+		return nil, fmt.Errorf("release %s is a draft", release.TagName)
+	}
+	assetName, downloadURL := piAssetFromRelease(release)
+	if downloadURL == "" {
+		return nil, fmt.Errorf("release %s has no TARR_Annunciator_Pi_arm64_*.tar.gz asset", release.TagName)
+	}
 	remoteVer := normalizeVersion(release.TagName)
 	localVer := normalizeVersion(AppVersion)
-	info := &remoteUpdateInfo{
+	return &remoteUpdateInfo{
 		TagName:      release.TagName,
 		AppVersion:   remoteVer,
 		Name:         release.Name,
@@ -259,7 +298,89 @@ func fetchLatestPiRelease() (*remoteUpdateInfo, error) {
 		PublishedAt:  release.PublishedAt,
 		LocalVersion: localVer,
 		UpdateAvail:  compareSemver(localVer, remoteVer) < 0,
+		Prerelease:   release.Prerelease,
+	}, nil
+}
+
+func listPiReleases() ([]remoteUpdateInfo, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases?per_page=40", githubOwner, githubRepo)
+	resp, err := githubAPIGet(url)
+	if err != nil {
+		return nil, fmt.Errorf("GitHub Releases list failed: %w", err)
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("GitHub Releases returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	var releases []githubReleaseJSON
+	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
+		return nil, err
+	}
+
+	localVer := normalizeVersion(AppVersion)
+	out := make([]remoteUpdateInfo, 0, len(releases))
+	for _, r := range releases {
+		if r.Draft {
+			continue
+		}
+		// Skip evergreen installer tag and any release without a Pi thin package
+		if strings.EqualFold(r.TagName, "one-click-installer") {
+			continue
+		}
+		info, err := remoteInfoFromRelease(r)
+		if err != nil {
+			continue
+		}
+		info.LocalVersion = localVer
+		out = append(out, *info)
+	}
+	return out, nil
+}
+
+func fetchPiReleaseByTag(tag string) (*remoteUpdateInfo, error) {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return nil, fmt.Errorf("tag_name is required")
+	}
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/tags/%s", githubOwner, githubRepo, tag)
+	resp, err := githubAPIGet(url)
+	if err != nil {
+		return nil, fmt.Errorf("GitHub release lookup failed: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("GitHub release %s returned %d: %s", tag, resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+	var release githubReleaseJSON
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return nil, err
+	}
+	return remoteInfoFromRelease(release)
+}
+
+func fetchLatestPiRelease() (*remoteUpdateInfo, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", githubOwner, githubRepo)
+	resp, err := githubAPIGet(url)
+	if err != nil {
+		return nil, fmt.Errorf("GitHub Releases request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("GitHub Releases returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+	var release githubReleaseJSON
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return nil, err
+	}
+	info, err := remoteInfoFromRelease(release)
+	if err != nil {
+		return nil, err
+	}
+	info.IsLatest = true
 	return info, nil
 }
 

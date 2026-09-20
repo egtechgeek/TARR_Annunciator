@@ -55,8 +55,18 @@ type LightningAnnouncement struct {
 	Enabled     bool   `json:"enabled"`
 }
 
+// LightningMonitorConfig is the Thor Guard XML poller settings (persisted in lightning.json).
+// The feed URL is not a separate secrets file — it lives here (and historically defaulted in code).
+type LightningMonitorConfig struct {
+	Enabled       bool   `json:"enabled"`
+	URL           string `json:"url"`
+	FetchInterval int    `json:"fetch_interval"` // seconds
+	Timeout       int    `json:"timeout"`        // seconds
+}
+
 // LightningConfig represents the lightning.json configuration
 type LightningConfig struct {
+	Monitor                LightningMonitorConfig  `json:"monitor"`
 	LightningAnnouncements []LightningAnnouncement `json:"lightning_announcements"`
 	RedAlertPolicy         RedAlertPolicy          `json:"red_alert_policy"`
 	Metadata               json.RawMessage         `json:"metadata,omitempty"`
@@ -85,14 +95,20 @@ func initializeLightningTrigger() error {
 		return err
 	}
 
-	// Create lightning trigger with default settings
+	mon := getLightningMonitorConfig()
+	if strings.TrimSpace(mon.URL) == "" {
+		log.Printf("Lightning monitor.url is empty in lightning.json — monitoring will stay stopped until a URL is configured in Admin")
+		mon.Enabled = false
+	}
+
+	// Create lightning trigger from persisted monitor settings (Admin → Lightning Alerts)
 	lightningTrigger = &LightningTrigger{
 		ID:            "lightning_monitor",
 		Name:          "Lightning Alert Monitor",
-		Enabled:       true,
-		URL:           "https://broward.thormobile4.net/tp/FL0115.xml",
-		FetchInterval: 30, // 30 seconds default
-		Timeout:       30, // 30 seconds timeout
+		Enabled:       mon.Enabled,
+		URL:           mon.URL,
+		FetchInterval: mon.FetchInterval,
+		Timeout:       mon.Timeout,
 		LastCondition: "Reset",
 		stopChan:      make(chan bool),
 	}
@@ -129,7 +145,39 @@ func defaultRedAlertPolicy() RedAlertPolicy {
 	}
 }
 
+func defaultLightningMonitorConfig() LightningMonitorConfig {
+	// URL must come from lightning.json only — never invent a Thor feed URL in code.
+	return LightningMonitorConfig{
+		Enabled:       false,
+		URL:           "",
+		FetchInterval: 60,
+		Timeout:       30,
+	}
+}
+
 func (c *LightningConfig) ensurePolicyDefaults() {
+	// Missing monitor block (pre-1.1.1 lightning.json): interval/timeout defaults only; URL stays empty
+	// until present in lightning.json (seed file or Admin).
+	if c.Monitor.URL == "" && c.Monitor.FetchInterval == 0 && c.Monitor.Timeout == 0 {
+		hadURL := strings.TrimSpace(c.Monitor.URL) != ""
+		def := defaultLightningMonitorConfig()
+		c.Monitor.FetchInterval = def.FetchInterval
+		c.Monitor.Timeout = def.Timeout
+		// Preserve Enabled only if a URL already existed (it didn't in this branch)
+		if !hadURL {
+			c.Monitor.Enabled = false
+			c.Monitor.URL = ""
+		}
+	} else {
+		if c.Monitor.FetchInterval < 30 {
+			c.Monitor.FetchInterval = 30
+		}
+		if c.Monitor.Timeout < 5 {
+			c.Monitor.Timeout = 30
+		}
+		// Do not invent Monitor.URL — empty means unconfigured
+	}
+
 	if c.RedAlertPolicy.ReminderIntervalMinutes <= 0 {
 		c.RedAlertPolicy = defaultRedAlertPolicy()
 		return
@@ -139,6 +187,90 @@ func (c *LightningConfig) ensurePolicyDefaults() {
 	}
 	if c.RedAlertPolicy.HornAudioFile == "" {
 		c.RedAlertPolicy.HornAudioFile = "thor_red_alert.mp3"
+	}
+}
+
+func getLightningMonitorConfig() LightningMonitorConfig {
+	if lightningConfig != nil {
+		lightningConfig.ensurePolicyDefaults()
+		return lightningConfig.Monitor
+	}
+	return defaultLightningMonitorConfig()
+}
+
+// isConditionAnnounceEnabled reports whether automatic announcements for a Thor condition
+// should play. Manual Admin "Test" buttons bypass this. Red Alert lock enter/exit is separate.
+func isConditionAnnounceEnabled(condition string) bool {
+	if lightningConfig == nil {
+		return true
+	}
+	cond := strings.ToLower(strings.TrimSpace(condition))
+	for i := range lightningConfig.LightningAnnouncements {
+		a := &lightningConfig.LightningAnnouncements[i]
+		id := strings.ToLower(a.ID)
+		switch cond {
+		case "redalert":
+			if strings.Contains(id, "redalert") || strings.Contains(id, "red_alert") {
+				return a.Enabled
+			}
+		case "warning":
+			if strings.Contains(id, "warning") && !strings.Contains(id, "red") {
+				return a.Enabled
+			}
+		case "caution":
+			if strings.Contains(id, "caution") {
+				return a.Enabled
+			}
+		case "allclear":
+			if strings.Contains(id, "allclear") || strings.Contains(id, "all_clear") {
+				return a.Enabled
+			}
+		case "unknown":
+			if strings.Contains(id, "unknown") {
+				return a.Enabled
+			}
+		}
+	}
+	return true
+}
+
+func setConditionAnnounceEnabled(condition string, enabled bool) bool {
+	if lightningConfig == nil {
+		return false
+	}
+	cond := strings.ToLower(strings.TrimSpace(condition))
+	updated := false
+	for i := range lightningConfig.LightningAnnouncements {
+		a := &lightningConfig.LightningAnnouncements[i]
+		id := strings.ToLower(a.ID)
+		match := false
+		switch cond {
+		case "redalert":
+			match = strings.Contains(id, "redalert") || strings.Contains(id, "red_alert")
+		case "warning":
+			match = strings.Contains(id, "warning") && !strings.Contains(id, "red")
+		case "caution":
+			match = strings.Contains(id, "caution")
+		case "allclear":
+			match = strings.Contains(id, "allclear") || strings.Contains(id, "all_clear")
+		case "unknown":
+			match = strings.Contains(id, "unknown")
+		}
+		if match {
+			a.Enabled = enabled
+			updated = true
+		}
+	}
+	return updated
+}
+
+func announcementEnableSnapshot() map[string]bool {
+	return map[string]bool{
+		"RedAlert": isConditionAnnounceEnabled("RedAlert"),
+		"Warning":  isConditionAnnounceEnabled("Warning"),
+		"Caution":  isConditionAnnounceEnabled("Caution"),
+		"AllClear": isConditionAnnounceEnabled("AllClear"),
+		"Unknown":  isConditionAnnounceEnabled("Unknown"),
 	}
 }
 
@@ -305,22 +437,29 @@ func (t *LightningTrigger) fetchAndCheck() {
 			return
 		}
 
-		// Check if this is an AllClear condition
+		// AllClear audio/lock release only after RedAlert; otherwise track silently (no announce)
 		if strings.ToLower(lightningAlert) == "allclear" {
 			if !t.shouldAcceptAllClear() {
-				log.Printf("AllClear condition ignored - previous condition was '%s' (not RedAlert)", t.LastCondition)
+				log.Printf("AllClear condition ignored for announce/lock — previous condition was '%s' (not RedAlert)", t.LastCondition)
 				t.LastCondition = lightningAlert
 				t.LastConditionTime = time.Now()
 				return
 			}
-			log.Printf("AllClear condition accepted - previous condition was '%s'", t.LastCondition)
+			log.Printf("AllClear condition accepted — previous condition was '%s'", t.LastCondition)
 		}
 
 		// Update condition state for valid (non-Unknown) conditions
 		t.LastCondition = lightningAlert
 		t.LastConditionTime = time.Now()
 
+		// Lock enter/exit always runs for RedAlert / accepted AllClear
 		t.applyConditionEffects(lightningAlert)
+
+		// Automatic announcements are optional per condition (Admin enable/disable)
+		if !isConditionAnnounceEnabled(lightningAlert) {
+			log.Printf("Lightning announce skipped for '%s' — disabled in Admin / lightning.json", lightningAlert)
+			return
+		}
 		t.playLightningAnnouncement(lightningAlert)
 	}
 }
@@ -871,29 +1010,42 @@ func listLightningAudioFiles() []string {
 	return files
 }
 
-// Update lightning trigger configuration
-func (t *LightningTrigger) UpdateConfig(url string, fetchInterval int, timeout int) error {
+// UpdateConfig updates live poller settings and persists them to lightning.json monitor block.
+func (t *LightningTrigger) UpdateConfig(url string, fetchInterval int, timeout int, enabled bool) error {
 	wasRunning := t.isRunning
 
-	// Stop if running
 	if wasRunning {
 		t.Stop()
-		// Wait a moment for the goroutine to stop
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	// Update configuration
 	t.URL = url
 	t.FetchInterval = fetchInterval
 	t.Timeout = timeout
+	t.Enabled = enabled && strings.TrimSpace(url) != ""
+	if enabled && strings.TrimSpace(url) == "" {
+		log.Printf("Lightning monitor enable ignored — monitor.url is empty in request/lightning.json")
+		t.Enabled = false
+	}
 
-	// Restart if it was running
-	if wasRunning {
-		t.stopChan = make(chan bool) // Create new channel
+	if lightningConfig != nil {
+		lightningConfig.Monitor = LightningMonitorConfig{
+			Enabled:       t.Enabled,
+			URL:           url,
+			FetchInterval: fetchInterval,
+			Timeout:       timeout,
+		}
+		if err := saveLightningConfig(); err != nil {
+			log.Printf("Warning: failed to persist lightning monitor config: %v", err)
+		}
+	}
+
+	if t.Enabled {
+		t.stopChan = make(chan bool)
 		go t.Start()
 	}
 
-	log.Printf("Lightning trigger configuration updated - URL: %s, Interval: %ds", url, fetchInterval)
+	log.Printf("Lightning trigger configuration updated - URL: %s, Interval: %ds, Enabled: %v", url, fetchInterval, enabled)
 	return nil
 }
 
@@ -928,7 +1080,7 @@ func getLightningTriggerStatus() map[string]interface{} {
 	reminderCount := lightningTrigger.reminderCount
 	lightningTrigger.mu.Unlock()
 
-	return map[string]interface{}{
+	out := map[string]interface{}{
 		"id":                       lightningTrigger.ID,
 		"name":                     lightningTrigger.Name,
 		"enabled":                  lightningTrigger.Enabled,
@@ -946,7 +1098,12 @@ func getLightningTriggerStatus() map[string]interface{} {
 		"next_reminder":            nextReminder,
 		"red_alert_policy":         getRedAlertPolicy(),
 		"available_reminder_files": listLightningAudioFiles(),
+		"condition_announce":       announcementEnableSnapshot(),
 	}
+	if lightningConfig != nil {
+		out["announcements"] = lightningConfig.LightningAnnouncements
+	}
+	return out
 }
 
 // Stop lightning trigger system

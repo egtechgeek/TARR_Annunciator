@@ -1,4 +1,10 @@
 {
+    "monitor": {
+        "enabled": true,
+        "url": "https://broward.thormobile4.net/tp/FL0115.xml",
+        "fetch_interval": 60,
+        "timeout": 30
+    },
     "lightning_announcements": [
         {
             "id": "THOR_RedAlert",
@@ -18,7 +24,7 @@
             "audio_file": "thor_warning.mp3",
             "tts_text": "THOR Warning: Lightning activity detected by monitoring system. Exercise caution and be prepared to seek shelter.",
             "priority": 8,
-            "enabled": true
+            "enabled": false
         },
         {
             "id": "THOR_Caution",
@@ -28,7 +34,7 @@
             "audio_file": "thor_caution.mp3",
             "tts_text": "THOR Caution: Lightning monitoring system reports developing weather risk. Remain aware of changing conditions.",
             "priority": 6,
-            "enabled": true
+            "enabled": false
         },
         {
             "id": "THOR_AllClear",

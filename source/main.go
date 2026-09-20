@@ -1516,11 +1516,12 @@ func testRedAlertReminderHandler(c *gin.Context) {
 
 func updateLightningTriggerConfigHandler(c *gin.Context) {
 	var config struct {
-		URL            string          `json:"url"`
-		FetchInterval  int             `json:"fetch_interval"`
-		Timeout        int             `json:"timeout"`
-		Enabled        bool            `json:"enabled"`
-		RedAlertPolicy *RedAlertPolicy `json:"red_alert_policy,omitempty"`
+		URL               string          `json:"url"`
+		FetchInterval     int             `json:"fetch_interval"`
+		Timeout           int             `json:"timeout"`
+		Enabled           bool            `json:"enabled"`
+		RedAlertPolicy    *RedAlertPolicy `json:"red_alert_policy,omitempty"`
+		ConditionAnnounce map[string]bool `json:"condition_announce,omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&config); err != nil {
@@ -1558,7 +1559,7 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 
 	// Update lightning trigger configuration
 	if lightningTrigger != nil {
-		if err := lightningTrigger.UpdateConfig(config.URL, config.FetchInterval, config.Timeout); err != nil {
+		if err := lightningTrigger.UpdateConfig(config.URL, config.FetchInterval, config.Timeout, config.Enabled); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"status": "error",
 				"error":  "Failed to update lightning trigger configuration: " + err.Error(),
@@ -1566,8 +1567,18 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 			return
 		}
 
-		// Update enabled state
-		lightningTrigger.Enabled = config.Enabled
+		if config.ConditionAnnounce != nil {
+			for cond, enabled := range config.ConditionAnnounce {
+				setConditionAnnounceEnabled(cond, enabled)
+			}
+			if err := saveLightningConfig(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"status": "error",
+					"error":  "Failed to save condition announce settings: " + err.Error(),
+				})
+				return
+			}
+		}
 
 		if config.RedAlertPolicy != nil {
 			if err := applyRedAlertPolicy(*config.RedAlertPolicy); err != nil {
@@ -1582,6 +1593,7 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
 			"message": "Lightning trigger configuration updated successfully",
+			"data":    getLightningTriggerStatus(),
 		})
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -1906,10 +1918,10 @@ func syncTimeHandler(c *gin.Context) {
 
 func getOperatingHoursHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"success":         true,
-		"config":          loadOperatingHours(),
-		"status":          getSchedulerHoursStatus(),
-		"time":            getTimeStatus(),
+		"success": true,
+		"config":  loadOperatingHours(),
+		"status":  getSchedulerHoursStatus(),
+		"time":    getTimeStatus(),
 	})
 }
 

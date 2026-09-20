@@ -95,6 +95,18 @@ rm -f "$STAGE_DIR/json/audio_settings.json" \
 NOTES="${RELEASE_NOTES:-TARR Annunciator Pi arm64 ${TAG}}"
 CREATED="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
+# List known schema migrations up through this package version (informational for UPDATE_PACKAGE.json)
+MIGRATIONS_JSON="$(python3 - "$VERSION" <<'PY'
+import json, sys
+ver = sys.argv[1].lstrip("v")
+known = ["1.1.0", "1.1.1"]
+out = [m for m in known if tuple(int(x) for x in m.split(".")) <= tuple(int(x) for x in ver.split(".")[:3])]
+if ver not in out:
+    out.append(ver)
+print(json.dumps(out))
+PY
+)"
+
 cat > "$STAGE_DIR/UPDATE_PACKAGE.json" <<EOF
 {
   "schema_version": 1,
@@ -108,7 +120,7 @@ cat > "$STAGE_DIR/UPDATE_PACKAGE.json" <<EOF
   },
   "created_at": "${CREATED}",
   "release_notes": $(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$NOTES"),
-  "migrations": ["1.1.0"]
+  "migrations": ${MIGRATIONS_JSON}
 }
 EOF
 

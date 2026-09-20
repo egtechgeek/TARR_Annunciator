@@ -31,6 +31,49 @@ func runSchemaMigrations(fromVersion string) error {
 		}
 	}
 
+	// 1.1.1: persist lightning monitor block in lightning.json (additive)
+	if compareSemver(fromVersion, "1.1.1") < 0 && compareSemver(toVersion, "1.1.1") >= 0 {
+		if err := migrateLightningMonitorBlock(); err != nil {
+			return fmt.Errorf("lightning monitor migration: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func migrateLightningMonitorBlock() error {
+	path := lightningConfigPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("Migration: lightning.json missing — skip monitor block")
+			return nil
+		}
+		return err
+	}
+	var live map[string]interface{}
+	if err := json.Unmarshal(data, &live); err != nil {
+		return fmt.Errorf("parse lightning.json: %w", err)
+	}
+	if _, ok := live["monitor"]; ok {
+		log.Printf("Migration: lightning.json monitor already present — leaving unchanged")
+		return nil
+	}
+	def := defaultLightningMonitorConfig()
+	live["monitor"] = map[string]interface{}{
+		"enabled":        false,
+		"url":            "",
+		"fetch_interval": def.FetchInterval,
+		"timeout":        def.Timeout,
+	}
+	out, err := json.MarshalIndent(live, "", "    ")
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(path, out, 0644); err != nil {
+		return err
+	}
+	log.Printf("Migration: lightning.json added empty monitor block (set URL in Admin — not invented in code)")
 	return nil
 }
 
@@ -139,13 +182,13 @@ func defaultLightningSeed() map[string]interface{} {
 	// Minimal additive seed for 1.1.0 features; does not replace local announcements.
 	return map[string]interface{}{
 		"red_alert_policy": map[string]interface{}{
-			"preempt_queue":              true,
-			"suppress_non_emergency":     true,
-			"reminder_enabled":           true,
-			"reminder_interval_minutes":  5,
-			"reminder_audio_file":        "thor_repeat1.mp3",
-			"reminder_include_horn":      false,
-			"horn_audio_file":            "thor_red_alert.mp3",
+			"preempt_queue":             true,
+			"suppress_non_emergency":    true,
+			"reminder_enabled":          true,
+			"reminder_interval_minutes": 5,
+			"reminder_audio_file":       "thor_repeat1.mp3",
+			"reminder_include_horn":     false,
+			"horn_audio_file":           "thor_red_alert.mp3",
 		},
 		"lightning_announcements": []interface{}{
 			map[string]interface{}{
@@ -156,7 +199,17 @@ func defaultLightningSeed() map[string]interface{} {
 				"audio_file":  "thor_caution.mp3",
 				"tts_text":    "THOR Caution: Lightning monitoring system reports developing weather risk. Remain aware of changing conditions.",
 				"priority":    6,
-				"enabled":     true,
+				"enabled":     false,
+			},
+			map[string]interface{}{
+				"id":          "THOR_Warning",
+				"name":        "THOR Warning",
+				"description": "THOR system warning - elevated lightning risk",
+				"category":    "system_alert",
+				"audio_file":  "thor_warning.mp3",
+				"tts_text":    "THOR Warning: Lightning activity detected by monitoring system. Exercise caution and be prepared to seek shelter.",
+				"priority":    8,
+				"enabled":     false,
 			},
 		},
 	}

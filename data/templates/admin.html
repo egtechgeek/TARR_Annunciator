@@ -69,11 +69,18 @@
                     <div class="card mb-3">
                         <div class="card-body">
                             <p class="mb-1"><strong>Running:</strong> <span id="update-local-version">Loading...</span></p>
-                            <p class="mb-1"><strong>Latest available:</strong> <span id="update-remote-version">Not checked</span></p>
-                            <p class="mb-3 text-muted small" id="update-status-text">Check GitHub Releases for a newer slim Pi package, then install without SSH.</p>
+                            <p class="mb-1"><strong>Newest listed:</strong> <span id="update-remote-version">Not checked</span></p>
+                            <p class="mb-3 text-muted small" id="update-status-text">Check GitHub Releases, then choose which thin Pi package to install (you are not forced to take the newest tag).</p>
+                            <div class="mb-3">
+                                <label for="update-release-select" class="form-label">Target release</label>
+                                <select class="form-select" id="update-release-select" disabled>
+                                    <option value="">Check for updates to load releases…</option>
+                                </select>
+                                <div class="form-text">Example: leave a test build as <code>v1.1.5</code> on GitHub but install only <code>v1.1.3</code> in production.</div>
+                            </div>
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 <button type="button" class="btn btn-outline-primary" id="check-updates-btn">🔍 Check for Updates</button>
-                                <button type="button" class="btn btn-success" id="install-updates-btn" disabled>⬇️ Download and Install</button>
+                                <button type="button" class="btn btn-success" id="install-updates-btn" disabled>⬇️ Download and Install Selected</button>
                             </div>
                             <pre id="update-log" class="bg-light border rounded p-2 small" style="max-height: 180px; overflow: auto; white-space: pre-wrap;"></pre>
                             <div id="update-message" class="mt-2"></div>
@@ -301,7 +308,7 @@
                                         </div>
                                         <div class="col">
                                             <label class="form-label" for="hours-close">Default close</label>
-                                            <input type="time" class="form-control" id="hours-close" value="21:00">
+                                            <input type="time" class="form-control" id="hours-close" value="16:00">
                                         </div>
                                     </div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="apply-default-hours-btn">Apply default hours to all days</button>
@@ -634,13 +641,13 @@
                                     <form id="lightning-config-form">
                                         <div class="mb-3">
                                             <label for="lightning-url" class="form-label">XML URL</label>
-                                            <input type="url" class="form-control" id="lightning-url" placeholder="https://broward.thormobile4.net/tp/FL0115.xml" required>
-                                            <div class="form-text">URL to fetch lightning alert XML data from</div>
+                                            <input type="url" class="form-control" id="lightning-url" placeholder="Set in lightning.json or paste Thor Guard XML URL" required>
+                                            <div class="form-text">Stored only in <code>json/lightning.json</code> (<code>monitor.url</code>). Default seed uses Tradewinds Park FL0115.</div>
                                         </div>
                                         
                                         <div class="mb-3">
                                             <label for="lightning-interval" class="form-label">Fetch Interval (seconds)</label>
-                                            <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="300" required>
+                                            <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="60" required>
                                             <div class="form-text">How often to check for lightning alerts (minimum 30 seconds)</div>
                                         </div>
                                         
@@ -664,6 +671,41 @@
                                     </form>
                                     
                                     <div id="lightning-config-message" class="mt-2"></div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3 border-warning">
+                                <div class="card-header bg-warning">
+                                    <h5 class="card-title mb-0">Condition Announcements (auto-play)</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted small mb-3">
+                                        When a Thor Guard XML condition <em>changes</em>, play the matching announcement only if enabled below.
+                                        Monitoring still tracks status either way. <strong>All Clear</strong> audio still only plays after a Red Alert (lock release);
+                                        disable it here if you do not want that audio. Manual <em>Test</em> buttons always play for verification.
+                                    </p>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="announce-redalert" checked>
+                                        <label class="form-check-label" for="announce-redalert"><strong>Red Alert</strong> — extreme danger / starts lock</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="announce-warning">
+                                        <label class="form-check-label" for="announce-warning"><strong>Warning</strong> — elevated risk (optional; off by default)</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="announce-caution">
+                                        <label class="form-check-label" for="announce-caution"><strong>Caution</strong> — developing risk (optional; off by default)</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="announce-allclear" checked>
+                                        <label class="form-check-label" for="announce-allclear"><strong>All Clear</strong> — after Red Alert only (optional audio)</label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="announce-unknown">
+                                        <label class="form-check-label" for="announce-unknown"><strong>Unknown</strong> — normally ignored as fetch noise</label>
+                                    </div>
+                                    <button type="button" class="btn btn-warning" id="save-condition-announce">💾 Save Condition Announcements</button>
+                                    <div id="condition-announce-message" class="mt-2"></div>
                                 </div>
                             </div>
 
@@ -940,7 +982,7 @@
                 const entry = (config.days && config.days[day]) || {};
                 const enabled = entry.enabled !== false;
                 const open = entry.open || config.open_time || '09:00';
-                const close = entry.close || config.close_time || '21:00';
+                const close = entry.close || config.close_time || '16:00';
                 const label = day.charAt(0).toUpperCase() + day.slice(1);
                 return `
                     <div class="row align-items-center mb-2">
@@ -1017,7 +1059,7 @@
                     operatingHoursConfig = data.config;
                     document.getElementById('hours-enabled').checked = !!operatingHoursConfig.enabled;
                     document.getElementById('hours-open').value = operatingHoursConfig.open_time || '09:00';
-                    document.getElementById('hours-close').value = operatingHoursConfig.close_time || '21:00';
+                    document.getElementById('hours-close').value = operatingHoursConfig.close_time || '16:00';
                     document.getElementById('time-sync-enabled').checked = !!(operatingHoursConfig.time_sync && operatingHoursConfig.time_sync.enabled);
                     document.getElementById('time-sync-set-system').checked = !!(operatingHoursConfig.time_sync && operatingHoursConfig.time_sync.set_system_clock);
                     ensureTimezoneOption(operatingHoursConfig.timezone);
@@ -2073,22 +2115,55 @@
             el.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
         }
 
+        function populateReleaseSelect(releases, preferTag) {
+            const sel = document.getElementById('update-release-select');
+            if (!sel) return;
+            sel.innerHTML = '';
+            if (!releases || !releases.length) {
+                sel.disabled = true;
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'No Pi thin packages found';
+                sel.appendChild(opt);
+                return;
+            }
+            releases.forEach(function(rel) {
+                const opt = document.createElement('option');
+                opt.value = rel.tag_name;
+                let label = rel.tag_name;
+                if (rel.is_latest) label += ' (newest stable)';
+                if (rel.prerelease) label += ' [prerelease]';
+                if (rel.update_available) label += ' — newer than running';
+                else if (rel.app_version) label += ' — v' + rel.app_version;
+                opt.textContent = label;
+                sel.appendChild(opt);
+            });
+            sel.disabled = false;
+            if (preferTag) {
+                sel.value = preferTag;
+            } else {
+                const stable = releases.find(function(r) { return !r.prerelease; });
+                sel.value = (stable || releases[0]).tag_name;
+            }
+        }
+
         function renderUpdateJob(job) {
             const logEl = document.getElementById('update-log');
             const statusEl = document.getElementById('update-status-text');
             const installBtn = document.getElementById('install-updates-btn');
+            const sel = document.getElementById('update-release-select');
             if (statusEl && job) statusEl.textContent = job.message || '';
             if (logEl && job && job.log) logEl.textContent = (job.log || []).join('\n');
             if (installBtn && job) {
                 const busy = job.status === 'downloading' || job.status === 'applying' || job.status === 'restarting';
-                const canInstall = job.status === 'available' || (job.remote && job.remote.update_available);
-                installBtn.disabled = busy || !canInstall;
+                const hasSelection = sel && sel.value;
+                installBtn.disabled = busy || !hasSelection;
             }
             if (job && job.remote) {
                 const remoteEl = document.getElementById('update-remote-version');
                 if (remoteEl) {
                     remoteEl.textContent = 'v' + (job.remote.app_version || '?') +
-                        (job.remote.update_available ? ' (newer)' : ' (same or older)');
+                        (job.remote.update_available ? ' (newer than running)' : ' (same or older than running)');
                 }
             }
         }
@@ -2119,20 +2194,23 @@
                             showUpdateMessage(data.error || 'Check failed', 'danger');
                             return;
                         }
+                        populateReleaseSelect(data.releases || [], data.remote && data.remote.tag_name);
                         if (data.remote) {
                             const remoteEl = document.getElementById('update-remote-version');
                             if (remoteEl) {
                                 remoteEl.textContent = 'v' + data.remote.app_version +
-                                    (data.remote.update_available ? ' (newer)' : ' (up to date)');
+                                    (data.remote.update_available ? ' (newer than running)' : ' (same or older)');
                             }
-                            showUpdateMessage(
-                                data.remote.update_available
-                                    ? 'Update available: v' + data.remote.app_version
-                                    : 'Already on the latest release',
-                                data.remote.update_available ? 'info' : 'success'
-                            );
                         }
+                        const n = (data.releases || []).length;
+                        showUpdateMessage(
+                            n ? ('Loaded ' + n + ' Pi release(s). Select a target, then install.') : 'No Pi packages found',
+                            n ? 'info' : 'warning'
+                        );
                         if (data.job) renderUpdateJob(data.job);
+                        const installBtn = document.getElementById('install-updates-btn');
+                        const sel = document.getElementById('update-release-select');
+                        if (installBtn && sel) installBtn.disabled = !sel.value;
                     })
                     .catch(function(err) {
                         checkUpdatesBtn.disabled = false;
@@ -2141,16 +2219,32 @@
             });
         }
 
+        const updateReleaseSelect = document.getElementById('update-release-select');
+        if (updateReleaseSelect) {
+            updateReleaseSelect.addEventListener('change', function() {
+                const installBtn = document.getElementById('install-updates-btn');
+                if (installBtn) installBtn.disabled = !updateReleaseSelect.value;
+            });
+        }
+
         const installUpdatesBtn = document.getElementById('install-updates-btn');
         if (installUpdatesBtn) {
             installUpdatesBtn.addEventListener('click', function() {
-                if (!confirm('Download and install the latest Pi package? The app will restart when finished.')) {
+                const sel = document.getElementById('update-release-select');
+                const tag = sel && sel.value;
+                if (!tag) {
+                    showUpdateMessage('Select a release first (Check for Updates).', 'warning');
+                    return;
+                }
+                if (!confirm('Download and install ' + tag + '? The app will restart when finished.')) {
                     return;
                 }
                 installUpdatesBtn.disabled = true;
                 fetch('/admin/updates/install', {
                     method: 'POST',
-                    credentials: 'same-origin'
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tag_name: tag })
                 })
                     .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
                     .then(({ ok, data }) => {
@@ -2159,7 +2253,7 @@
                             installUpdatesBtn.disabled = false;
                             return;
                         }
-                        showUpdateMessage(data.message || 'Update started…', 'info');
+                        showUpdateMessage(data.message || ('Installing ' + tag + '…'), 'info');
                         const poll = setInterval(function() {
                             refreshUpdateStatus();
                             fetch('/admin/updates/status', { credentials: 'same-origin' })
@@ -2560,7 +2654,7 @@
                     statusHtml += `<p><strong>Status:</strong> <span class="badge ${status.running ? 'bg-success' : 'bg-secondary'}">${status.running ? 'Running' : 'Stopped'}</span></p>`;
                     statusHtml += `<p><strong>Enabled:</strong> ${status.enabled ? '✅ Yes' : '❌ No'}</p>`;
                     statusHtml += `<p><strong>URL:</strong> <code class="small">${status.url || 'Not configured'}</code></p>`;
-                    statusHtml += `<p><strong>Fetch Interval:</strong> ${status.fetch_interval || 30} seconds</p>`;
+                    statusHtml += `<p><strong>Fetch Interval:</strong> ${status.fetch_interval || 60} seconds</p>`;
                     statusHtml += '</div>';
                     
                     statusHtml += '<div class="col-md-6">';
@@ -2586,10 +2680,17 @@
                     content.innerHTML = statusHtml;
                     
                     // Update form with current values unless the operator is editing them
-                    setValueIfNotFocused('lightning-url', status.url || 'https://broward.thormobile4.net/tp/FL0115.xml');
-                    setValueIfNotFocused('lightning-interval', status.fetch_interval || 30);
+                    setValueIfNotFocused('lightning-url', status.url || '');
+                    setValueIfNotFocused('lightning-interval', status.fetch_interval || 60);
                     setValueIfNotFocused('lightning-timeout', status.timeout || 30);
                     setCheckedIfNotFocused('lightning-enabled', status.enabled || false);
+
+                    const announce = status.condition_announce || {};
+                    setCheckedIfNotFocused('announce-redalert', announce.RedAlert !== false);
+                    setCheckedIfNotFocused('announce-warning', !!announce.Warning);
+                    setCheckedIfNotFocused('announce-caution', !!announce.Caution);
+                    setCheckedIfNotFocused('announce-allclear', announce.AllClear !== false);
+                    setCheckedIfNotFocused('announce-unknown', !!announce.Unknown);
 
                     const policy = status.red_alert_policy || {};
                     setCheckedIfNotFocused('red-alert-preempt', policy.preempt_queue !== false);
@@ -2644,6 +2745,54 @@
             el.checked = checked;
         }
 
+        function getConditionAnnounceFromForm() {
+            return {
+                RedAlert: document.getElementById('announce-redalert').checked,
+                Warning: document.getElementById('announce-warning').checked,
+                Caution: document.getElementById('announce-caution').checked,
+                AllClear: document.getElementById('announce-allclear').checked,
+                Unknown: document.getElementById('announce-unknown').checked
+            };
+        }
+
+        function getLightningConfigPayload() {
+            return {
+                url: document.getElementById('lightning-url').value,
+                fetch_interval: parseInt(document.getElementById('lightning-interval').value, 10),
+                timeout: parseInt(document.getElementById('lightning-timeout').value, 10),
+                enabled: document.getElementById('lightning-enabled').checked,
+                red_alert_policy: getRedAlertPolicyFromForm(),
+                condition_announce: getConditionAnnounceFromForm()
+            };
+        }
+
+        function saveConditionAnnounce() {
+            fetch('/admin/lightning/config', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(getLightningConfigPayload())
+            })
+            .then(response => response.json())
+            .then(data => {
+                const ok = data.status === 'success';
+                showConditionAnnounceMessage(ok ? 'Condition announcement settings saved' : (`Failed: ${data.error || 'unknown'}`), ok ? 'success' : 'danger');
+                if (ok) {
+                    loadLightningTriggerStatus();
+                }
+            })
+            .catch(error => {
+                showConditionAnnounceMessage(`Error: ${error.message}`, 'danger');
+            });
+        }
+
+        function showConditionAnnounceMessage(message, type) {
+            const el = document.getElementById('condition-announce-message');
+            if (!el) return;
+            el.innerHTML = `<div class="alert alert-${type} py-2 mb-0">${message}</div>`;
+            setTimeout(() => { el.innerHTML = ''; }, 4000);
+        }
+
         function getRedAlertPolicyFromForm() {
             return {
                 preempt_queue: document.getElementById('red-alert-preempt').checked,
@@ -2657,21 +2806,13 @@
         }
 
         function saveRedAlertPolicy() {
-            const formData = {
-                url: document.getElementById('lightning-url').value,
-                fetch_interval: parseInt(document.getElementById('lightning-interval').value, 10),
-                timeout: parseInt(document.getElementById('lightning-timeout').value, 10),
-                enabled: document.getElementById('lightning-enabled').checked,
-                red_alert_policy: getRedAlertPolicyFromForm()
-            };
-
             fetch('/admin/lightning/config', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify(formData)
+                body: JSON.stringify(getLightningConfigPayload())
             })
             .then(response => response.json())
             .then(data => {
@@ -2752,21 +2893,13 @@
         function updateLightningTriggerConfig(event) {
             event.preventDefault();
             
-            const formData = {
-                url: document.getElementById('lightning-url').value,
-                fetch_interval: parseInt(document.getElementById('lightning-interval').value),
-                timeout: parseInt(document.getElementById('lightning-timeout').value),
-                enabled: document.getElementById('lightning-enabled').checked,
-                red_alert_policy: getRedAlertPolicyFromForm()
-            };
-            
             fetch('/admin/lightning/config', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify(formData)
+                body: JSON.stringify(getLightningConfigPayload())
             })
             .then(response => response.json())
             .then(data => {
@@ -2827,6 +2960,7 @@
         document.getElementById('lightning-config-form').addEventListener('submit', updateLightningTriggerConfig);
         document.getElementById('test-lightning-fetch').addEventListener('click', testLightningFetch);
         document.getElementById('save-red-alert-policy').addEventListener('click', saveRedAlertPolicy);
+        document.getElementById('save-condition-announce').addEventListener('click', saveConditionAnnounce);
         document.getElementById('test-red-alert-reminder').addEventListener('click', testRedAlertReminder);
         document.getElementById('test-condition-redalert').addEventListener('click', function() { testLightningCondition('RedAlert'); });
         document.getElementById('test-condition-warning').addEventListener('click', function() { testLightningCondition('Warning'); });

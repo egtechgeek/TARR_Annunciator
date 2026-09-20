@@ -84,13 +84,13 @@ var (
 func defaultOperatingHours() OperatingHoursConfig {
 	days := map[string]DayHours{}
 	for _, day := range weekdayKeys() {
-		days[day] = DayHours{Enabled: true, Open: "09:00", Close: "21:00"}
+		days[day] = DayHours{Enabled: true, Open: "09:00", Close: "16:00"}
 	}
 	return OperatingHoursConfig{
 		Enabled:   false,
 		Timezone:  defaultOperatingTZ,
 		OpenTime:  "09:00",
-		CloseTime: "21:00",
+		CloseTime: "16:00",
 		Days:      days,
 		TimeSync: TimeSyncConfig{
 			Enabled:        true,
@@ -133,7 +133,7 @@ func normalizeOperatingHours(cfg OperatingHoursConfig) OperatingHoursConfig {
 		cfg.OpenTime = "09:00"
 	}
 	if strings.TrimSpace(cfg.CloseTime) == "" {
-		cfg.CloseTime = "21:00"
+		cfg.CloseTime = "16:00"
 	}
 	if cfg.Days == nil {
 		cfg.Days = map[string]DayHours{}

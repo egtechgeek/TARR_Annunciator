@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "region": "broward",
+  "host": "broward.thormobile4.net",
+  "source": "broward_thor_guard_sensors.csv",
+  "generated_for": "TARR Annunciator v1.1.5+",
+  "sensors": [
+    {
+      "id": "FL0101",
+      "path_prefix": "bpp",
+      "display_name": "Brian Piccolo Park",
+      "url": "https://broward.thormobile4.net/bpp/FL0101.xml"
+    },
+    {
+      "id": "FL0102",
+      "path_prefix": "cbsp",
+      "display_name": "CB Smith Park",
+      "url": "https://broward.thormobile4.net/cbsp/FL0102.xml"
+    },
+    {
+      "id": "FL0103",
+      "path_prefix": "cbrp",
+      "display_name": "Cent Broward Reg Park",
+      "url": "https://broward.thormobile4.net/cbrp/FL0103.xml"
+    },
+    {
+      "id": "FL0104",
+      "path_prefix": "ep",
+      "display_name": "Easterlin Park",
+      "url": "https://broward.thormobile4.net/ep/FL0104.xml"
+    },
+    {
+      "id": "FL0105",
+      "path_prefix": "ff",
+      "display_name": "Forest Fern",
+      "url": "https://broward.thormobile4.net/ff/FL0105.xml"
+    },
+    {
+      "id": "FL0106",
+      "path_prefix": "fp",
+      "display_name": "Franklin Park",
+      "url": "https://broward.thormobile4.net/fp/FL0106.xml"
+    },
+    {
+      "id": "FL0107",
+      "path_prefix": "lk",
+      "display_name": "Long Key",
+      "url": "https://broward.thormobile4.net/lk/FL0107.xml"
+    },
+    {
+      "id": "FL0108",
+      "path_prefix": "mp",
+      "display_name": "Markham Park",
+      "url": "https://broward.thormobile4.net/mp/FL0108.xml"
+    },
+    {
+      "id": "FL0109",
+      "path_prefix": "php",
+      "display_name": "Plantation Heritage",
+      "url": "https://broward.thormobile4.net/php/FL0109.xml"
+    },
+    {
+      "id": "FL0110",
+      "path_prefix": "qwp",
+      "display_name": "Quiet Waters",
+      "url": "https://broward.thormobile4.net/qwp/FL0110.xml"
+    },
+    {
+      "id": "FL0111",
+      "path_prefix": "rsdp",
+      "display_name": "Rev Sam Delevoe Park",
+      "url": "https://broward.thormobile4.net/rsdp/FL0111.xml"
+    },
+    {
+      "id": "FL0112",
+      "path_prefix": "rgp",
+      "display_name": "Roosevelt Gardens",
+      "url": "https://broward.thormobile4.net/rgp/FL0112.xml"
+    },
+    {
+      "id": "FL0113",
+      "path_prefix": "sw",
+      "display_name": "Secret Woods",
+      "url": "https://broward.thormobile4.net/sw/FL0113.xml"
+    },
+    {
+      "id": "FL0114",
+      "path_prefix": "svp",
+      "display_name": "Sunview Park",
+      "url": "https://broward.thormobile4.net/svp/FL0114.xml"
+    },
+    {
+      "id": "FL0115",
+      "path_prefix": "tp",
+      "display_name": "Tradewinds Park",
+      "url": "https://broward.thormobile4.net/tp/FL0115.xml"
+    },
+    {
+      "id": "FL0116",
+      "path_prefix": "ttp",
+      "display_name": "Tree Tops Park",
+      "url": "https://broward.thormobile4.net/ttp/FL0116.xml"
+    },
+    {
+      "id": "FL0117",
+      "path_prefix": "typ",
+      "display_name": "TY Park",
+      "url": "https://broward.thormobile4.net/typ/FL0117.xml"
+    },
+    {
+      "id": "FL0118",
+      "path_prefix": "wlp",
+      "display_name": "West Lake Park",
+      "url": "https://broward.thormobile4.net/wlp/FL0118.xml"
+    },
+    {
+      "id": "FL0119",
+      "path_prefix": "vvp",
+      "display_name": "Vista View Park",
+      "url": "https://broward.thormobile4.net/vvp/FL0119.xml"
+    }
+  ]
+}
