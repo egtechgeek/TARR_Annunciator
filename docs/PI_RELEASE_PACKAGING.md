@@ -115,7 +115,7 @@ TARR_Annunciator_Pi_arm64_v1.1.0/
 - `FromLiveRaspberryPi/`
 - Live Pi state (`audio_settings.json`, `alsa.state`, `logs/`)
 - `admin_config.json` from seeds (operator secrets)
-- `legacy_py/`, Windows packages, unrelated repo folders
+- Windows packages, unrelated repo folders
 
 Install must **never** bulk-overwrite live operator JSON. Migrations are additive only.
 
