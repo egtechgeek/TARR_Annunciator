@@ -3,13 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"os/exec"
-	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
+	"log"
+	"regexp"
 )
 
 type AudioDevice struct {
@@ -776,22 +774,17 @@ func getALSAAudioDevices() []AudioDevice {
 }
 
 func setLinuxAudioDevice(deviceID string) error {
-	if strings.HasPrefix(deviceID, "hw:") {
-		if err := setALSAHwDevice(deviceID); err == nil {
-			return nil
-		} else {
-			log.Printf("ALSA hw device set failed: %v", err)
-		}
-	}
-
+	// Try PipeWire first (most modern)
 	cmd := exec.Command("wpctl", "set-default", deviceID)
 	if err := cmd.Run(); err == nil {
 		log.Printf("Successfully set PipeWire default sink to: %s", deviceID)
 		return nil
 	}
 
+	// Try PulseAudio next
 	cmd = exec.Command("pactl", "info")
 	if err := cmd.Run(); err == nil {
+		// PulseAudio is available
 		cmd = exec.Command("pactl", "set-default-sink", deviceID)
 		if err := cmd.Run(); err != nil {
 			log.Printf("Error setting PulseAudio default sink: %v", err)
@@ -801,52 +794,10 @@ func setLinuxAudioDevice(deviceID string) error {
 		return nil
 	}
 
-	lower := strings.ToLower(deviceID)
-	switch {
-	case lower == "auto" || lower == "0":
-		return setRaspberryPiAudioOutput("auto")
-	case strings.Contains(lower, "headphone") || strings.Contains(lower, "analog") || lower == "1":
-		return setRaspberryPiAudioOutput("analog")
-	case strings.Contains(lower, "hdmi") || lower == "2":
-		return setRaspberryPiAudioOutput("hdmi")
-	}
-
-	if strings.HasPrefix(deviceID, "hw:") {
-		return setALSAHwDevice(deviceID)
-	}
-
-	return fmt.Errorf("could not set audio output device %s", deviceID)
-}
-
-func setALSAHwDevice(deviceID string) error {
-	card := extractCardNumber(deviceID)
-	device := "0"
-	if parts := strings.Split(strings.TrimPrefix(deviceID, "hw:"), ","); len(parts) > 1 {
-		device = parts[1]
-	}
-
-	if err := os.Setenv("ALSA_CARD", card); err != nil {
-		return err
-	}
-	if err := os.Setenv("AUDIODEV", deviceID); err != nil {
-		return err
-	}
-
-	asound := fmt.Sprintf("pcm.!default {\n    type plug\n    slave.pcm \"hw:%s,%s\"\n}\nctl.!default {\n    type hw\n    card %s\n}\n", card, device, card)
-
-	if app != nil && app.Config != nil && app.Config.BaseDir != "" {
-		if err := os.WriteFile(filepath.Join(app.Config.BaseDir, "asoundrc"), []byte(asound), 0644); err != nil {
-			log.Printf("Warning: could not write app asoundrc: %v", err)
-		}
-	}
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		if err := os.WriteFile(filepath.Join(home, ".asoundrc"), []byte(asound), 0644); err != nil {
-			log.Printf("Warning: could not write ~/.asoundrc: %v", err)
-		}
-	}
-
-	log.Printf("Successfully set ALSA output device to %s (card %s)", deviceID, card)
-	return nil
+	// For ALSA, we can't easily change the default device at runtime
+	// ALSA defaults are typically configured in ~/.asoundrc or /etc/asound.conf
+	log.Printf("ALSA device selection requires manual configuration in ~/.asoundrc")
+	return fmt.Errorf("ALSA device selection not supported at runtime - please configure ~/.asoundrc manually")
 }
 
 // ============== MACOS IMPLEMENTATION ==============

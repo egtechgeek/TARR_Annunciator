@@ -29,18 +29,15 @@ type LightningTrigger struct {
 	LastConditionTime time.Time `json:"last_condition_time"`
 
 	// Internal state
-	isRunning          bool
-	stopChan           chan bool
-	mu                 sync.Mutex
-	redAlertActive     bool
-	redAlertSince      time.Time
-	reminderCount      int
-	lastReminderAt     time.Time
-	nextReminderAt     time.Time
-	reminderStop       chan struct{}
-	lastFetchError     string
-	lastFetchErrorLog  time.Time
-	loggedFetchRecover bool
+	isRunning      bool
+	stopChan       chan bool
+	mu             sync.Mutex
+	redAlertActive bool
+	redAlertSince  time.Time
+	reminderCount  int
+	lastReminderAt time.Time
+	nextReminderAt time.Time
+	reminderStop   chan struct{}
 }
 
 // LightningAnnouncement represents a lightning announcement from the JSON config
@@ -256,43 +253,44 @@ func (t *LightningTrigger) fetchAndCheck() {
 	// Fetch XML
 	resp, err := client.Get(t.URL)
 	if err != nil {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger fetch error: %v", err))
+		log.Printf("Lightning trigger fetch error: %v", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger received status %d", resp.StatusCode))
+		log.Printf("Lightning trigger received status %d", resp.StatusCode)
 		return
 	}
 
 	// Read response body
 	xmlData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger read error: %v", err))
+		log.Printf("Lightning trigger read error: %v", err)
 		return
 	}
 
 	// Save XML file locally
 	if err := t.saveXMLFile(xmlData); err != nil {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger failed to save XML file: %v", err))
+		log.Printf("Lightning trigger failed to save XML file: %v", err)
 		// Continue processing even if file save fails
 	}
 
 	// Convert XML from UTF-16 to UTF-8 if needed
 	xmlString, err := t.convertXMLEncoding(xmlData)
 	if err != nil {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger encoding conversion error: %v", err))
+		log.Printf("Lightning trigger encoding conversion error: %v", err)
 		return
 	}
 
 	// Extract lightning alert value
 	lightningAlert := t.extractLightningAlertFromString(xmlString)
 	if lightningAlert == "" {
+		log.Printf("No lightningalert tag found in XML")
 		return
 	}
 
-	t.noteFetchSuccess()
+	log.Printf("Lightning alert status: %s", lightningAlert)
 
 	// Check if condition has changed
 	if lightningAlert != t.LastCondition {
@@ -347,26 +345,8 @@ func (t *LightningTrigger) saveXMLFile(xmlData []byte) error {
 		return fmt.Errorf("failed to write XML file: %v", err)
 	}
 
+	log.Printf("Lightning XML saved to: %s (%d bytes)", filePath, len(xmlData))
 	return nil
-}
-
-func (t *LightningTrigger) logFetchProblem(msg string) {
-	now := time.Now()
-	if msg == t.lastFetchError && now.Sub(t.lastFetchErrorLog) < 15*time.Minute {
-		return
-	}
-	t.lastFetchError = msg
-	t.lastFetchErrorLog = now
-	t.loggedFetchRecover = false
-	log.Printf("%s", msg)
-}
-
-func (t *LightningTrigger) noteFetchSuccess() {
-	if t.lastFetchError != "" && !t.loggedFetchRecover {
-		log.Printf("Lightning trigger fetch recovered after: %s", t.lastFetchError)
-		t.loggedFetchRecover = true
-	}
-	t.lastFetchError = ""
 }
 
 // Generate filename from URL
@@ -452,16 +432,25 @@ func (t *LightningTrigger) decodeUTF16BE(data []byte) (string, error) {
 
 // Extract lightningalert value from XML string
 func (t *LightningTrigger) extractLightningAlertFromString(xmlStr string) string {
+	// Debug: Log first 1000 characters of XML to see what we're parsing
+	xmlPreview := xmlStr
+	if len(xmlStr) > 1000 {
+		xmlPreview = xmlStr[:1000] + "..."
+	}
+	log.Printf("Lightning XML preview (converted): %s", xmlPreview)
+
+	// Look for <lightningalert>VALUE</lightningalert> (case sensitive)
 	startTag := "<lightningalert>"
 	endTag := "</lightningalert>"
 
 	startIndex := strings.Index(xmlStr, startTag)
 	if startIndex == -1 {
+		// Try case-insensitive search for debugging
 		lowerXML := strings.ToLower(xmlStr)
 		if strings.Contains(lowerXML, "<lightningalert>") {
-			t.logFetchProblem("Lightning: Found lightningalert tag in different case")
+			log.Printf("Lightning: Found lightningalert tag in different case")
 		} else {
-			t.logXMLPreview("Lightning: No lightningalert tag found in XML", xmlStr)
+			log.Printf("Lightning: No lightningalert tag found in XML")
 		}
 		return ""
 	}
@@ -469,28 +458,52 @@ func (t *LightningTrigger) extractLightningAlertFromString(xmlStr string) string
 	startIndex += len(startTag)
 	endIndex := strings.Index(xmlStr[startIndex:], endTag)
 	if endIndex == -1 {
-		t.logXMLPreview("Lightning: Found opening tag but no closing tag", xmlStr)
+		log.Printf("Lightning: Found opening tag but no closing tag")
 		return ""
 	}
 
 	value := strings.TrimSpace(xmlStr[startIndex : startIndex+endIndex])
-	if value == "" {
-		t.logFetchProblem("Lightning: empty lightningalert value")
-	}
+	log.Printf("Lightning: Successfully extracted value: '%s'", value)
 	return value
-}
-
-func (t *LightningTrigger) logXMLPreview(reason, xmlStr string) {
-	xmlPreview := xmlStr
-	if len(xmlStr) > 1000 {
-		xmlPreview = xmlStr[:1000] + "..."
-	}
-	t.logFetchProblem(fmt.Sprintf("%s; preview: %s", reason, xmlPreview))
 }
 
 // Extract lightningalert value from XML (deprecated - use extractLightningAlertFromString)
 func (t *LightningTrigger) extractLightningAlert(xmlData []byte) string {
-	return t.extractLightningAlertFromString(string(xmlData))
+	xmlStr := string(xmlData)
+
+	// Debug: Log first 1000 characters of XML to see what we're parsing
+	xmlPreview := xmlStr
+	if len(xmlStr) > 1000 {
+		xmlPreview = xmlStr[:1000] + "..."
+	}
+	log.Printf("Lightning XML preview: %s", xmlPreview)
+
+	// Look for <lightningalert>VALUE</lightningalert> (case sensitive)
+	startTag := "<lightningalert>"
+	endTag := "</lightningalert>"
+
+	startIndex := strings.Index(xmlStr, startTag)
+	if startIndex == -1 {
+		// Try case-insensitive search for debugging
+		lowerXML := strings.ToLower(xmlStr)
+		if strings.Contains(lowerXML, "<lightningalert>") {
+			log.Printf("Lightning: Found lightningalert tag in different case")
+		} else {
+			log.Printf("Lightning: No lightningalert tag found in XML")
+		}
+		return ""
+	}
+
+	startIndex += len(startTag)
+	endIndex := strings.Index(xmlStr[startIndex:], endTag)
+	if endIndex == -1 {
+		log.Printf("Lightning: Found opening tag but no closing tag")
+		return ""
+	}
+
+	value := strings.TrimSpace(xmlStr[startIndex : startIndex+endIndex])
+	log.Printf("Lightning: Successfully extracted value: '%s'", value)
+	return value
 }
 
 // Play lightning announcement based on condition

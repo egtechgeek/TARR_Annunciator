@@ -57,8 +57,7 @@
                     <p><strong>Audio System:</strong> <span class="status-ok">Active (Beep)</span></p>
                     <p><strong>Volume:</strong> <span id="current-volume">{{printf "%.0f" (mul .current_volume 100)}}%</span></p>
                     <p><strong>Selected Device:</strong> <span id="selected-device-info">{{.selected_audio_device}}</span></p>
-                    <p><strong>Clock:</strong> <span id="system-clock">Loading...</span></p>
-                    <p><strong>Scheduler:</strong> <span id="scheduler-hours-status" class="status-ok">Loading...</span></p>
+                    <p><strong>Scheduler:</strong> <span class="status-ok">Running</span></p>
                     <p><strong>Web Interface:</strong> <a href="/" target="_blank">http://localhost:8080</a></p>
                 </div>
                 
@@ -133,7 +132,6 @@
                                 🔄
                             </button>
                         </div>
-                        <small class="form-text text-muted">Saved with volume and reapplied automatically after reboot or power loss.</small>
                     </div>
 
                     <!-- Audio System Override (Linux/ARM only) -->
@@ -228,72 +226,6 @@
 
             <!-- Schedule Management Tab -->
             <div class="tab-pane fade" id="schedule-management-panel" role="tabpanel">
-                <div class="section">
-                    <h3>🕒 Time Sync & Operating Hours</h3>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <h6 class="card-title mb-0">Date & Time</h6>
-                                </div>
-                                <div class="card-body">
-                                    <p class="mb-1"><strong>App clock:</strong> <span id="hours-app-clock">Loading...</span></p>
-                                    <p class="mb-1"><strong>System clock:</strong> <span id="hours-system-clock">Loading...</span></p>
-                                    <p class="mb-1"><strong>Last NTP sync:</strong> <span id="hours-last-sync">Never</span></p>
-                                    <p class="mb-3 text-muted small">Uses NTP at startup and hourly. If the Pi cannot change the OS clock, the app still uses a corrected time for operating hours.</p>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="time-sync-enabled" checked>
-                                        <label class="form-check-label" for="time-sync-enabled">Enable automatic time sync</label>
-                                    </div>
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="time-sync-set-system" checked>
-                                        <label class="form-check-label" for="time-sync-set-system">Also try to set the system clock</label>
-                                    </div>
-                                    <button type="button" class="btn btn-outline-primary" id="sync-time-now-btn">🕒 Sync Time Now</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card mb-3">
-                                <div class="card-header">
-                                    <h6 class="card-title mb-0">Operating Hours</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="form-check form-switch mb-3">
-                                        <input class="form-check-input" type="checkbox" id="hours-enabled">
-                                        <label class="form-check-label" for="hours-enabled">Pause scheduled announcements outside operating hours</label>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label" for="hours-timezone">Timezone</label>
-                                        <select class="form-select" id="hours-timezone">
-                                            <option value="America/New_York">America/New_York (Eastern)</option>
-                                            <option value="America/Chicago">America/Chicago (Central)</option>
-                                            <option value="America/Denver">America/Denver (Mountain)</option>
-                                            <option value="America/Los_Angeles">America/Los_Angeles (Pacific)</option>
-                                            <option value="America/Phoenix">America/Phoenix</option>
-                                            <option value="UTC">UTC</option>
-                                        </select>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <div class="col">
-                                            <label class="form-label" for="hours-open">Default open</label>
-                                            <input type="time" class="form-control" id="hours-open" value="09:00">
-                                        </div>
-                                        <div class="col">
-                                            <label class="form-label" for="hours-close">Default close</label>
-                                            <input type="time" class="form-control" id="hours-close" value="21:00">
-                                        </div>
-                                    </div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="apply-default-hours-btn">Apply default hours to all days</button>
-                                    <div id="hours-days"></div>
-                                    <p class="text-muted small mb-3">Lightning, emergency, and manual announcements still run when the scheduler is paused.</p>
-                                    <button type="button" class="btn btn-primary" id="save-operating-hours-btn">💾 Save Hours & Time Settings</button>
-                                    <div id="hours-message" class="mt-2"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <div class="section">
                     <h3>⏰ Schedule Management</h3>
                     <form method="post" action="/admin">
@@ -889,189 +821,6 @@
         .catch(error => {
             document.getElementById('platform-info').textContent = 'Unknown';
         });
-
-        const weekdayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        let operatingHoursConfig = null;
-
-        function showHoursMessage(message, type) {
-            const el = document.getElementById('hours-message');
-            if (!el) return;
-            el.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-            setTimeout(() => { el.innerHTML = ''; }, 4000);
-        }
-
-        function ensureTimezoneOption(tz) {
-            const select = document.getElementById('hours-timezone');
-            if (!select || !tz) return;
-            const exists = Array.from(select.options).some(opt => opt.value === tz);
-            if (!exists) {
-                const opt = document.createElement('option');
-                opt.value = tz;
-                opt.textContent = tz;
-                select.appendChild(opt);
-            }
-            select.value = tz;
-        }
-
-        function renderHoursDays(config) {
-            const container = document.getElementById('hours-days');
-            if (!container) return;
-            container.innerHTML = weekdayOrder.map(day => {
-                const entry = (config.days && config.days[day]) || {};
-                const enabled = entry.enabled !== false;
-                const open = entry.open || config.open_time || '09:00';
-                const close = entry.close || config.close_time || '21:00';
-                const label = day.charAt(0).toUpperCase() + day.slice(1);
-                return `
-                    <div class="row align-items-center mb-2">
-                        <div class="col-4">
-                            <div class="form-check">
-                                <input class="form-check-input hours-day-enabled" type="checkbox" data-day="${day}" id="hours-day-${day}" ${enabled ? 'checked' : ''}>
-                                <label class="form-check-label" for="hours-day-${day}">${label}</label>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <input type="time" class="form-control form-control-sm hours-day-open" data-day="${day}" value="${open}">
-                        </div>
-                        <div class="col-4">
-                            <input type="time" class="form-control form-control-sm hours-day-close" data-day="${day}" value="${close}">
-                        </div>
-                    </div>`;
-            }).join('');
-        }
-
-        function collectOperatingHoursConfig() {
-            const days = {};
-            weekdayOrder.forEach(day => {
-                const enabledEl = document.getElementById(`hours-day-${day}`);
-                const openEl = document.querySelector(`.hours-day-open[data-day="${day}"]`);
-                const closeEl = document.querySelector(`.hours-day-close[data-day="${day}"]`);
-                days[day] = {
-                    enabled: !!(enabledEl && enabledEl.checked),
-                    open: openEl ? openEl.value : document.getElementById('hours-open').value,
-                    close: closeEl ? closeEl.value : document.getElementById('hours-close').value
-                };
-            });
-            return {
-                enabled: document.getElementById('hours-enabled').checked,
-                timezone: document.getElementById('hours-timezone').value,
-                open_time: document.getElementById('hours-open').value,
-                close_time: document.getElementById('hours-close').value,
-                days: days,
-                time_sync: {
-                    enabled: document.getElementById('time-sync-enabled').checked,
-                    sync_on_startup: true,
-                    set_system_clock: document.getElementById('time-sync-set-system').checked,
-                    ntp_servers: (operatingHoursConfig && operatingHoursConfig.time_sync && operatingHoursConfig.time_sync.ntp_servers) || ['pool.ntp.org', 'time.google.com', 'time.cloudflare.com']
-                }
-            };
-        }
-
-        function updateClockDisplays(data) {
-            const time = (data && data.time) || {};
-            const hours = (data && (data.operating_hours || data.status)) || {};
-            const clockEl = document.getElementById('system-clock');
-            const schedEl = document.getElementById('scheduler-hours-status');
-            if (clockEl) clockEl.textContent = time.app_time || hours.local_time || 'Unknown';
-            if (schedEl) {
-                schedEl.textContent = hours.label || 'Unknown';
-                schedEl.className = hours.scheduler_active ? 'status-ok' : 'status-error';
-            }
-            const appClock = document.getElementById('hours-app-clock');
-            const sysClock = document.getElementById('hours-system-clock');
-            const lastSync = document.getElementById('hours-last-sync');
-            if (appClock) appClock.textContent = time.app_time || 'Unknown';
-            if (sysClock) sysClock.textContent = time.system_time || 'Unknown';
-            if (lastSync) {
-                lastSync.textContent = time.last_sync
-                    ? `${time.last_sync}${time.last_server ? ' via ' + time.last_server : ''}`
-                    : 'Never';
-            }
-        }
-
-        function loadOperatingHours() {
-            fetch('/admin/operating-hours')
-                .then(response => response.json())
-                .then(data => {
-                    if (!data.success) return;
-                    operatingHoursConfig = data.config;
-                    document.getElementById('hours-enabled').checked = !!operatingHoursConfig.enabled;
-                    document.getElementById('hours-open').value = operatingHoursConfig.open_time || '09:00';
-                    document.getElementById('hours-close').value = operatingHoursConfig.close_time || '21:00';
-                    document.getElementById('time-sync-enabled').checked = !!(operatingHoursConfig.time_sync && operatingHoursConfig.time_sync.enabled);
-                    document.getElementById('time-sync-set-system').checked = !!(operatingHoursConfig.time_sync && operatingHoursConfig.time_sync.set_system_clock);
-                    ensureTimezoneOption(operatingHoursConfig.timezone);
-                    renderHoursDays(operatingHoursConfig);
-                    updateClockDisplays(data);
-                })
-                .catch(function() {});
-        }
-
-        loadOperatingHours();
-        setInterval(function() {
-            fetch('/admin/time-status')
-                .then(response => response.json())
-                .then(updateClockDisplays)
-                .catch(function() {});
-        }, 10000);
-
-        const saveHoursBtn = document.getElementById('save-operating-hours-btn');
-        if (saveHoursBtn) {
-            saveHoursBtn.addEventListener('click', function() {
-                const config = collectOperatingHoursConfig();
-                fetch('/admin/operating-hours', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        operatingHoursConfig = data.config;
-                        updateClockDisplays(data);
-                        showHoursMessage('Operating hours and time settings saved', 'success');
-                    } else {
-                        showHoursMessage(data.error || 'Failed to save operating hours', 'danger');
-                    }
-                })
-                .catch(function() {
-                    showHoursMessage('Failed to save operating hours', 'danger');
-                });
-            });
-        }
-
-        const syncTimeBtn = document.getElementById('sync-time-now-btn');
-        if (syncTimeBtn) {
-            syncTimeBtn.addEventListener('click', function() {
-                fetch('/admin/time-sync', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        updateClockDisplays(data);
-                        if (data.success) {
-                            showHoursMessage('Time synchronized', 'success');
-                        } else {
-                            showHoursMessage(data.error || 'Time sync failed', 'danger');
-                        }
-                    })
-                    .catch(function() {
-                        showHoursMessage('Time sync failed', 'danger');
-                    });
-            });
-        }
-
-        const applyDefaultHoursBtn = document.getElementById('apply-default-hours-btn');
-        if (applyDefaultHoursBtn) {
-            applyDefaultHoursBtn.addEventListener('click', function() {
-                const open = document.getElementById('hours-open').value;
-                const close = document.getElementById('hours-close').value;
-                weekdayOrder.forEach(day => {
-                    const openEl = document.querySelector(`.hours-day-open[data-day="${day}"]`);
-                    const closeEl = document.querySelector(`.hours-day-close[data-day="${day}"]`);
-                    if (openEl) openEl.value = open;
-                    if (closeEl) closeEl.value = close;
-                });
-            });
-        }
 
         // Audio controls
         const volumeSlider = document.getElementById('volume-slider');

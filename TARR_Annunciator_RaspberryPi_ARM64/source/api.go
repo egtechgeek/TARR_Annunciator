@@ -28,13 +28,12 @@ func apiStatusHandler(c *gin.Context) {
 		"audio_available":       app.AudioEnabled,
 		"audio_backend":         "beep",
 		"api_enabled":           app.Config.APIEnabled,
-		"scheduler_running":     getSchedulerHoursStatus()["scheduler_active"],
-		"operating_hours":       getSchedulerHoursStatus(),
+		"scheduler_running":     true,
 		"volume":                int(app.Config.CurrentVolume * 100),
 		"selected_audio_device": app.Config.SelectedAudioDevice,
 		"available_devices":     len(devices),
 		"platform":              platformInfo,
-		"timestamp":             appNow().Format(time.RFC3339),
+		"timestamp":             time.Now().Format(time.RFC3339),
 	})
 }
 
@@ -420,16 +419,18 @@ func apiSetAudioDeviceHandler(c *gin.Context) {
 	}
 
 	// Set the device
-	if err := applySelectedAudioDevice(deviceIDStr, selectedDevice.Name); err != nil {
+	if err := setAudioDevice(deviceIDStr); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set audio device: " + err.Error()})
 		return
 	}
 
+	app.Config.SelectedAudioDevice = deviceIDStr
+	applySystemMixerVolume(app.Config.CurrentVolume)
+
 	c.JSON(http.StatusOK, gin.H{
-		"success":   true,
-		"device":    selectedDevice,
-		"persisted": true,
-		"message":   "Audio device set and saved for reboot",
+		"success": true,
+		"device":  selectedDevice,
+		"message": "Audio device set successfully",
 	})
 }
 

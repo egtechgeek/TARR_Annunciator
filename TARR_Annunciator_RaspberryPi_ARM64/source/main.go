@@ -213,13 +213,6 @@ func main() {
 		AudioEnabled: true,
 	}
 
-	// Screen/cron/boot sessions often have a short PATH and no XDG_RUNTIME_DIR.
-	// amixer still talks to ALSA without a TTY; this just makes the tools findable.
-	ensureLinuxAudioEnv()
-
-	// Restore saved output device before the speaker opens the default ALSA/Pulse sink.
-	restoreAudioOutputDevice()
-
 	// Initialize audio
 	if err := initAudio(); err != nil {
 		log.Printf("Audio initialization failed: %v", err)
@@ -230,9 +223,6 @@ func main() {
 
 	// Sync/restore ALSA (alsamixer) volume on Linux so reboot defaults don't stay quiet
 	initializeSystemVolume()
-
-	// NTP/time sync and operating-hours gate for scheduled announcements
-	initializeTimeAndHours()
 
 	// Initialize announcement queue system
 	InitializeAnnouncementManager()
@@ -397,11 +387,6 @@ func setupWebRoutes() {
 	app.Router.POST("/admin/lightning/test-condition/:condition", requireAuth(), testLightningConditionHandler)
 	app.Router.POST("/admin/lightning/test-reminder", requireAuth(), testRedAlertReminderHandler)
 	app.Router.POST("/admin/lightning/reset", requireAuth(), resetLightningStateHandler)
-
-	app.Router.GET("/admin/time-status", requireAuth(), getTimeStatusHandler)
-	app.Router.POST("/admin/time-sync", requireAuth(), syncTimeHandler)
-	app.Router.GET("/admin/operating-hours", requireAuth(), getOperatingHoursHandler)
-	app.Router.POST("/admin/operating-hours", requireAuth(), saveOperatingHoursHandler)
 }
 
 func setupAPIRoutes() {
@@ -596,13 +581,10 @@ func schedulerStatusHandler(c *gin.Context) {
 		})
 	}
 
-	hours := getSchedulerHoursStatus()
 	c.JSON(http.StatusOK, gin.H{
-		"scheduler_running": hours["scheduler_active"],
+		"scheduler_running": true,
 		"jobs":              jobs,
 		"audio_available":   app.AudioEnabled,
-		"operating_hours":   hours,
-		"time":              getTimeStatus(),
 	})
 }
 
@@ -779,16 +761,18 @@ func setAudioDeviceHandler(c *gin.Context) {
 	}
 
 	// Set the device
-	if err := applySelectedAudioDevice(deviceID, selectedDevice.Name); err != nil {
+	if err := setAudioDevice(deviceID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to set audio device: " + err.Error()})
 		return
 	}
 
+	app.Config.SelectedAudioDevice = deviceID
+	applySystemMixerVolume(app.Config.CurrentVolume)
+
 	c.JSON(http.StatusOK, gin.H{
-		"success":   true,
-		"device":    selectedDevice,
-		"persisted": true,
-		"message":   "Audio device set and saved for reboot",
+		"success": true,
+		"device":  selectedDevice,
+		"message": "Audio device set successfully",
 	})
 }
 
@@ -1413,42 +1397,108 @@ func deleteAPIKeyHandler(c *gin.Context) {
 
 // Logging system variables
 var (
-	logFile   *rotatingFileWriter
+	logFile   *os.File
 	logWriter io.Writer
 )
 
-// initializeLogging sets up file logging with size-based rotation and cleanup
+// initializeLogging sets up file logging with automatic rotation and cleanup
 func initializeLogging(logDir string) error {
-	file, err := newRotatingFileWriter(logDir)
+	// Create logs directory if it doesn't exist
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return fmt.Errorf("failed to create logs directory: %v", err)
+	}
+
+	// Generate log filename with timestamp
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	logFileName := fmt.Sprintf("tarr-annunciator_%s.log", timestamp)
+	logFilePath := filepath.Join(logDir, logFileName)
+
+	// Open log file
+	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open log file: %v", err)
 	}
 
 	logFile = file
+
+	// Create multi-writer to write to both console and file
 	logWriter = io.MultiWriter(os.Stdout, file)
 	log.SetOutput(logWriter)
 
+	// Add log header
 	log.Printf("=== TARR Annunciator Started ===")
 	log.Printf("Version: Go Application")
 	log.Printf("Platform: %s/%s", runtime.GOOS, runtime.GOARCH)
-	log.Printf("Log file: %s", file.Path())
-	log.Printf("Log rotation: max %d MB per file, keep %d files, delete after %d days",
-		maxLogFileSize/1024/1024, maxLogFiles, logRetentionDays)
+	log.Printf("Log file: %s", logFilePath)
 	log.Printf("Timestamp: %s", time.Now().Format("2006-01-02 15:04:05"))
 	log.Printf("=====================================")
-	reportLogCleanup(logDir)
 
+	// Start log cleanup routine
 	go func() {
+		if err := cleanupOldLogs(logDir); err != nil {
+			log.Printf("Warning: Failed to cleanup old logs: %v", err)
+		}
+
+		// Setup periodic cleanup (every 24 hours)
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
+
 		for range ticker.C {
-			if err := pruneLogFiles(logDir, file.Path()); err != nil {
+			if err := cleanupOldLogs(logDir); err != nil {
 				log.Printf("Warning: Failed to cleanup old logs: %v", err)
-				continue
 			}
-			reportLogCleanup(logDir)
 		}
 	}()
+
+	return nil
+}
+
+// cleanupOldLogs removes log files older than 30 days
+func cleanupOldLogs(logDir string) error {
+	log.Printf("Starting log cleanup routine...")
+
+	// Read directory contents
+	files, err := os.ReadDir(logDir)
+	if err != nil {
+		return fmt.Errorf("failed to read logs directory: %v", err)
+	}
+
+	cutoffTime := time.Now().AddDate(0, 0, -30) // 30 days ago
+	deletedCount := 0
+	totalSize := int64(0)
+
+	for _, file := range files {
+		// Only process .log files
+		if !strings.HasSuffix(file.Name(), ".log") {
+			continue
+		}
+
+		// Get file info
+		info, err := file.Info()
+		if err != nil {
+			log.Printf("Warning: Could not get info for log file %s: %v", file.Name(), err)
+			continue
+		}
+
+		totalSize += info.Size()
+
+		// Check if file is older than 30 days
+		if info.ModTime().Before(cutoffTime) {
+			filePath := filepath.Join(logDir, file.Name())
+			if err := os.Remove(filePath); err != nil {
+				log.Printf("Warning: Could not delete old log file %s: %v", file.Name(), err)
+			} else {
+				log.Printf("Deleted old log file: %s (%.2f MB, %s old)",
+					file.Name(),
+					float64(info.Size())/1024/1024,
+					time.Since(info.ModTime()).Round(24*time.Hour))
+				deletedCount++
+			}
+		}
+	}
+
+	log.Printf("Log cleanup completed: %d files deleted, total log size: %.2f MB",
+		deletedCount, float64(totalSize)/1024/1024)
 
 	return nil
 }
@@ -1865,67 +1915,11 @@ func resetLightningStateHandler(c *gin.Context) {
 }
 
 // closeLogging properly closes the log file
-func getTimeStatusHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success":         true,
-		"time":            getTimeStatus(),
-		"operating_hours": getSchedulerHoursStatus(),
-	})
-}
-
-func syncTimeHandler(c *gin.Context) {
-	cfg := loadOperatingHours()
-	if err := syncTimeFromNTP(cfg); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   err.Error(),
-			"time":    getTimeStatus(),
-		})
-		return
-	}
-	applySchedulerHoursState(true)
-	c.JSON(http.StatusOK, gin.H{
-		"success":         true,
-		"message":         "Time synchronized",
-		"time":            getTimeStatus(),
-		"operating_hours": getSchedulerHoursStatus(),
-	})
-}
-
-func getOperatingHoursHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success":         true,
-		"config":          loadOperatingHours(),
-		"status":          getSchedulerHoursStatus(),
-		"time":            getTimeStatus(),
-	})
-}
-
-func saveOperatingHoursHandler(c *gin.Context) {
-	var cfg OperatingHoursConfig
-	if err := c.ShouldBindJSON(&cfg); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid operating hours JSON: " + err.Error()})
-		return
-	}
-	if err := saveOperatingHours(cfg); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to save operating hours: " + err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Operating hours saved",
-		"config":  loadOperatingHours(),
-		"status":  getSchedulerHoursStatus(),
-		"time":    getTimeStatus(),
-	})
-}
-
 func closeLogging() {
 	if logFile != nil {
 		log.Printf("=== TARR Annunciator Shutting Down ===")
 		log.Printf("Timestamp: %s", time.Now().Format("2006-01-02 15:04:05"))
 		log.Printf("=======================================")
 		logFile.Close()
-		logFile = nil
 	}
 }

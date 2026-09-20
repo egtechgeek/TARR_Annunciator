@@ -228,10 +228,6 @@ func updateScheduler() {
 			// Capture variables for closure
 			trainNum, direction, destination, trackNum := item.TrainNumber, item.Direction, item.Destination, item.TrackNumber
 			_, err := app.Scheduler.AddFunc(item.Cron, func() {
-				if !scheduledJobsAllowed() {
-					log.Printf("Skipping scheduled station announcement (outside operating hours): Train %s", trainNum)
-					return
-				}
 				log.Printf("🕐 Scheduled station announcement triggered: Train %s", trainNum)
 				if announcementManager != nil {
 					parameters := map[string]interface{}{
@@ -264,10 +260,6 @@ func updateScheduler() {
 			// Capture variables for closure
 			file := item.File
 			_, err := app.Scheduler.AddFunc(item.Cron, func() {
-				if !scheduledJobsAllowed() {
-					log.Printf("Skipping scheduled promo announcement (outside operating hours): %s", file)
-					return
-				}
 				log.Printf("🕐 Scheduled promo announcement triggered: %s", file)
 				if announcementManager != nil {
 					parameters := map[string]interface{}{
@@ -318,10 +310,6 @@ func updateScheduler() {
 			delaySeconds := delay
 			
 			_, err := app.Scheduler.AddFunc(item.Cron, func() {
-				if !scheduledJobsAllowed() {
-					log.Printf("Skipping scheduled safety announcement (outside operating hours)")
-					return
-				}
 				if len(languagesCopy) == 1 {
 					// Single language - use existing logic
 					log.Printf("🕐 Scheduled safety announcement triggered: %s", languagesCopy[0])

@@ -33,11 +33,9 @@ type SystemMixerStatus struct {
 }
 
 type audioSettings struct {
-	Volume           float64 `json:"volume"`
-	ApplyOnStartup   bool    `json:"apply_on_startup"`
-	OutputDevice     string  `json:"output_device"`
-	OutputDeviceName string  `json:"output_device_name,omitempty"`
-	UpdatedAt        string  `json:"updated_at"`
+	Volume         float64 `json:"volume"`
+	ApplyOnStartup bool    `json:"apply_on_startup"`
+	UpdatedAt      string  `json:"updated_at"`
 }
 
 type alsaControl struct {
@@ -52,44 +50,6 @@ var (
 	alsaPlaybackPercentRe   = regexp.MustCompile(`Playback[^\[]*\[(\d+)%\]`)
 	alsaAnyPercentRe        = regexp.MustCompile(`\[(\d+)%\]`)
 )
-
-func ensureLinuxAudioEnv() {
-	if runtime.GOOS != "linux" {
-		return
-	}
-
-	path := os.Getenv("PATH")
-	for _, extra := range []string{"/usr/bin", "/usr/sbin", "/bin", "/sbin"} {
-		if !pathContainsDir(path, extra) {
-			if path == "" {
-				path = extra
-			} else {
-				path = path + string(os.PathListSeparator) + extra
-			}
-		}
-	}
-	if err := os.Setenv("PATH", path); err != nil {
-		log.Printf("Warning: could not expand PATH for audio tools: %v", err)
-	}
-
-	if os.Getenv("XDG_RUNTIME_DIR") == "" {
-		runtimeDir := fmt.Sprintf("/run/user/%d", os.Getuid())
-		if info, err := os.Stat(runtimeDir); err == nil && info.IsDir() {
-			if err := os.Setenv("XDG_RUNTIME_DIR", runtimeDir); err != nil {
-				log.Printf("Warning: could not set XDG_RUNTIME_DIR: %v", err)
-			}
-		}
-	}
-}
-
-func pathContainsDir(path, dir string) bool {
-	for _, part := range strings.Split(path, string(os.PathListSeparator)) {
-		if part == dir {
-			return true
-		}
-	}
-	return false
-}
 
 func initializeSystemVolume() {
 	if runtime.GOOS != "linux" {
@@ -491,70 +451,16 @@ func loadAudioSettings() (audioSettings, bool) {
 	return settings, true
 }
 
-func restoreAudioOutputDevice() {
-	settings, ok := loadAudioSettings()
-	if !ok || strings.TrimSpace(settings.OutputDevice) == "" {
-		return
-	}
-
-	app.Config.SelectedAudioDevice = settings.OutputDevice
-	if err := setAudioDevice(settings.OutputDevice); err != nil {
-		log.Printf("Warning: could not restore audio output device %s: %v", settings.OutputDevice, err)
-		return
-	}
-	if settings.OutputDeviceName != "" {
-		log.Printf("✓ Restored audio output device: %s (%s)", settings.OutputDeviceName, settings.OutputDevice)
-		return
-	}
-	log.Printf("✓ Restored audio output device: %s", settings.OutputDevice)
-}
-
-func applySelectedAudioDevice(deviceID, deviceName string) error {
-	if err := setAudioDevice(deviceID); err != nil {
-		return err
-	}
-	if app != nil && app.Config != nil {
-		app.Config.SelectedAudioDevice = deviceID
-	}
-	if err := persistAudioDevice(deviceID, deviceName); err != nil {
-		log.Printf("Warning: could not persist audio output device: %v", err)
-	}
-	applySystemMixerVolume(app.Config.CurrentVolume)
-	return nil
-}
-
-func persistAudioDevice(deviceID, deviceName string) error {
-	path := audioSettingsPath()
-	if path == "" {
-		return fmt.Errorf("JSON directory not available")
-	}
-	settings, _ := loadAudioSettings()
-	if app != nil && app.Config != nil {
-		settings.Volume = clampVolume(app.Config.CurrentVolume)
-	}
-	settings.ApplyOnStartup = true
-	settings.OutputDevice = deviceID
-	settings.OutputDeviceName = deviceName
-	settings.UpdatedAt = time.Now().Format(time.RFC3339)
-	return writeAudioSettings(path, settings)
-}
-
 func persistAudioSettings(volume float64) error {
 	path := audioSettingsPath()
 	if path == "" {
 		return fmt.Errorf("JSON directory not available")
 	}
-	settings, _ := loadAudioSettings()
-	settings.Volume = clampVolume(volume)
-	settings.ApplyOnStartup = true
-	settings.UpdatedAt = time.Now().Format(time.RFC3339)
-	if app != nil && app.Config != nil && app.Config.SelectedAudioDevice != "" {
-		settings.OutputDevice = app.Config.SelectedAudioDevice
+	settings := audioSettings{
+		Volume:         clampVolume(volume),
+		ApplyOnStartup: true,
+		UpdatedAt:      time.Now().Format(time.RFC3339),
 	}
-	return writeAudioSettings(path, settings)
-}
-
-func writeAudioSettings(path string, settings audioSettings) error {
 	data, err := json.MarshalIndent(settings, "", "    ")
 	if err != nil {
 		return err
@@ -584,7 +490,7 @@ func effectiveSoftwareVolume() float64 {
 
 func mixerHelpText() string {
 	if runtime.GOOS == "linux" {
-		return "On Raspberry Pi / Linux this slider sets ALSA mixer volume (same controls as alsamixer). Volume and the selected output device are saved and restored after reboot or power loss."
+		return "On Raspberry Pi / Linux this slider sets ALSA mixer volume (same controls as alsamixer) and restores it when the app starts after a reboot."
 	}
 	return "This slider controls application playback volume."
 }
