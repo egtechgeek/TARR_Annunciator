@@ -3,37 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <title>TARR Annunciator</title>
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('tarr-color-scheme');
+                if (t !== 'light' && t !== 'dark') t = 'dark';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
+        :root, html[data-theme="dark"] {
+            --tarr-bg: #1a1a1a;
+            --tarr-panel: #2a2a2a;
+            --tarr-border: #444;
+            --tarr-text: #f0f0f0;
+            --tarr-muted: #aaa;
+            --tarr-green: #4CAF50;
+            --tarr-green-hover: #45a049;
+            --tarr-link: #4CAF50;
+            --tarr-nav: #ccc;
+            --tarr-input-bg: #1e1e1e;
+            --tarr-input-border: #555;
+        }
+        html[data-theme="light"] {
+            --tarr-bg: #f5f5f5;
+            --tarr-panel: #ffffff;
+            --tarr-border: #ddd;
+            --tarr-text: #222;
+            --tarr-muted: #666;
+            --tarr-green: #4CAF50;
+            --tarr-green-hover: #45a049;
+            --tarr-link: #2e7d32;
+            --tarr-nav: #555;
+            --tarr-input-bg: #fff;
+            --tarr-input-border: #ccc;
+        }
         body {
             font-family: Arial, sans-serif;
-            background-color: #1a1a1a;
-            color: #f0f0f0;
+            background-color: var(--tarr-bg);
+            color: var(--tarr-text);
             padding: 20px;
         }
-        h1 { text-align: center; }
+        h1 { text-align: center; color: var(--tarr-text); }
         .section {
-            background-color: #2a2a2a;
+            background-color: var(--tarr-panel);
             padding: 20px;
             margin: 15px auto;
             border-radius: 8px;
             max-width: 720px;
+            border: 1px solid var(--tarr-border);
         }
-        label { display: block; margin: 10px 0 5px; }
+        label { display: block; margin: 10px 0 5px; color: var(--tarr-text); }
         select, .section button[type="submit"] { width: 100%; padding: 10px; margin-bottom: 10px; }
+        select {
+            background: var(--tarr-input-bg);
+            color: var(--tarr-text);
+            border: 1px solid var(--tarr-input-border);
+            border-radius: 4px;
+        }
         .section button[type="submit"], .ctrl-btn {
-            background-color: #4CAF50;
+            background-color: var(--tarr-green);
             color: white;
             border: none;
             cursor: pointer;
             border-radius: 4px;
             padding: 10px 14px;
         }
-        .section button[type="submit"]:hover, .ctrl-btn:hover { background-color: #45a049; }
-        .status { text-align: center; margin-bottom: 20px; color: #4CAF50; }
+        .section button[type="submit"]:hover, .ctrl-btn:hover { background-color: var(--tarr-green-hover); }
+        .status { text-align: center; margin-bottom: 20px; color: var(--tarr-green); }
         .status .status-ok { color: #4CAF50; }
         .status .status-warn { color: #ff9800; }
         .status .status-error { color: #f44336; }
+        .status a { color: var(--tarr-link); }
+        .text-muted { color: var(--tarr-muted) !important; }
         #red-alert-banner {
             display: none;
             background: #b71c1c;
@@ -45,9 +91,13 @@
             border-radius: 8px;
             font-weight: bold;
         }
-        .nav-tabs .nav-link { color: #ccc; }
-        .nav-tabs .nav-link.active { background: #2a2a2a; color: #fff; border-color: #444 #444 #2a2a2a; }
-        .nav-tabs { border-bottom-color: #444; max-width: 720px; margin: 0 auto 12px; }
+        .nav-tabs .nav-link { color: var(--tarr-nav); }
+        .nav-tabs .nav-link.active {
+            background: var(--tarr-panel);
+            color: var(--tarr-text);
+            border-color: var(--tarr-border) var(--tarr-border) var(--tarr-panel);
+        }
+        .nav-tabs { border-bottom-color: var(--tarr-border); max-width: 720px; margin: 0 auto 12px; }
         .tab-content { max-width: 720px; margin: 0 auto; }
         .badge-cond { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; }
         .bg-danger { background: #c62828; }
@@ -55,11 +105,26 @@
         .bg-info { background: #0288d1; }
         .bg-success { background: #2e7d32; }
         .bg-secondary { background: #616161; }
-        table.lightning-mini { width: 100%; font-size: 0.9rem; }
-        table.lightning-mini th, table.lightning-mini td { padding: 4px 6px; border-bottom: 1px solid #444; }
+        table.lightning-mini { width: 100%; font-size: 0.9rem; color: var(--tarr-text); }
+        table.lightning-mini th, table.lightning-mini td { padding: 4px 6px; border-bottom: 1px solid var(--tarr-border); }
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 50;
+            background: var(--tarr-panel);
+            color: var(--tarr-text);
+            border: 1px solid var(--tarr-border);
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .theme-toggle:hover { border-color: var(--tarr-green); }
     </style>
 </head>
 <body>
+    <button type="button" class="theme-toggle" id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle color theme">🌙 Dark</button>
     <h1>TARR Annunciator Control</h1>
     <div id="red-alert-banner">THOR GUARD RED ALERT ACTIVE — station, promo, safety, and scheduled announcements are suspended until All Clear</div>
 
@@ -69,7 +134,7 @@
             |
             🕒 Scheduler: <span id="scheduler-status">Loading…</span>
             |
-            ⚙️ <a href="/admin" style="color: #4CAF50;">🔒 Admin Panel (Protected)</a>
+            ⚙️ <a href="/admin" style="color: inherit;">🔒 Admin Panel (Protected)</a>
         </p>
     </div>
 
@@ -175,6 +240,23 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        (function initThemeToggle() {
+            const KEY = 'tarr-color-scheme';
+            const btn = document.getElementById('theme-toggle');
+            function current() {
+                return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            }
+            function apply(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                try { localStorage.setItem(KEY, theme); } catch (e) {}
+                if (btn) btn.textContent = theme === 'light' ? '☀️ Light' : '🌙 Dark';
+            }
+            apply(current());
+            if (btn) btn.addEventListener('click', function () {
+                apply(current() === 'dark' ? 'light' : 'dark');
+            });
+        })();
+
         async function postForm(formId, endpoint) {
             const form = document.getElementById(formId);
             const data = new FormData(form);

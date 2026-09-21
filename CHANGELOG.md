@@ -5,7 +5,34 @@ All notable changes to TARR Annunciator are documented here.
 Product versions match `AppVersion` in `source/version.go` and GitHub Release tags (`vX.Y.Z`).
 Target platform going forward: **Raspberry Pi OS 64-bit (`linux/arm64`)**.
 
-Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** (current).
+Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** → **`1.1.3`** (current).
+
+---
+
+## [1.1.3] - 2026-09-21
+
+Operator life-safety follow-up after field use of v1.1.2, plus Admin Lightning UX.
+
+### Added
+
+- **Manual Thor/lightning override** (Admin): Force Red Alert, Force All Clear / unlock, or clear override flag when all feeds have failed — distinct from Manual Test drills; visible in Live Status; flag auto-clears when feeds recover; Reset clears override
+- **Composite Red Alert enter rules** (Admin): e.g. both Failover 1 and Failover 2 report Warning → enter Red Alert lock (enter-only; All Clear release authority unchanged)
+- Admin UI theme aligned with Main Control (dark panels, green primary actions) + light/dark theme toggle shared with Main
+- Admin Lightning tab: jump links, numbered sections, per-section Save buttons + sticky Save bar
+- **All enabled Thor feeds are polled every cycle** so Live Status shows Last Status for Primary / Failover 1 / Failover 2; only the active feed drives failover decisions and condition enter/announce
+- Lightning MP3 fields use **dynamic selects** populated from `static/mp3/lightning/` on the device (configured-but-missing files still appear as “(not on disk)”)
+- **Stale `<localtime>` protection:** Thor XML date (time-of-day ignored) more than 24 hours behind app time → feed treated as error / Unknown (blocks stuck RedAlert sensors such as a frozen Fern Forest feed). Admin trigger `stale_localtime` (default on)
+
+### Changed
+
+- `AppVersion` **1.1.3**
+- Operator `MANUAL.md` updated for override, composite enter rules, and Lightning Admin layout
+
+### Safety
+
+- Does not weaken v1.1.1/v1.1.2 All Clear acceptance, Unknown ignore, or `primary_only` / `failover_vote` unlock gates
+- Composite rules affect **enter** only; unlock still requires authorized All Clear
+- Standby feed polls update health only — they do not unlock, announce, or switch active feed by themselves
 
 ---
 
@@ -39,6 +66,8 @@ Thor Guard multi-feed failover with full Admin control (life-safety).
 - Replaced legacy `require_allclear_from_same_feed` with `allclear_release_mode` (unlock-only; does not change Red Alert enter)
 - API Docs moved behind Admin session (`/admin/api-docs`); removed from public index
 - Public `/lightning_status` includes `active_displayname`, `on_failover`, feed health for Dashboard
+- Public Main header shows **dynamic** audio + scheduler / operating-hours status
+- `api_docs.html` rewritten for v1.1.2 (`/api` announce/queue/audio/config/lightning + public helpers)
 - `AppVersion` **1.1.2**
 
 ### Safety

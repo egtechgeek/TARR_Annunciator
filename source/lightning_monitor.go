@@ -49,6 +49,7 @@ type FailoverTriggers struct {
 	UnknownCondition      bool `json:"unknown_condition"`
 	DisplaynameMismatch   bool `json:"displayname_mismatch"`
 	UniqueIDMismatch      bool `json:"uniqueid_mismatch"`
+	StaleLocaltime        bool `json:"stale_localtime"` // XML <localtime> date >24h behind app time
 }
 
 // LightningFailoverPolicy is Admin-owned failover/failback policy (no PA fields).
@@ -65,6 +66,16 @@ type LightningFailoverPolicy struct {
 	PreserveConditionAcrossFail   bool             `json:"preserve_condition_across_failover"`
 	OnAllFeedsFailed              string           `json:"on_all_feeds_failed"` // hold_last_condition | force_unknown_status
 	Triggers                      FailoverTriggers `json:"triggers"`
+}
+
+// CompositeRedAlertRule enters Red Alert lock when multiple feeds each report a required condition.
+// Unlock / All Clear release authority is unchanged (enter-only).
+type CompositeRedAlertRule struct {
+	ID               string   `json:"id"`
+	Enabled          bool     `json:"enabled"`
+	Label            string   `json:"label"`
+	RequireFeedIDs   []string `json:"require_feed_ids"`
+	RequireCondition string   `json:"require_condition"` // e.g. Warning
 }
 
 // FeedSwitchAnnouncement is one optional PA rule for an active-feed transition.
@@ -116,6 +127,7 @@ func defaultFailoverTriggers() FailoverTriggers {
 		UnknownCondition:      false,
 		DisplaynameMismatch:   false,
 		UniqueIDMismatch:      false,
+		StaleLocaltime:        true,
 	}
 }
 

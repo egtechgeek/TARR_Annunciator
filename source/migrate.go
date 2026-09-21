@@ -51,6 +51,20 @@ func runSchemaMigrations(fromVersion string) error {
 		}
 	}
 
+	// 1.1.3: composite Red Alert enter rules, stale localtime trigger, Voice_Unknown default
+	if compareSemver(fromVersion, "1.1.3") < 0 && compareSemver(toVersion, "1.1.3") >= 0 {
+		if err := migrateLightning113Additive(); err != nil {
+			return fmt.Errorf("lightning 1.1.3 migration: %w", err)
+		}
+	}
+
+	// Idempotent repairs for units already on 1.1.3 before stale_localtime / Voice_Unknown landed
+	if compareSemver(toVersion, "1.1.3") >= 0 {
+		if err := migrateLightning113Additive(); err != nil {
+			return fmt.Errorf("lightning 1.1.3 additive repair: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -88,6 +102,88 @@ func migrateLightningMonitorBlock() error {
 	}
 	log.Printf("Migration: lightning.json added empty monitor block (set URL in Admin — not invented in code)")
 	return nil
+}
+
+// migrateLightning113Additive is idempotent: composite rules array, stale_localtime trigger default,
+// and thor_unknown → Voice_Unknown.mp3 for Unknown announce paths.
+func migrateLightning113Additive() error {
+	path := lightningConfigPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("Migration: lightning.json missing — skip 1.1.3 additive")
+			return nil
+		}
+		return err
+	}
+	var live map[string]interface{}
+	if err := json.Unmarshal(data, &live); err != nil {
+		return fmt.Errorf("parse lightning.json: %w", err)
+	}
+	changed := false
+
+	mon, _ := live["monitor"].(map[string]interface{})
+	if mon != nil {
+		if _, ok := mon["composite_red_alert_rules"]; !ok {
+			mon["composite_red_alert_rules"] = []interface{}{}
+			changed = true
+			log.Printf("Migration: lightning.json composite_red_alert_rules initialized")
+		}
+		fo, _ := mon["failover"].(map[string]interface{})
+		if fo != nil {
+			tr, _ := fo["triggers"].(map[string]interface{})
+			if tr == nil {
+				tr = map[string]interface{}{}
+				fo["triggers"] = tr
+			}
+			if _, ok := tr["stale_localtime"]; !ok {
+				tr["stale_localtime"] = true
+				changed = true
+				log.Printf("Migration: lightning.json failover.triggers.stale_localtime defaulted to true")
+			}
+		}
+		live["monitor"] = mon
+	}
+
+	if ca, ok := live["condition_audio"].(map[string]interface{}); ok {
+		if unk, ok := ca["Unknown"].(map[string]interface{}); ok {
+			af, _ := unk["announce_file"].(string)
+			af = strings.TrimSpace(af)
+			if af == "" || strings.EqualFold(filepath.Base(af), "thor_unknown.mp3") {
+				unk["announce_file"] = "Voice_Unknown.mp3"
+				ca["Unknown"] = unk
+				live["condition_audio"] = ca
+				changed = true
+				log.Printf("Migration: condition_audio.Unknown.announce_file → Voice_Unknown.mp3")
+			}
+		}
+	}
+
+	if anns, ok := live["lightning_announcements"].([]interface{}); ok {
+		for _, raw := range anns {
+			m, ok := raw.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			id, _ := m["id"].(string)
+			af, _ := m["audio_file"].(string)
+			base := strings.ToLower(filepath.Base(strings.TrimSpace(af)))
+			if strings.EqualFold(id, "THOR_Unknown") && (base == "" || base == "thor_unknown.mp3") {
+				m["audio_file"] = "Voice_Unknown.mp3"
+				changed = true
+				log.Printf("Migration: THOR_Unknown audio_file → Voice_Unknown.mp3")
+			}
+		}
+	}
+
+	if !changed {
+		return nil
+	}
+	out, err := json.MarshalIndent(live, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(out, '\n'), 0644)
 }
 
 func migrateLightningMultiFeed() error {
@@ -268,6 +364,7 @@ func lightningAudioRenameMap() map[string]string {
 		"warning.mp3":         "Voice_Warning.mp3",
 		"thor_caution.mp3":    "Voice_Caution.mp3",
 		"thor_repeat1.mp3":    "Voice_RedAlert_Reminder.mp3",
+		"thor_unknown.mp3":    "Voice_Unknown.mp3",
 		// Legacy horn was the same file as the red-alert announce clip
 		"thor_red_alert_horn.mp3": "Horn_RedAlert.mp3",
 	}

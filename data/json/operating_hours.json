@@ -5,12 +5,12 @@
     "close_time": "16:00",
     "days": {
         "friday": {
-            "enabled": true,
+            "enabled": false,
             "open": "09:00",
             "close": "16:00"
         },
         "monday": {
-            "enabled": true,
+            "enabled": false,
             "open": "09:00",
             "close": "16:00"
         },
@@ -25,17 +25,17 @@
             "close": "16:00"
         },
         "thursday": {
-            "enabled": true,
+            "enabled": false,
             "open": "09:00",
             "close": "16:00"
         },
         "tuesday": {
-            "enabled": true,
+            "enabled": false,
             "open": "09:00",
             "close": "16:00"
         },
         "wednesday": {
-            "enabled": true,
+            "enabled": false,
             "open": "09:00",
             "close": "16:00"
         }

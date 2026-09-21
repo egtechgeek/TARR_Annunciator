@@ -1,7 +1,7 @@
 # TARR Annunciator — Operator Manual
 
 **Product:** TARR Annunciator (`tarr-annunciator`)  
-**Current version:** v1.1.2  
+**Current version:** v1.1.3  
 **Audience:** Station staff, supervisors, and site operators who need to run and configure the system day to day — not software developers.
 
 This manual explains **what the system does**, **where you click**, **what each setting means**, and **what happens when something goes wrong**. Read sections in order the first time; afterward use the table of contents to jump to a topic.
@@ -37,7 +37,7 @@ This manual explains **what the system does**, **where you click**, **what each 
 25. [Lightning — Global Condition Announcements](#25-lightning--global-condition-announcements)
 26. [Lightning — Global Condition Audio (horn + voice)](#26-lightning--global-condition-audio-horn--voice)
 27. [Lightning — Red Alert Policy](#27-lightning--red-alert-policy)
-28. [Lightning — Manual Tests, Pin, and Reset](#28-lightning--manual-tests-pin-and-reset)
+28. [Lightning — Manual Tests, Pin, Reset, and Manual Override](#28-lightning--manual-tests-pin-reset-and-manual-override)
 29. [How Red Alert / All Clear really work (rules)](#29-how-red-alert--all-clear-really-work-rules)
 30. [Announcement types and priority](#30-announcement-types-and-priority)
 31. [Sound files (MP3 folders)](#31-sound-files-mp3-folders)
@@ -506,7 +506,7 @@ Exact on-screen controls vary by install; always **Save** before leaving the tab
 
 **Tab:** ⚡ Lightning Alerts
 
-This is the life-safety heart of the system.
+This is the life-safety heart of the system. Settings are grouped into numbered sections on one tab. **Each settings card has its own Save button** so you do not need to scroll to the bottom after a small change. A sticky Save bar also sits at the bottom of the tab. Jump links at the top skip to Status, Monitor, Feeds, Failover, and so on.
 
 ### Big ideas (read these first)
 
@@ -515,16 +515,23 @@ This is the life-safety heart of the system.
 3. Turning **announce audio off** does **not** turn monitoring off, and does **not** remove the Red Alert **lock**.  
 4. **Failover policy** (which feed is trusted) is separate from **feed-switch announcements** (optional PA when the active feed changes).  
 5. **All Clear release authority** only controls **unlocking** Red Alert — not what can *enter* Red Alert.  
-6. Lightning settings are saved with **separate Save buttons**. Unsaved edits show a yellow banner; live status still refreshes, but your typed values will not be overwritten until you Discard or Save.
+6. **Composite enter rules** can treat distant failover Warning combinations as Red Alert enter — unlock rules stay separate.  
+7. **Manual Override** is for total sensor failure — it sets real lock state. It is **not** the same as Manual Test (audio drill).  
+8. Unsaved edits show a yellow banner; live status still refreshes, but typed values are not overwritten until you Discard or Save.
 
-### Save buttons you must notice
+### Sections (top to bottom)
 
-| Button | What it saves |
-|--------|----------------|
-| **Save Monitor** | Timing, failover policy, feeds, feed-switch rules |
-| **Save Condition Announcements** | Which conditions may make PA sound (global toggles) |
-| **Save Condition Audio** | Horn + voice MP3 choices |
-| **Save Red Alert Policy** | Preempt / suppress / reminder settings |
+| # | Section | Save button |
+|---|---------|-------------|
+| — | Live Status / Manual Tests / Override | (actions only) |
+| 1 | Monitoring & timing (+ All Clear release) | Save Monitor |
+| 2 | Feeds | Save Monitor (feeds) |
+| 3 | Failover & Failback | Save Monitor (failover) |
+| 4 | Composite Red Alert enter rules | Save Monitor (composite) |
+| 5 | Which conditions may announce | Save Announcements |
+| 6 | Red Alert Policy | Save Red Alert Policy |
+| 7 | Feed-switch Announcements | Save Monitor (feed-switch) |
+| 8 | Global Condition Audio | Save Condition Audio |
 
 If you change something and forget to press the matching Save, it will revert after reload.
 
@@ -756,7 +763,7 @@ Buttons:
 
 ---
 
-## 28. Lightning — Manual Tests, Pin, and Reset
+## 28. Lightning — Manual Tests, Pin, Reset, and Manual Override
 
 ### Manual Tests
 
@@ -770,16 +777,31 @@ Treat **Test Red Alert** carefully on a live PA — it can engage lock behavior 
 Forces Primary / Failover 1 / Failover 2 for drills.  
 **Unpin** returns to automatic failover selection.
 
+### Manual Override (all sensors failed)
+
+Use when **Primary, Failover 1, and Failover 2** are unreachable or unusable and operators must set lock state by hand.
+
+| Action | Meaning |
+|--------|---------|
+| **Force Red Alert (override)** | Sets real Red Alert lock + plays Red Alert sequence; Live Status shows **MANUAL OVERRIDE ACTIVE** |
+| **Force All Clear / unlock (override)** | Clears the Red Alert lock + plays All Clear; override flag remains until cleared or feeds recover |
+| **Clear override flag only** | Removes the override banner; does **not** change the current lock/condition |
+
+Notes:
+- This is **not** Manual Test. Override changes operational lock state.
+- When any Thor feed recovers successfully, the override **flag** auto-clears; the next real condition drives state.
+- **Reset THOR Guard State** also clears the override flag.
+
 ### Reset THOR Guard State
 
-Clears cached condition, Red Alert lock, and reminder timer.  
+Clears cached condition, Red Alert lock, reminder timer, and manual override.  
 Use after a drill or if the lock is stuck because of a bad test — **not** as a substitute for a real All Clear during an actual storm.
 
 ---
 
 ## 29. How Red Alert / All Clear really work (rules)
 
-These rules are intentional and safety-critical (preserved from v1.1.1, still true in v1.1.2):
+These rules are intentional and safety-critical (preserved from v1.1.1 / v1.1.2, still true in v1.1.3):
 
 1. **Unknown** from Thor is ignored for lock/announce purposes (it does not update the “previous condition” used for All Clear decisions).  
 2. **All Clear is accepted** only if:
@@ -788,8 +810,12 @@ These rules are intentional and safety-critical (preserved from v1.1.1, still tr
    Otherwise All Clear is ignored for unlock/PA (tracking may still update).  
 3. On **reject**, there is **no** unlock and **no** All Clear PA.  
 4. On **accept**, the lock exits, then All Clear may announce (unless announce audio is disabled).  
-5. **Only Red Alert enters the lock.** Caution and Warning never take the lock by themselves.  
-6. **All Clear release authority** runs **after** rule (2) succeeds. Primary under `primary_only` behaves like the classic single-feed system.
+5. **Red Alert enters the lock** when a feed reports Red Alert, **or** when an enabled **composite enter rule** matches (Advanced — e.g. both failovers Warning). Caution and Warning alone never take the lock.  
+6. **All Clear release authority** runs **after** rule (2) succeeds. Primary under `primary_only` behaves like the classic single-feed system. Composite enter does **not** change unlock rules.
+
+### Composite enter (Advanced)
+
+Example rule operators may enable: require **failover_1** and **failover_2** each report **Warning** → treat as **Red Alert** enter (lock + Red Alert PA). Distant failovers may be 1–5 miles away; this is Admin-configurable, not hardcoded miles.
 
 ### Practical examples
 
@@ -801,6 +827,8 @@ These rules are intentional and safety-critical (preserved from v1.1.1, still tr
 | Failover enters Red Alert (Primary down) → only that failover says All Clear | Stay locked under both release modes |
 | `failover_vote`, both failovers All Clear | Unlock allowed (after rule 2) |
 | `failover_vote`, one All Clear + one Unknown | Stay locked |
+| Composite: both failovers Warning → Red Alert | Lock enters; unlock still needs authorized All Clear |
+| All feeds down → Manual Override Force Red Alert | Lock active; Live Status shows override |
 
 ---
 

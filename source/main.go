@@ -414,6 +414,7 @@ func setupWebRoutes() {
 	app.Router.GET("/admin/lightning/sensors", requireAuth(), getLightningSensorsHandler)
 	app.Router.POST("/admin/lightning/active-feed", requireAuth(), pinLightningActiveFeedHandler)
 	app.Router.POST("/admin/lightning/test-feed-switch-audio", requireAuth(), testFeedSwitchAudioHandler)
+	app.Router.POST("/admin/lightning/override", requireAuth(), lightningManualOverrideHandler)
 
 	app.Router.GET("/admin/time-status", requireAuth(), getTimeStatusHandler)
 	app.Router.POST("/admin/time-sync", requireAuth(), syncTimeHandler)
@@ -1501,6 +1502,8 @@ func publicLightningStatusHandler(c *gin.Context) {
 		"feeds":                     status["feeds"],
 		"allclear_release_mode":     status["allclear_release_mode"],
 		"entered_red_alert_on_feed": status["entered_red_alert_on_feed"],
+		"manual_override_active":    status["manual_override_active"],
+		"manual_override_condition": status["manual_override_condition"],
 	})
 }
 
@@ -1606,6 +1609,7 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 			Failover                *LightningFailoverPolicy `json:"failover"`
 			Feeds                   []LightningFeedConfig    `json:"feeds"`
 			FeedSwitchAnnouncements []FeedSwitchAnnouncement `json:"feed_switch_announcements"`
+			CompositeRedAlertRules  []CompositeRedAlertRule  `json:"composite_red_alert_rules"`
 			AnnounceTiming          *LightningAnnounceTiming `json:"announce_timing"`
 			DisplaynameOverrides    []DisplaynameOverride    `json:"displayname_overrides"`
 		}
@@ -1639,6 +1643,9 @@ func updateLightningTriggerConfigHandler(c *gin.Context) {
 		}
 		if body.FeedSwitchAnnouncements != nil {
 			mon.FeedSwitchAnnouncements = body.FeedSwitchAnnouncements
+		}
+		if body.CompositeRedAlertRules != nil {
+			mon.CompositeRedAlertRules = body.CompositeRedAlertRules
 		}
 		mon.URL = primaryFeedURL(mon)
 
@@ -1979,6 +1986,34 @@ func resetLightningStateHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "THOR Guard cached state reset",
+		"data":    getLightningTriggerStatus(),
+	})
+}
+
+func lightningManualOverrideHandler(c *gin.Context) {
+	if lightningTrigger == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Lightning trigger not available",
+		})
+		return
+	}
+	var body struct {
+		Action string `json:"action"`
+		Note   string `json:"note"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": "action required"})
+		return
+	}
+	msg, err := lightningTrigger.ApplyManualOverride(body.Action, body.Note)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": msg,
 		"data":    getLightningTriggerStatus(),
 	})
 }

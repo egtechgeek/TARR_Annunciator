@@ -23,7 +23,8 @@
                 "missing_lightningalert": true,
                 "unknown_condition": true,
                 "displayname_mismatch": false,
-                "uniqueid_mismatch": false
+                "uniqueid_mismatch": false,
+                "stale_localtime": true
             }
         },
         "feeds": [
@@ -152,7 +153,7 @@
                 "match_sensor_id": "",
                 "match_displayname": "",
                 "audio_file": "",
-                "label": "primary → failover_1"
+                "label": "primary \u2192 failover_1"
             },
             {
                 "id": "p_to_f2",
@@ -163,9 +164,10 @@
                 "match_sensor_id": "",
                 "match_displayname": "",
                 "audio_file": "",
-                "label": "primary → failover_2"
+                "label": "primary \u2192 failover_2"
             }
-        ]
+        ],
+        "composite_red_alert_rules": []
     },
     "lightning_announcements": [
         {
@@ -213,7 +215,7 @@
             "name": "THOR Unknown Status",
             "description": "THOR system unknown status - system connectivity issue",
             "category": "system_alert",
-            "audio_file": "",
+            "audio_file": "Voice_Unknown.mp3",
             "tts_text": "THOR System Alert: Lightning monitoring system status unknown. Exercise extreme caution until system connectivity is restored.",
             "priority": 7,
             "enabled": false
@@ -252,7 +254,7 @@
         "Unknown": {
             "horn_enabled": false,
             "horn_file": "",
-            "announce_file": ""
+            "announce_file": "Voice_Unknown.mp3"
         }
     },
     "announce_timing": {

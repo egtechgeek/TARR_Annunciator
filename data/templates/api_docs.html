@@ -2,146 +2,422 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TARR Annunciator API Documentation</title>
+    <title>TARR Annunciator API Documentation — v1.1.2</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { padding: 20px; }
-        .api-section { margin-bottom: 3rem; }
-        .endpoint { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        body { padding: 20px; background: #fafafa; }
+        .api-section { margin-bottom: 2.5rem; }
+        .endpoint { background: #fff; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #e9ecef; }
         .method-get { border-left: 4px solid #28a745; }
         .method-post { border-left: 4px solid #007bff; }
-        .code-block { background: #1e1e1e; color: #f8f8f2; padding: 1rem; border-radius: 5px; overflow-x: auto; }
-        .response-example { background: #f1f3f4; padding: 1rem; border-radius: 5px; }
-        h1, h2 { color: #333; }
-        .badge-method { font-size: 0.8rem; }
+        .method-put { border-left: 4px solid #fd7e14; }
+        .method-delete { border-left: 4px solid #dc3545; }
+        .code-block, .response-example { background: #1e1e1e; color: #f8f8f2; padding: 1rem; border-radius: 5px; overflow-x: auto; font-size: 0.9rem; }
+        .response-example { background: #2d2d2d; }
+        h1, h2 { color: #222; }
+        .badge-method { font-size: 0.75rem; vertical-align: middle; }
+        .toc a { text-decoration: none; }
+        .auth-pill { font-size: 0.75rem; }
+        code { color: #c7254e; }
+        .nav-admin { margin-bottom: 1.5rem; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚂 TARR Annunciator API Documentation</h1>
-        <p class="lead">REST API for triggering announcements and controlling the TARR Annunciator system externally.</p>
-        
+        <div class="nav-admin">
+            <a href="/admin" class="btn btn-sm btn-outline-secondary">← Back to Admin</a>
+        </div>
+
+        <h1>TARR Annunciator API Documentation</h1>
+        <p class="lead mb-1">REST API for external systems and scripts (v1.1.2).</p>
+        <p class="text-muted">This page requires an <strong>Admin login</strong>. It is served at <code>/admin/api-docs</code> (legacy <code>/api/docs</code> uses the same auth gate).</p>
+
         <div class="alert alert-info">
-            <h5>🔑 Authentication</h5>
-            <p>Most API endpoints require authentication using an API key. Include the key in one of these ways:</p>
-            <ul>
-                <li><strong>Header:</strong> <code>X-API-Key: tarr-api-2025</code></li>
-                <li><strong>Query parameter:</strong> <code>?api_key=tarr-api-2025</code></li>
-                <li><strong>Form parameter:</strong> <code>api_key=tarr-api-2025</code></li>
+            <h5 class="alert-heading">Authentication</h5>
+            <p class="mb-2">Most <code>/api/…</code> write/control endpoints require an <strong>API key</strong> configured under Admin → User &amp; API Management.</p>
+            <ul class="mb-2">
+                <li><strong>Header (preferred):</strong> <code>X-API-Key: YOUR_API_KEY</code></li>
+                <li><strong>Query:</strong> <code>?api_key=YOUR_API_KEY</code></li>
+                <li><strong>Form field:</strong> <code>api_key=YOUR_API_KEY</code></li>
+            </ul>
+            <p class="mb-0 small">Replace <code>YOUR_API_KEY</code> with a key from Admin. Do not hard-code production keys into public repos.</p>
+        </div>
+
+        <div class="alert alert-warning">
+            <h5 class="alert-heading">Red Alert behavior</h5>
+            <p class="mb-0">While a Thor Guard <strong>Red Alert lock</strong> is active and non-emergency suppress is enabled, station / promo / safety / scheduled announcements are rejected with HTTP <strong>409 Conflict</strong> and <code>red_alert_active: true</code>. Emergencies and lightning audio still follow their own rules.</p>
+        </div>
+
+        <div class="api-section">
+            <h2>Contents</h2>
+            <ul class="toc">
+                <li><a href="#public">Public endpoints (no API key)</a></li>
+                <li><a href="#announce">Announcements (API key)</a></li>
+                <li><a href="#queue-ctrl">Queue controls (API key)</a></li>
+                <li><a href="#audio">Audio (API key)</a></li>
+                <li><a href="#config">Configuration &amp; schedule (API key)</a></li>
+                <li><a href="#lightning">Lightning / Thor Guard (API key)</a></li>
+                <li><a href="#session-queue">Queue status (Admin session)</a></li>
+                <li><a href="#related">Related public HTTP helpers</a></li>
+                <li><a href="#errors">Common errors</a></li>
+                <li><a href="#examples">curl examples</a></li>
             </ul>
         </div>
 
-        <div class="api-section">
-            <h2>System Status</h2>
-            
+        <!-- ========== PUBLIC ========== -->
+        <div class="api-section" id="public">
+            <h2>Public endpoints <span class="badge bg-secondary auth-pill">no API key</span></h2>
+
             <div class="endpoint method-get">
                 <h4><span class="badge bg-success badge-method">GET</span> /api/status</h4>
-                <p>Get system status information (no authentication required)</p>
+                <p>Overall system status: version, audio, scheduler / operating hours, platform.</p>
                 <div class="response-example">
-                    <strong>Response:</strong>
-                    <pre><code>{
+                    <strong>Example response:</strong>
+                    <pre class="mb-0"><code>{
   "status": "online",
+  "app_version": "1.1.2",
+  "installed_version": "1.1.2",
   "audio_available": true,
   "audio_backend": "beep",
   "api_enabled": true,
-  "scheduler_running": true,
+  "scheduler_running": false,
+  "operating_hours": {
+    "hours_enabled": true,
+    "scheduler_active": false,
+    "label": "Paused (outside operating hours)",
+    "timezone": "America/New_York",
+    "local_time": "2026-09-20 21:00:00 EDT",
+    "within_hours": false
+  },
   "volume": 70,
-  "timestamp": "2024-01-15T12:30:45Z"
+  "selected_audio_device": "default",
+  "available_devices": 2,
+  "platform": { "...": "platform details" },
+  "timestamp": "2026-09-20T21:00:00-04:00"
 }</code></pre>
                 </div>
             </div>
+
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/platform</h4>
+                <p>Host platform details (OS / arch / Raspberry Pi hints). Useful for installers and support.</p>
+            </div>
         </div>
 
-        <div class="api-section">
-            <h2>Announcements</h2>
-            
+        <!-- ========== ANNOUNCE ========== -->
+        <div class="api-section" id="announce">
+            <h2>Announcements <span class="badge bg-primary auth-pill">API key</span></h2>
+            <p class="text-muted">Accept JSON (<code>Content-Type: application/json</code>) or form fields. Values for trains / destinations / etc. must match IDs from <code>GET /api/config</code>.</p>
+
             <div class="endpoint method-post">
                 <h4><span class="badge bg-primary badge-method">POST</span> /api/announce/station</h4>
-                <p>Trigger a station announcement</p>
+                <p>Queue a station (train) announcement.</p>
                 <div class="code-block">
-                    <strong>Request Body (JSON):</strong>
-                    <pre><code>{
+                    <strong>JSON body:</strong>
+                    <pre class="mb-0"><code>{
   "train_number": "1",
-  "direction": "westbound", 
+  "direction": "westbound",
   "destination": "goodwin_station",
   "track_number": "1"
 }</code></pre>
                 </div>
+                <p class="small mt-2 mb-0">Optional form fields: <code>priority</code> (default <code>normal</code>), <code>delay</code> seconds.</p>
             </div>
 
             <div class="endpoint method-post">
                 <h4><span class="badge bg-primary badge-method">POST</span> /api/announce/safety</h4>
-                <p>Trigger a safety announcement</p>
+                <p>Queue a safety announcement.</p>
                 <div class="code-block">
-                    <strong>Request Body (JSON):</strong>
-                    <pre><code>{
+                    <strong>JSON body:</strong>
+                    <pre class="mb-0"><code>{
   "language": "english"
 }</code></pre>
                 </div>
+                <p class="small mt-2 mb-0">Optional: <code>priority</code> (default <code>high</code>), <code>delay</code>.</p>
             </div>
 
             <div class="endpoint method-post">
                 <h4><span class="badge bg-primary badge-method">POST</span> /api/announce/promo</h4>
-                <p>Trigger a promotional announcement</p>
+                <p>Queue a promo announcement. <code>file</code> is the promo ID (not necessarily including <code>.mp3</code> — use IDs from config).</p>
                 <div class="code-block">
-                    <strong>Request Body (JSON):</strong>
-                    <pre><code>{
+                    <strong>JSON body:</strong>
+                    <pre class="mb-0"><code>{
   "file": "promo_english"
+}</code></pre>
+                </div>
+                <p class="small mt-2 mb-0">Optional: <code>priority</code> (default <code>low</code>), <code>delay</code>.</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/announce/emergency</h4>
+                <p>Queue an emergency announcement at highest priority. <code>file</code> must be an emergency ID from config (e.g. <code>severe_weather</code>).</p>
+                <div class="code-block">
+                    <strong>JSON body:</strong>
+                    <pre class="mb-0"><code>{
+  "file": "severe_weather"
 }</code></pre>
                 </div>
             </div>
         </div>
 
-        <div class="api-section">
-            <h2>Audio Control</h2>
-            
+        <!-- ========== QUEUE CTRL ========== -->
+        <div class="api-section" id="queue-ctrl">
+            <h2>Queue controls <span class="badge bg-primary auth-pill">API key</span></h2>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/announcements/pause</h4>
+                <p>Pause the announcement queue (does not clear waiting items).</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/announcements/resume</h4>
+                <p>Resume a paused queue.</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/announcements/stop-current</h4>
+                <p>Stop the announcement that is currently playing.</p>
+            </div>
+        </div>
+
+        <!-- ========== AUDIO ========== -->
+        <div class="api-section" id="audio">
+            <h2>Audio <span class="badge bg-primary auth-pill">API key</span></h2>
+
             <div class="endpoint method-get">
                 <h4><span class="badge bg-success badge-method">GET</span> /api/audio/volume</h4>
-                <p>Get current volume setting, including ALSA/system mixer status on Linux</p>
+                <p>Returns <code>volume</code> (0.0–1.0), <code>volume_percent</code>, and <code>system_mixer</code> status on Linux.</p>
             </div>
 
             <div class="endpoint method-post">
                 <h4><span class="badge bg-primary badge-method">POST</span> /api/audio/volume</h4>
-                <p>Set audio volume (0.0-1.0 or 0-100). On Raspberry Pi / Linux this also sets ALSA mixer levels (alsamixer) and restores them on startup.</p>
+                <p>Set volume. Accepts <code>0.0–1.0</code> or <code>0–100</code>. On Raspberry Pi / Linux also updates ALSA mixer levels and persists for reboot.</p>
                 <div class="code-block">
-                    <strong>Request Body (JSON):</strong>
-                    <pre><code>{
-  "volume": 75
-}</code></pre>
+                    <pre class="mb-0"><code>{ "volume": 75 }</code></pre>
+                </div>
+            </div>
+
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/audio/devices</h4>
+                <p>List detected audio output devices and the currently selected device.</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/audio/devices</h4>
+                <p>Select an output device by ID (from the devices list).</p>
+                <div class="code-block">
+                    <pre class="mb-0"><code>{ "device_id": "default" }</code></pre>
                 </div>
             </div>
         </div>
 
-        <div class="api-section">
-            <h2>Configuration</h2>
-            
+        <!-- ========== CONFIG ========== -->
+        <div class="api-section" id="config">
+            <h2>Configuration &amp; schedule <span class="badge bg-primary auth-pill">API key</span></h2>
+
             <div class="endpoint method-get">
                 <h4><span class="badge bg-success badge-method">GET</span> /api/config</h4>
-                <p>Get system configuration (trains, destinations, etc.)</p>
+                <p>Catalogs used by announcements: trains, directions, destinations, tracks, promo list, safety languages, emergencies.</p>
             </div>
 
             <div class="endpoint method-get">
                 <h4><span class="badge bg-success badge-method">GET</span> /api/schedule</h4>
-                <p>Get current announcement schedule</p>
+                <p>Returns the current cron schedule object (<code>station_announcements</code>, <code>promo_announcements</code>, <code>safety_announcements</code>).</p>
             </div>
 
             <div class="endpoint method-post">
                 <h4><span class="badge bg-primary badge-method">POST</span> /api/schedule</h4>
-                <p>Update announcement schedule</p>
+                <p>Replace the schedule. Body must wrap the cron object:</p>
+                <div class="code-block">
+                    <pre class="mb-0"><code>{
+  "schedule": {
+    "station_announcements": [],
+    "promo_announcements": [],
+    "safety_announcements": []
+  }
+}</code></pre>
+                </div>
+                <p class="small mt-2 mb-0">On success the in-process scheduler is rebuilt. Jobs still respect operating hours.</p>
             </div>
         </div>
 
-        <div class="alert alert-warning mt-4">
-            <h5>🔗 Testing the API</h5>
-            <p>You can test API endpoints using tools like curl, Postman, or the built-in API test script.</p>
-            <p><strong>Example curl command:</strong></p>
-            <pre><code>curl -X POST http://localhost:8080/api/announce/station \
-  -H "X-API-Key: tarr-api-2025" \
+        <!-- ========== LIGHTNING ========== -->
+        <div class="api-section" id="lightning">
+            <h2>Lightning / Thor Guard <span class="badge bg-primary auth-pill">API key</span></h2>
+            <p class="text-muted">Multi-feed monitor (primary + failover_1 + failover_2), Red Alert lock, All Clear release modes, condition audio. Prefer Admin UI for day-to-day changes; use these endpoints for automation.</p>
+
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/lightning/status</h4>
+                <p>Full lightning trigger status (same rich payload Admin uses), including:</p>
+                <ul class="small">
+                    <li><code>active_feed_id</code>, <code>active_displayname</code>, <code>on_failover</code></li>
+                    <li><code>last_condition</code>, <code>red_alert_active</code>, reminder fields</li>
+                    <li><code>feeds</code>, <code>failover</code>, <code>feed_health</code> (includes <code>last_alert</code>)</li>
+                    <li><code>allclear_release_mode</code> (<code>primary_only</code> | <code>failover_vote</code>)</li>
+                    <li><code>entered_red_alert_on_feed</code>, <code>condition_announce</code>, <code>condition_audio</code>, <code>red_alert_policy</code></li>
+                </ul>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/lightning/config</h4>
+                <p>Update lightning configuration by <code>section</code> (same handler as Admin). Sections:</p>
+                <ul class="small">
+                    <li><code>monitor</code> (default) — timing, failover, feeds, feed-switch rules, announce timing</li>
+                    <li><code>condition_announce</code> — which conditions may PA</li>
+                    <li><code>condition_audio</code> — horn + voice MP3 pairs</li>
+                    <li><code>red_alert_policy</code> — preempt / suppress / reminder</li>
+                </ul>
+                <div class="code-block">
+                    <strong>Example — set All Clear release mode:</strong>
+                    <pre class="mb-0"><code>{
+  "section": "monitor",
+  "enabled": true,
+  "fetch_interval": 60,
+  "timeout": 30,
+  "failover": {
+    "consecutive_failures": 5,
+    "failback_mode": "prefer_primary",
+    "failback_after_successes": 5,
+    "allow_failover_during_red_alert": true,
+    "allclear_release_mode": "primary_only",
+    "preserve_condition_across_failover": true,
+    "on_all_feeds_failed": "hold_last_condition",
+    "triggers": {
+      "http_error": true,
+      "http_status_not_ok": true,
+      "empty_body": true,
+      "encoding_error": true,
+      "missing_lightningalert": true,
+      "unknown_condition": true,
+      "displayname_mismatch": false,
+      "uniqueid_mismatch": false
+    }
+  },
+  "feeds": [ "... full feed objects ..." ]
+}</code></pre>
+                </div>
+                <p class="small mt-2 mb-0">Send a complete monitor payload when updating feeds/failover (Admin does this). Partial objects may disable feeds if omitted incorrectly.</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/lightning/test/:condition</h4>
+                <p>Manual condition test / drill. <code>:condition</code> is one of: <code>RedAlert</code>, <code>AllClear</code>, <code>Warning</code>, <code>Caution</code>, <code>Unknown</code> (case-insensitive).</p>
+                <p class="small mb-0 text-danger">Plays audio and can engage Red Alert lock — use carefully on a live PA.</p>
+            </div>
+        </div>
+
+        <!-- ========== SESSION QUEUE ========== -->
+        <div class="api-section" id="session-queue">
+            <h2>Queue status <span class="badge bg-warning text-dark auth-pill">Admin session cookie</span></h2>
+            <p class="text-muted">These routes use <code>requireAuth()</code> (browser Admin login), not the API key middleware. They power the Admin Announcement Queue tab.</p>
+
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/queue/status</h4>
+                <p>Current queue state (running / paused / playing / waiting).</p>
+            </div>
+
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /api/queue/history?limit=20</h4>
+                <p>Recent announcement history. Optional <code>limit</code> (default 20).</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /api/queue/cancel</h4>
+                <p>Cancel a queued item by ID.</p>
+                <div class="code-block">
+                    <pre class="mb-0"><code>{ "id": "announcement-id-here" }</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== RELATED ========== -->
+        <div class="api-section" id="related">
+            <h2>Related public HTTP helpers <span class="badge bg-secondary auth-pill">no API key</span></h2>
+            <p class="text-muted">Not under the <code>/api</code> group, but useful for dashboards and kiosks.</p>
+
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /lightning_status</h4>
+                <p>Public subset of lightning status for the Main Control Dashboard: lock, condition, active feed, feed health, <code>allclear_release_mode</code>, etc.</p>
+            </div>
+
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /scheduler_status</h4>
+                <p>Scheduler jobs, <code>audio_available</code>, and <code>operating_hours</code> label (same wording as Admin / Main header).</p>
+            </div>
+
+            <div class="endpoint method-get">
+                <h4><span class="badge bg-success badge-method">GET</span> /audio_status</h4>
+                <p>Audio availability, volume, mixer summary, chime presence.</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /play_announcement</h4>
+                <p>Form-based station play used by the Main UI (not API-key gated).</p>
+            </div>
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /play_promo</h4>
+                <p>Form-based promo play (Main UI).</p>
+            </div>
+            <div class="endpoint method-post">
+                <h4><span class="badge bg-primary badge-method">POST</span> /play_safety_announcement</h4>
+                <p>Form-based safety play (Main UI).</p>
+            </div>
+        </div>
+
+        <!-- ========== ERRORS ========== -->
+        <div class="api-section" id="errors">
+            <h2>Common errors</h2>
+            <table class="table table-sm table-bordered bg-white">
+                <thead><tr><th>HTTP</th><th>When</th></tr></thead>
+                <tbody>
+                    <tr><td>400</td><td>Missing/invalid fields, bad JSON, unknown promo/emergency/language ID</td></tr>
+                    <tr><td>401 / redirect</td><td>Admin session required (docs page, queue status routes)</td></tr>
+                    <tr><td>409</td><td>Announcement suppressed by active Red Alert lock</td></tr>
+                    <tr><td>503</td><td>API disabled in configuration (<code>api_enabled</code> false)</td></tr>
+                    <tr><td>403 / 401</td><td>Missing or invalid API key on authenticated <code>/api</code> routes</td></tr>
+                </tbody>
+            </table>
+            <p class="small text-muted">Admin-only UI routes (<code>/admin/lightning/…</code>, updates, Bluetooth, users, etc.) are not fully enumerated here — they require a browser Admin session and power the Admin tabs. Use this document for external integration via <code>/api</code>.</p>
+        </div>
+
+        <!-- ========== EXAMPLES ========== -->
+        <div class="api-section" id="examples">
+            <h2>curl examples</h2>
+            <p>Replace <code>HOST</code> (e.g. <code>10.81.77.159:8080</code> or <code>localhost:8080</code>) and <code>YOUR_API_KEY</code>.</p>
+
+            <div class="code-block mb-3">
+                <strong>Status (public):</strong>
+                <pre class="mb-0"><code>curl -s http://HOST/api/status</code></pre>
+            </div>
+
+            <div class="code-block mb-3">
+                <strong>Station announcement:</strong>
+                <pre class="mb-0"><code>curl -X POST http://HOST/api/announce/station \
+  -H "X-API-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"train_number":"1","direction":"westbound","destination":"goodwin_station","track_number":"1"}'</code></pre>
-        </div>
-    </div>
+            </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <div class="code-block mb-3">
+                <strong>Lightning status:</strong>
+                <pre class="mb-0"><code>curl -s http://HOST/api/lightning/status \
+  -H "X-API-Key: YOUR_API_KEY"</code></pre>
+            </div>
+
+            <div class="code-block mb-3">
+                <strong>Pause queue:</strong>
+                <pre class="mb-0"><code>curl -X POST http://HOST/api/announcements/pause \
+  -H "X-API-Key: YOUR_API_KEY"</code></pre>
+            </div>
+
+            <div class="code-block">
+                <strong>Public lightning dashboard subset:</strong>
+                <pre class="mb-0"><code>curl -s http://HOST/lightning_status</code></pre>
+            </div>
+        </div>
+
+        <hr>
+        <p class="text-muted small">TARR Annunciator API docs — app version 1.1.2. For operator procedures see <code>MANUAL.md</code>.</p>
+    </div>
 </body>
 </html>

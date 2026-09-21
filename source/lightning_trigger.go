@@ -59,6 +59,12 @@ type LightningTrigger struct {
 	activeUniqueID         string
 	lastProbeAt            time.Time
 	lastAllClearVoteSummary string
+	// Manual override (Admin) — distinct from Manual Test audio drills.
+	manualOverrideActive    bool
+	manualOverrideCondition string
+	manualOverrideAt        time.Time
+	manualOverrideNote      string
+	lastCompositeEnterSummary string
 }
 
 // LightningAnnouncement represents a lightning announcement from the JSON config
@@ -82,6 +88,7 @@ type LightningMonitorConfig struct {
 	Failover                LightningFailoverPolicy  `json:"failover"`
 	Feeds                   []LightningFeedConfig    `json:"feeds"`
 	FeedSwitchAnnouncements []FeedSwitchAnnouncement `json:"feed_switch_announcements"`
+	CompositeRedAlertRules  []CompositeRedAlertRule  `json:"composite_red_alert_rules"`
 }
 
 // LightningConfig represents the lightning.json configuration
@@ -201,7 +208,7 @@ func defaultConditionAudioConfig() ConditionAudioConfig {
 		AllClear: ConditionAudioClip{HornEnabled: true, HornFile: "Horn_AllClear.mp3", AnnounceFile: "Voice_AllClear.mp3"},
 		Warning:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Warning.mp3"},
 		Caution:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Caution.mp3"},
-		Unknown:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "thor_unknown.mp3"},
+		Unknown:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Unknown.mp3"},
 	}
 }
 
@@ -271,7 +278,7 @@ func (c *LightningConfig) ensurePolicyDefaults() {
 		}
 		tr := c.Monitor.Failover.Triggers
 		if !tr.HTTPError && !tr.HTTPStatusNotOK && !tr.EmptyBody && !tr.EncodingError &&
-			!tr.MissingLightningAlert && !tr.UnknownCondition && !tr.DisplaynameMismatch && !tr.UniqueIDMismatch {
+			!tr.MissingLightningAlert && !tr.UnknownCondition && !tr.DisplaynameMismatch && !tr.UniqueIDMismatch && !tr.StaleLocaltime {
 			c.Monitor.Failover.Triggers = defaultFailoverTriggers()
 		}
 	}
@@ -324,6 +331,9 @@ func (c *LightningConfig) ensurePolicyDefaults() {
 
 	if c.Monitor.FeedSwitchAnnouncements == nil {
 		c.Monitor.FeedSwitchAnnouncements = []FeedSwitchAnnouncement{}
+	}
+	if c.Monitor.CompositeRedAlertRules == nil {
+		c.Monitor.CompositeRedAlertRules = []CompositeRedAlertRule{}
 	}
 	if c.DisplaynameOverrides == nil {
 		c.DisplaynameOverrides = []DisplaynameOverride{}
@@ -741,7 +751,66 @@ func (t *LightningTrigger) fetchOneFeed(feed LightningFeedConfig, globalTimeout 
 	if alert == "" {
 		return feedFetchResult{failureClass: "missing_lightningalert", errMsg: "missing lightningalert", displayname: dn, uniqueid: uid, xmlString: xmlString}
 	}
+	// Stale <localtime> date check — ignore clock, use calendar date vs app time.
+	// Stuck sensors (e.g. Fern Forest frozen on RedAlert) publish an old date.
+	localtime := extractXMLTag(xmlString, "localtime")
+	if stale, sensorDay, reason := thorLocaltimeStale(localtime, appNow()); stale {
+		msg := reason
+		if !sensorDay.IsZero() {
+			msg = fmt.Sprintf("%s (sensor date %s)", reason, sensorDay.Format("01/02/2006"))
+		}
+		return feedFetchResult{
+			failureClass: "stale_localtime",
+			errMsg:       msg,
+			alert:        "Unknown",
+			displayname:  dn,
+			uniqueid:     uid,
+			xmlString:    xmlString,
+		}
+	}
 	return feedFetchResult{ok: true, alert: alert, displayname: dn, uniqueid: uid, xmlString: xmlString}
+}
+
+// thorLocaltimeStale reports whether Thor <localtime> is more than 24h behind app time.
+// Time-of-day is ignored (sensor clocks/timezones are unreliable); only the date is used.
+// Empty localtime does not reject the feed (legacy/missing tag).
+func thorLocaltimeStale(localtimeStr string, now time.Time) (stale bool, sensorDay time.Time, reason string) {
+	localtimeStr = strings.TrimSpace(localtimeStr)
+	if localtimeStr == "" {
+		return false, time.Time{}, ""
+	}
+	parsed, err := parseThorLocaltime(localtimeStr)
+	if err != nil {
+		return true, time.Time{}, "unparseable localtime: " + localtimeStr
+	}
+	loc := now.Location()
+	sensorDay = time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, loc)
+	// More than 24h after the start of the sensor's calendar day → date is too old.
+	if now.After(sensorDay.Add(24 * time.Hour)) {
+		return true, sensorDay, "localtime date more than 24h behind app time"
+	}
+	return false, sensorDay, ""
+}
+
+func parseThorLocaltime(s string) (time.Time, error) {
+	s = strings.TrimSpace(s)
+	layouts := []string{
+		"03:04:05 PM 01/02/2006",
+		"3:04:05 PM 01/02/2006",
+		"03:04:05 PM 1/2/2006",
+		"3:04:05 PM 1/2/2006",
+		"15:04:05 01/02/2006",
+		"15:04:05 1/2/2006",
+	}
+	var lastErr error
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, s)
+		if err == nil {
+			return t, nil
+		}
+		lastErr = err
+	}
+	return time.Time{}, lastErr
 }
 
 func (t *LightningTrigger) triggerEnabled(class string) bool {
@@ -763,6 +832,8 @@ func (t *LightningTrigger) triggerEnabled(class string) bool {
 		return tr.DisplaynameMismatch
 	case "uniqueid_mismatch":
 		return tr.UniqueIDMismatch
+	case "stale_localtime":
+		return tr.StaleLocaltime
 	default:
 		return true
 	}
@@ -776,6 +847,9 @@ func (t *LightningTrigger) recordFeedFailure(feedID, class, msg string) {
 	h.LastError = fmt.Sprintf("%s: %s", class, msg)
 	h.LastErrorAt = now
 	h.ConsecutiveSuccesses = 0
+	if class == "stale_localtime" {
+		h.LastAlert = "Unknown"
+	}
 	window := t.failover.FailureWindowSeconds
 	if window > 0 {
 		cutoff := now.Add(-time.Duration(window) * time.Second)
@@ -809,7 +883,63 @@ func (t *LightningTrigger) recordFeedSuccess(feedID, alert, dn, uid string) {
 	t.noteFetchSuccess()
 }
 
-// Fetch XML and check for lightning conditions (multi-feed)
+// recordStandbyObservation updates Live Status health for a non-active enabled feed.
+// It never drives failover / condition changes / global lastFetchError.
+func (t *LightningTrigger) recordStandbyObservation(feedID string, res feedFetchResult) {
+	h := t.healthFor(feedID)
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	now := time.Now()
+	if res.ok {
+		h.ConsecutiveFailures = 0
+		h.FailureTimes = nil
+		h.ConsecutiveSuccesses++
+		h.LastOK = now
+		h.LastError = ""
+		h.LastAlert = res.alert
+		h.LastDisplayname = res.displayname
+		h.LastUniqueID = res.uniqueid
+		return
+	}
+	h.ConsecutiveSuccesses = 0
+	h.ConsecutiveFailures++
+	h.LastError = fmt.Sprintf("%s: %s", res.failureClass, res.errMsg)
+	h.LastErrorAt = now
+	if res.failureClass == "stale_localtime" {
+		h.LastAlert = "Unknown"
+		if res.displayname != "" {
+			h.LastDisplayname = res.displayname
+		}
+		if res.uniqueid != "" {
+			h.LastUniqueID = res.uniqueid
+		}
+	}
+}
+
+func (t *LightningTrigger) fetchEnabledFeedsParallel(feeds []LightningFeedConfig, timeout int) map[string]feedFetchResult {
+	out := make(map[string]feedFetchResult, len(feeds))
+	if len(feeds) == 0 {
+		return out
+	}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	for i := range feeds {
+		wg.Add(1)
+		go func(feed LightningFeedConfig) {
+			defer wg.Done()
+			r := t.fetchOneFeed(feed, timeout)
+			mu.Lock()
+			out[feed.ID] = r
+			mu.Unlock()
+		}(feeds[i])
+	}
+	wg.Wait()
+	return out
+}
+
+// Fetch XML and check for lightning conditions (multi-feed).
+// All enabled feeds are fetched every cycle so Live Status shows each sensor's last condition.
+// Only the active feed drives failover decisions and processConditionChange.
 func (t *LightningTrigger) fetchAndCheck() {
 	defer func() {
 		t.mu.Lock()
@@ -825,11 +955,18 @@ func (t *LightningTrigger) fetchAndCheck() {
 	t.Timeout = mon.Timeout
 	t.mu.Unlock()
 
+	enabled := enabledFeedsInOrder(mon)
+	if len(enabled) == 0 {
+		t.mu.Lock()
+		t.allFeedsFailed = true
+		t.mu.Unlock()
+		return
+	}
+
 	t.mu.Lock()
 	active := t.resolveActiveFeedLocked(mon)
 	pinned := t.pinnedFeedID
 	t.mu.Unlock()
-
 	if active == nil {
 		t.mu.Lock()
 		t.allFeedsFailed = true
@@ -837,80 +974,130 @@ func (t *LightningTrigger) fetchAndCheck() {
 		return
 	}
 
-	// Failback probe
-	if pinned == "" {
-		if pref := preferredFailbackFeed(mon, active.ID); pref != nil && pref.ID != active.ID {
-			shouldProbe := true
-			t.mu.Lock()
-			probeEvery := t.failover.FailbackProbeIntervalSeconds
-			if probeEvery > 0 && time.Since(t.lastProbeAt) < time.Duration(probeEvery)*time.Second {
-				shouldProbe = false
-			}
-			if shouldProbe {
-				t.lastProbeAt = time.Now()
-			}
-			t.mu.Unlock()
-			if shouldProbe {
-				pres := t.fetchOneFeed(*pref, mon.Timeout)
-				if pres.ok {
-					t.recordFeedSuccess(pref.ID, pres.alert, pres.displayname, pres.uniqueid)
-					h := t.healthFor(pref.ID)
-					t.mu.Lock()
-					need := t.failover.FailbackAfterSuccesses
-					okCount := h.ConsecutiveSuccesses
-					t.mu.Unlock()
-					if need < 1 {
-						need = 1
-					}
-					if okCount >= need {
-						t.switchActiveFeed(pref, "failback")
-						active = pref
-					}
-				} else if t.triggerEnabled(pres.failureClass) {
-					t.recordFeedFailure(pref.ID, pres.failureClass, pres.errMsg)
-				}
-			}
+	results := t.fetchEnabledFeedsParallel(enabled, mon.Timeout)
+
+	anyOK := false
+	for _, f := range enabled {
+		res, ok := results[f.ID]
+		if !ok {
+			continue
 		}
+		if f.ID == active.ID {
+			if res.ok {
+				anyOK = true
+			}
+			continue // active handled below
+		}
+		// Standby enabled feeds: status only
+		if res.ok {
+			anyOK = true
+		}
+		t.recordStandbyObservation(f.ID, res)
 	}
 
-	res := t.fetchOneFeed(*active, mon.Timeout)
-	if !res.ok {
-		if t.triggerEnabled(res.failureClass) {
-			t.recordFeedFailure(active.ID, res.failureClass, res.errMsg)
-			t.maybeFailover(mon, active)
-		}
+	res, hasActive := results[active.ID]
+	if !hasActive {
+		t.mu.Lock()
+		t.allFeedsFailed = !anyOK
+		t.mu.Unlock()
 		return
 	}
 
-	// Mismatch checks
+	if !res.ok {
+		// Stale localtime always counts — frozen sensors must not keep driving lock/announce.
+		applyFail := res.failureClass == "stale_localtime" || t.triggerEnabled(res.failureClass)
+		if applyFail {
+			t.recordFeedFailure(active.ID, res.failureClass, res.errMsg)
+			t.maybeFailover(mon, active)
+		}
+		t.mu.Lock()
+		t.allFeedsFailed = !anyOK
+		t.mu.Unlock()
+		return
+	}
+
+	// Mismatch checks (active feed only — may trigger failover)
 	if strings.TrimSpace(active.ExpectedDisplayname) != "" && res.displayname != "" &&
 		!strings.EqualFold(active.ExpectedDisplayname, res.displayname) && t.triggerEnabled("displayname_mismatch") {
 		t.recordFeedFailure(active.ID, "displayname_mismatch", fmt.Sprintf("expected %q got %q", active.ExpectedDisplayname, res.displayname))
 		t.maybeFailover(mon, active)
+		t.mu.Lock()
+		t.allFeedsFailed = !anyOK
+		t.mu.Unlock()
 		return
 	}
 	if strings.TrimSpace(active.ExpectedUniqueID) != "" && res.uniqueid != "" &&
 		!strings.EqualFold(active.ExpectedUniqueID, res.uniqueid) && t.triggerEnabled("uniqueid_mismatch") {
 		t.recordFeedFailure(active.ID, "uniqueid_mismatch", fmt.Sprintf("expected %q got %q", active.ExpectedUniqueID, res.uniqueid))
 		t.maybeFailover(mon, active)
+		t.mu.Lock()
+		t.allFeedsFailed = !anyOK
+		t.mu.Unlock()
 		return
 	}
 
 	if strings.EqualFold(res.alert, "unknown") && t.triggerEnabled("unknown_condition") {
 		t.recordFeedFailure(active.ID, "unknown_condition", "Unknown")
 		t.maybeFailover(mon, active)
+		t.mu.Lock()
+		t.allFeedsFailed = !anyOK
+		t.mu.Unlock()
 		return
 	}
 
 	t.recordFeedSuccess(active.ID, res.alert, res.displayname, res.uniqueid)
 	t.mu.Lock()
+	wasAllFailed := t.allFeedsFailed
+	overrideActive := t.manualOverrideActive
 	t.activeDisplayname = res.displayname
 	t.activeUniqueID = res.uniqueid
 	t.URL = strings.TrimSpace(active.URL)
 	t.allFeedsFailed = false
+	if overrideActive && wasAllFailed {
+		t.manualOverrideActive = false
+		t.manualOverrideNote = "cleared on feed recovery"
+		log.Printf("Lightning manual override cleared — feed recovered (%s)", active.ID)
+	}
 	t.mu.Unlock()
 
+	// Failback using this cycle's standby success counters (no extra probe fetch needed)
+	if pinned == "" {
+		if pref := preferredFailbackFeed(mon, active.ID); pref != nil && pref.ID != active.ID {
+			h := t.healthFor(pref.ID)
+			t.mu.Lock()
+			need := t.failover.FailbackAfterSuccesses
+			okCount := h.ConsecutiveSuccesses
+			probeEvery := t.failover.FailbackProbeIntervalSeconds
+			sinceProbe := time.Since(t.lastProbeAt)
+			t.mu.Unlock()
+			if need < 1 {
+				need = 1
+			}
+			allowProbe := probeEvery <= 0 || sinceProbe >= time.Duration(probeEvery)*time.Second
+			if allowProbe {
+				t.mu.Lock()
+				t.lastProbeAt = time.Now()
+				t.mu.Unlock()
+				if okCount >= need {
+					if prefRes, ok := results[pref.ID]; ok && prefRes.ok {
+						t.switchActiveFeed(pref, "failback")
+						active = pref
+						t.mu.Lock()
+						t.activeDisplayname = prefRes.displayname
+						t.activeUniqueID = prefRes.uniqueid
+						t.URL = strings.TrimSpace(active.URL)
+						t.mu.Unlock()
+						t.processConditionChange(active, prefRes.alert)
+						t.evaluateCompositeRedAlertEnter()
+						return
+					}
+				}
+			}
+		}
+	}
+
 	t.processConditionChange(active, res.alert)
+	t.evaluateCompositeRedAlertEnter()
 }
 
 func (t *LightningTrigger) maybeFailover(mon LightningMonitorConfig, active *LightningFeedConfig) {
@@ -1461,11 +1648,176 @@ func (t *LightningTrigger) ResetState() {
 	t.reminderCount = 0
 	t.lastReminderAt = time.Time{}
 	t.nextReminderAt = time.Time{}
+	t.manualOverrideActive = false
+	t.manualOverrideCondition = ""
+	t.manualOverrideAt = time.Time{}
+	t.manualOverrideNote = ""
+	t.enteredRedAlertOnFeed = ""
+	t.lastCompositeEnterSummary = ""
 	t.mu.Unlock()
 
 	t.LastCondition = "Reset"
 	t.LastConditionTime = time.Time{}
 	log.Printf("THOR Guard cached state reset to Reset")
+}
+
+// ApplyManualOverride sets operational lightning lock state when Thor feeds are unusable.
+// Distinct from TestCondition (audio drill). action: redalert | allclear | clear
+func (t *LightningTrigger) ApplyManualOverride(action, note string) (string, error) {
+	action = strings.ToLower(strings.TrimSpace(action))
+	note = strings.TrimSpace(note)
+	if note == "" {
+		note = "admin"
+	}
+	switch action {
+	case "redalert", "force_redalert":
+		t.mu.Lock()
+		t.manualOverrideActive = true
+		t.manualOverrideCondition = "RedAlert"
+		t.manualOverrideAt = time.Now()
+		t.manualOverrideNote = note
+		t.LastCondition = "RedAlert"
+		t.LastConditionTime = time.Now()
+		t.enteredRedAlertOnFeed = "manual_override"
+		t.mu.Unlock()
+		t.applyConditionEffects("RedAlert")
+		t.playLightningAnnouncement("RedAlert")
+		msg := "Manual override: Force Red Alert applied"
+		log.Printf("%s (by %s)", msg, note)
+		return msg, nil
+	case "allclear", "force_allclear":
+		t.mu.Lock()
+		t.manualOverrideActive = true
+		t.manualOverrideCondition = "AllClear"
+		t.manualOverrideAt = time.Now()
+		t.manualOverrideNote = note
+		t.LastCondition = "AllClear"
+		t.LastConditionTime = time.Now()
+		t.enteredRedAlertOnFeed = ""
+		t.mu.Unlock()
+		t.applyConditionEffects("AllClear")
+		t.playLightningAnnouncement("AllClear")
+		msg := "Manual override: Force All Clear / unlock applied"
+		log.Printf("%s (by %s)", msg, note)
+		return msg, nil
+	case "clear", "clear_flag":
+		t.mu.Lock()
+		was := t.manualOverrideActive
+		cond := t.manualOverrideCondition
+		t.manualOverrideActive = false
+		t.manualOverrideCondition = ""
+		t.manualOverrideAt = time.Time{}
+		t.manualOverrideNote = note
+		t.mu.Unlock()
+		if !was {
+			return "Manual override flag was already inactive", nil
+		}
+		msg := fmt.Sprintf("Manual override flag cleared (was %s); lock/condition unchanged", cond)
+		log.Printf("%s (by %s)", msg, note)
+		return msg, nil
+	default:
+		return "", fmt.Errorf("unknown override action %q (use redalert, allclear, or clear)", action)
+	}
+}
+
+// evaluateCompositeRedAlertEnter checks Admin composite enter rules (e.g. both failovers Warning → Red Alert).
+// Unlock / All Clear release authority is never modified here.
+func (t *LightningTrigger) evaluateCompositeRedAlertEnter() {
+	if isRedAlertActive() {
+		return
+	}
+	mon := t.monitorSnapshot()
+	rules := mon.CompositeRedAlertRules
+	if len(rules) == 0 {
+		return
+	}
+	timeout := mon.Timeout
+	if timeout < 5 {
+		timeout = 30
+	}
+
+	for _, rule := range rules {
+		if !rule.Enabled {
+			continue
+		}
+		needCond := strings.TrimSpace(rule.RequireCondition)
+		feeds := rule.RequireFeedIDs
+		if needCond == "" || len(feeds) < 2 {
+			continue
+		}
+		type probe struct {
+			id    string
+			alert string
+			ok    bool
+			err   string
+		}
+		results := make([]probe, len(feeds))
+		var wg sync.WaitGroup
+		for i, fid := range feeds {
+			fid = strings.TrimSpace(fid)
+			f := feedByID(mon, fid)
+			results[i].id = fid
+			if f == nil || !f.Enabled || strings.TrimSpace(f.URL) == "" {
+				results[i].err = "feed missing or disabled"
+				continue
+			}
+			wg.Add(1)
+			go func(idx int, feed LightningFeedConfig) {
+				defer wg.Done()
+				r := t.fetchOneFeed(feed, timeout)
+				if !r.ok {
+					results[idx].err = r.failureClass + ": " + r.errMsg
+					return
+				}
+				results[idx].alert = r.alert
+				results[idx].ok = strings.EqualFold(strings.TrimSpace(r.alert), needCond)
+			}(i, *f)
+		}
+		wg.Wait()
+
+		allMatch := true
+		parts := make([]string, 0, len(results))
+		for _, p := range results {
+			if p.err != "" {
+				parts = append(parts, fmt.Sprintf("%s=error(%s)", p.id, p.err))
+				allMatch = false
+				continue
+			}
+			parts = append(parts, fmt.Sprintf("%s=%s", p.id, p.alert))
+			if !p.ok {
+				allMatch = false
+			}
+		}
+		summary := fmt.Sprintf("rule=%s require=%s [%s]", rule.ID, needCond, strings.Join(parts, ", "))
+		if !allMatch {
+			continue
+		}
+
+		label := rule.Label
+		if label == "" {
+			label = rule.ID
+		}
+		log.Printf("Composite Red Alert enter matched: %s — %s", label, summary)
+		t.mu.Lock()
+		t.LastCondition = "RedAlert"
+		t.LastConditionTime = time.Now()
+		t.enteredRedAlertOnFeed = "composite:" + rule.ID
+		t.lastCompositeEnterSummary = summary
+		t.mu.Unlock()
+		t.applyConditionEffects("RedAlert")
+
+		// Announce as Red Alert using primary feed context if available, else first required feed.
+		announceFeed := feedByID(mon, "primary")
+		if announceFeed == nil || !announceFeed.Enabled {
+			announceFeed = feedByID(mon, feeds[0])
+		}
+		if announceFeed != nil && feedAnnounceEnabled(announceFeed, "RedAlert") && t.announceTimingAllows("RedAlert") {
+			t.playLightningAnnouncementForFeed(announceFeed, "RedAlert")
+		} else if announceFeed == nil {
+			t.playLightningAnnouncement("RedAlert")
+		}
+		return // one enter per poll cycle
+	}
 }
 
 func (t *LightningTrigger) applyConditionEffects(condition string) {
@@ -1647,16 +1999,6 @@ func applyRedAlertPolicy(policy RedAlertPolicy) error {
 }
 
 func listLightningAudioFiles() []string {
-	known := []string{
-		"Horn_RedAlert.mp3",
-		"Horn_AllClear.mp3",
-		"Voice_RedAlert.mp3",
-		"Voice_RedAlert_Reminder.mp3",
-		"Voice_AllClear.mp3",
-		"Voice_Warning.mp3",
-		"Voice_Caution.mp3",
-		"thor_unknown.mp3",
-	}
 	seen := map[string]bool{}
 	var files []string
 	add := func(name string) {
@@ -1670,6 +2012,31 @@ func listLightningAudioFiles() []string {
 		seen[name] = true
 		files = append(files, name)
 	}
+	// Prefer what is actually on disk under static/mp3/lightning/
+	dir := ""
+	if app != nil && app.Config != nil && app.Config.MP3Dir != "" {
+		dir = filepath.Join(app.Config.MP3Dir, "lightning")
+	} else {
+		dir = filepath.Join("static", "mp3", "lightning")
+	}
+	if entries, err := os.ReadDir(dir); err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() && strings.HasSuffix(strings.ToLower(entry.Name()), ".mp3") {
+				add(entry.Name())
+			}
+		}
+	}
+	// Also keep any currently configured / known names so Admin select can show (not on disk)
+	known := []string{
+		"Horn_RedAlert.mp3",
+		"Horn_AllClear.mp3",
+		"Voice_RedAlert.mp3",
+		"Voice_RedAlert_Reminder.mp3",
+		"Voice_AllClear.mp3",
+		"Voice_Warning.mp3",
+		"Voice_Caution.mp3",
+		"Voice_Unknown.mp3",
+	}
 	for _, name := range known {
 		add(name)
 	}
@@ -1679,16 +2046,14 @@ func listLightningAudioFiles() []string {
 		}
 		add(lightningConfig.RedAlertPolicy.ReminderAudioFile)
 		add(lightningConfig.RedAlertPolicy.HornAudioFile)
-	}
-	if app != nil && app.Config != nil && app.Config.MP3Dir != "" {
-		entries, err := os.ReadDir(filepath.Join(app.Config.MP3Dir, "lightning"))
-		if err == nil {
-			for _, entry := range entries {
-				if !entry.IsDir() && strings.HasSuffix(strings.ToLower(entry.Name()), ".mp3") {
-					add(entry.Name())
-				}
-			}
-		}
+		ca := lightningConfig.ConditionAudio
+		add(ca.RedAlert.HornFile)
+		add(ca.RedAlert.AnnounceFile)
+		add(ca.AllClear.HornFile)
+		add(ca.AllClear.AnnounceFile)
+		add(ca.Warning.AnnounceFile)
+		add(ca.Caution.AnnounceFile)
+		add(ca.Unknown.AnnounceFile)
 	}
 	sort.Strings(files)
 	return files
@@ -1866,6 +2231,14 @@ func getLightningTriggerStatus() map[string]interface{} {
 	lastErr := lightningTrigger.lastFetchError
 	enteredOn := lightningTrigger.enteredRedAlertOnFeed
 	voteSummary := lightningTrigger.lastAllClearVoteSummary
+	overrideActive := lightningTrigger.manualOverrideActive
+	overrideCond := lightningTrigger.manualOverrideCondition
+	overrideNote := lightningTrigger.manualOverrideNote
+	overrideAt := ""
+	if !lightningTrigger.manualOverrideAt.IsZero() {
+		overrideAt = lightningTrigger.manualOverrideAt.Format("2006-01-02 15:04:05")
+	}
+	compositeSummary := lightningTrigger.lastCompositeEnterSummary
 	healthCopy := map[string]interface{}{}
 	for id, h := range lightningTrigger.feedHealth {
 		if h == nil {
@@ -1925,6 +2298,12 @@ func getLightningTriggerStatus() map[string]interface{} {
 		"entered_red_alert_on_feed": enteredOn,
 		"allclear_release_mode":    normalizeAllClearReleaseMode(mon.Failover.AllClearReleaseMode),
 		"last_allclear_vote":       voteSummary,
+		"manual_override_active":   overrideActive,
+		"manual_override_condition": overrideCond,
+		"manual_override_at":       overrideAt,
+		"manual_override_note":     overrideNote,
+		"composite_red_alert_rules": mon.CompositeRedAlertRules,
+		"last_composite_enter":     compositeSummary,
 		"known_sensors":            getBrowardTGSensors(),
 		"announce_timing":          LightningAnnounceTiming{},
 	}

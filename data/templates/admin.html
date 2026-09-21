@@ -3,13 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <title>TARR Annunciator Admin Interface</title>
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('tarr-color-scheme');
+                if (t !== 'light' && t !== 'dark') t = 'dark';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { padding: 20px; }
+        :root, html[data-theme="dark"] {
+            --tarr-bg: #1a1a1a;
+            --tarr-panel: #2a2a2a;
+            --tarr-panel-2: #333;
+            --tarr-border: #444;
+            --tarr-text: #f0f0f0;
+            --tarr-muted: #c8c8c8;
+            --tarr-green: #4CAF50;
+            --tarr-green-hover: #45a049;
+            --tarr-orange: #ff9800;
+            --tarr-red: #f44336;
+            --tarr-input-bg: #1e1e1e;
+            --tarr-input-border: #555;
+            --tarr-code-bg: #1e1e1e;
+            --tarr-code-fg: #ffcc80;
+            --tarr-save-bar-bg: #222;
+            --tarr-btn-close-filter: invert(1);
+            --bs-body-color: #f0f0f0;
+            --bs-body-bg: #1a1a1a;
+            --bs-emphasis-color: #ffffff;
+            --bs-secondary-color: #c8c8c8;
+            --bs-tertiary-color: #b0b0b0;
+            --bs-heading-color: #f0f0f0;
+            --bs-card-color: #f0f0f0;
+            --bs-card-title-color: #f0f0f0;
+            --bs-card-subtitle-color: #c8c8c8;
+            --bs-card-cap-color: #f0f0f0;
+            --bs-link-color: #4CAF50;
+            --bs-link-hover-color: #66bb6a;
+            --bs-border-color: #444;
+            --bs-code-color: #ffcc80;
+        }
+        html[data-theme="light"] {
+            --tarr-bg: #f5f5f5;
+            --tarr-panel: #ffffff;
+            --tarr-panel-2: #f0f0f0;
+            --tarr-border: #ddd;
+            --tarr-text: #222;
+            --tarr-muted: #666;
+            --tarr-green: #4CAF50;
+            --tarr-green-hover: #45a049;
+            --tarr-orange: #ef6c00;
+            --tarr-red: #d32f2f;
+            --tarr-input-bg: #fff;
+            --tarr-input-border: #ccc;
+            --tarr-code-bg: #f3f3f3;
+            --tarr-code-fg: #b45309;
+            --tarr-save-bar-bg: #fafafa;
+            --tarr-btn-close-filter: none;
+            --bs-body-color: #222;
+            --bs-body-bg: #f5f5f5;
+            --bs-emphasis-color: #111;
+            --bs-secondary-color: #666;
+            --bs-tertiary-color: #777;
+            --bs-heading-color: #222;
+            --bs-card-color: #222;
+            --bs-card-title-color: #222;
+            --bs-card-subtitle-color: #666;
+            --bs-card-cap-color: #222;
+            --bs-link-color: #2e7d32;
+            --bs-link-hover-color: #1b5e20;
+            --bs-border-color: #ddd;
+            --bs-code-color: #b45309;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--tarr-bg);
+            color: var(--tarr-text);
+            padding: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 { color: var(--tarr-text); }
+        a { color: var(--tarr-green); }
+        a:hover { color: #66bb6a; }
         textarea { width: 100%; height: 200px; font-family: monospace; }
-        .section { margin-bottom: 40px; }
-        .status-ok { color: green; }
-        .status-error { color: red; }
+        .section {
+            background-color: var(--tarr-panel);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--tarr-border);
+        }
+        .status-ok { color: var(--tarr-green); }
+        .status-warn { color: var(--tarr-orange); }
+        .status-error { color: var(--tarr-red); }
+        .text-muted { color: var(--tarr-muted) !important; }
+        .nav-tabs { border-bottom-color: var(--tarr-border); }
+        .nav-tabs .nav-link {
+            color: #ccc;
+            background: transparent;
+            border-color: transparent;
+        }
+        .nav-tabs .nav-link:hover { border-color: var(--tarr-border); color: #fff; }
+        .nav-tabs .nav-link.active {
+            background: var(--tarr-panel);
+            color: #fff;
+            border-color: var(--tarr-border) var(--tarr-border) var(--tarr-panel);
+        }
+        .card {
+            background-color: var(--tarr-panel);
+            border-color: var(--tarr-border);
+            color: var(--tarr-text);
+        }
+        .card-header {
+            background-color: var(--tarr-panel-2) !important;
+            border-bottom-color: var(--tarr-border);
+            color: var(--tarr-text) !important;
+        }
+        .card-header.bg-warning,
+        .card-header.bg-info,
+        .card-header.bg-primary,
+        .card-header.bg-danger,
+        .card-header.bg-success {
+            background-color: var(--tarr-panel-2) !important;
+            color: var(--tarr-text) !important;
+        }
+        .card-body { color: var(--tarr-text); }
+        .border-warning { border-color: #f9a825 !important; }
+        .border-info { border-color: #0288d1 !important; }
+        .border-primary { border-color: #4CAF50 !important; }
+        .border-danger { border-color: #c62828 !important; }
+        .form-control, .form-select, .form-control:focus, .form-select:focus {
+            background-color: var(--tarr-input-bg);
+            border-color: var(--tarr-input-border);
+            color: var(--tarr-text);
+            box-shadow: none;
+        }
+        .form-control::placeholder { color: var(--tarr-muted); }
+        .form-control:disabled, .form-select:disabled {
+            background-color: var(--tarr-panel-2);
+            color: var(--tarr-muted);
+        }
+        .form-check-label, .form-label { color: var(--tarr-text); }
+        .table {
+            color: var(--tarr-text);
+            --bs-table-color: var(--tarr-text);
+            --bs-table-bg: transparent;
+            --bs-table-striped-color: var(--tarr-text);
+            --bs-table-striped-bg: var(--tarr-panel-2);
+            --bs-table-hover-color: var(--tarr-text);
+            --bs-table-hover-bg: var(--tarr-panel-2);
+            --bs-table-border-color: var(--tarr-border);
+        }
+        .table th, .table td, .table-striped > tbody > tr:nth-of-type(odd) > * { color: var(--tarr-text); }
+        .card-title, .card-subtitle, .card-header, .card-header .card-title { color: var(--tarr-text) !important; }
+        .form-text, .text-body-secondary { color: var(--tarr-muted) !important; }
+        code, kbd {
+            color: var(--tarr-code-fg);
+            background: var(--tarr-code-bg);
+            padding: 0.1em 0.35em;
+            border-radius: 3px;
+        }
+        .list-group-item {
+            background-color: var(--tarr-panel);
+            color: var(--tarr-text);
+            border-color: var(--tarr-border);
+        }
+        .list-group-item .text-muted, .list-group-item small { color: var(--tarr-muted) !important; }
+        .badge.bg-warning, .badge.bg-info, .badge.bg-light { color: #111 !important; }
+        .dropdown-menu { background: var(--tarr-panel); color: var(--tarr-text); border-color: var(--tarr-border); }
+        .dropdown-item { color: var(--tarr-text); }
+        .dropdown-item:hover { background: var(--tarr-panel-2); color: var(--tarr-text); }
+        option { background: var(--tarr-input-bg); color: var(--tarr-text); }
+        .btn {
+            border-radius: 4px;
+            padding: 8px 14px;
+        }
+        .btn-primary, .btn-success {
+            background-color: var(--tarr-green);
+            border-color: var(--tarr-green);
+            color: #fff;
+        }
+        .btn-primary:hover, .btn-success:hover,
+        .btn-primary:focus, .btn-success:focus {
+            background-color: var(--tarr-green-hover);
+            border-color: var(--tarr-green-hover);
+            color: #fff;
+        }
+        .btn-warning {
+            background-color: var(--tarr-orange);
+            border-color: var(--tarr-orange);
+            color: #111;
+        }
+        .btn-warning:hover { background-color: #fb8c00; border-color: #fb8c00; color: #111; }
+        .btn-danger {
+            background-color: var(--tarr-red);
+            border-color: var(--tarr-red);
+            color: #fff;
+        }
+        .btn-danger:hover { background-color: #e53935; border-color: #e53935; }
+        .btn-secondary, .btn-outline-secondary {
+            background-color: transparent;
+            border-color: #666;
+            color: #ddd;
+        }
+        .btn-outline-secondary:hover, .btn-secondary:hover {
+            background-color: #444;
+            border-color: #888;
+            color: #fff;
+        }
+        .btn-outline-primary {
+            background-color: transparent;
+            border-color: var(--tarr-green);
+            color: var(--tarr-green);
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--tarr-green);
+            border-color: var(--tarr-green);
+            color: #fff;
+        }
+        .btn-outline-danger {
+            background: transparent;
+            border-color: var(--tarr-red);
+            color: var(--tarr-red);
+        }
+        .btn-outline-danger:hover {
+            background: var(--tarr-red);
+            color: #fff;
+        }
+        .btn-outline-warning {
+            background: transparent;
+            border-color: var(--tarr-orange);
+            color: var(--tarr-orange);
+        }
+        .btn-outline-warning:hover {
+            background: var(--tarr-orange);
+            color: #111;
+        }
+        .alert-info {
+            background: #1a2f40;
+            border-color: #0288d1;
+            color: #e3f2fd;
+        }
+        .alert-warning {
+            background: #3e2e12;
+            border-color: var(--tarr-orange);
+            color: #ffe0b2;
+        }
+        .alert-danger {
+            background: #3b1515;
+            border-color: var(--tarr-red);
+            color: #ffcdd2;
+        }
+        .alert-success {
+            background: #1b2e1b;
+            border-color: var(--tarr-green);
+            color: #c8e6c9;
+        }
+        .bg-light { background-color: var(--tarr-panel-2) !important; color: var(--tarr-text) !important; }
+        .border { border-color: var(--tarr-border) !important; }
+        pre.bg-light, #update-log {
+            background: var(--tarr-input-bg) !important;
+            color: var(--tarr-text) !important;
+            border-color: var(--tarr-border) !important;
+        }
+        .modal-content {
+            background-color: var(--tarr-panel);
+            color: var(--tarr-text);
+            border-color: var(--tarr-border);
+        }
+        .modal-header, .modal-footer { border-color: var(--tarr-border); }
+        .btn-close { filter: var(--tarr-btn-close-filter); }
+        .lightning-save-bar {
+            position: sticky;
+            bottom: 0;
+            z-index: 20;
+            background: var(--tarr-save-bar-bg);
+            border: 1px solid var(--tarr-border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-top: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .lightning-save-bar .msg { flex: 1 1 100%; margin: 0; }
+        @media (min-width: 768px) {
+            .lightning-save-bar .msg { flex: 1 1 auto; margin-left: 8px; }
+        }
+        .lightning-section-save {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--tarr-border);
+        }
+        .lightning-inline-msg { font-size: 0.9rem; }
+        .lightning-jump {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            padding: 8px 12px;
+            background: var(--tarr-panel-2);
+            border: 1px solid var(--tarr-border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .lightning-jump a { text-decoration: none; white-space: nowrap; }
+        .lightning-jump a:hover { text-decoration: underline; }
+        .cra-rule-card {
+            border: 1px solid var(--tarr-border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            background: var(--tarr-panel-2);
+        }
+        .cra-rule-card.cra-disabled { opacity: 0.65; }
+        .cra-rule-sentence {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 10px;
+            font-size: 1rem;
+            line-height: 1.4;
+            margin: 10px 0 4px;
+        }
+        .cra-rule-sentence .cra-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--tarr-panel);
+            border: 1px solid var(--tarr-border);
+            border-radius: 6px;
+            padding: 4px 10px;
+        }
+        .cra-rule-sentence .form-select {
+            width: auto;
+            min-width: 8rem;
+            display: inline-block;
+        }
+        .cra-feed-picks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            margin: 8px 0 4px;
+        }
+        html[data-theme="light"] .alert-info {
+            background: #e3f2fd;
+            border-color: #90caf9;
+            color: #0d47a1;
+        }
+        html[data-theme="light"] .alert-warning {
+            background: #fff3e0;
+            border-color: #ffcc80;
+            color: #e65100;
+        }
+        html[data-theme="light"] .alert-danger {
+            background: #ffebee;
+            border-color: #ef9a9a;
+            color: #b71c1c;
+        }
+        html[data-theme="light"] .alert-success {
+            background: #e8f5e9;
+            border-color: #a5d6a7;
+            color: #1b5e20;
+        }
+        html[data-theme="light"] .nav-tabs .nav-link { color: #555; }
+        html[data-theme="light"] .nav-tabs .nav-link.active {
+            background: var(--tarr-panel);
+            color: #111;
+            border-color: var(--tarr-border) var(--tarr-border) var(--tarr-panel);
+        }
     </style>
 </head>
 <body>
@@ -17,7 +387,8 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>TARR Annunciator Admin Interface</h1>
             <div>
-                <a href="/" class="btn btn-outline-secondary me-2">🏠 Main Interface</a>
+                <button type="button" class="btn btn-outline-secondary me-2" id="theme-toggle" title="Toggle light/dark theme">🌙 Dark</button>
+                <a href="/" class="btn btn-outline-primary me-2">🏠 Main Interface</a>
                 <a href="/admin/api-docs" class="btn btn-outline-primary me-2">📚 API Docs</a>
                 <a href="/admin/logout" class="btn btn-outline-danger">🚪 Logout</a>
             </div>
@@ -26,16 +397,16 @@
         <!-- Main Tab Navigation -->
         <ul class="nav nav-tabs mb-4" id="main-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="system-status-tab" data-bs-toggle="tab" data-bs-target="#system-status-panel" type="button" role="tab">📊 System Status</button>
+                <button class="nav-link active" id="system-status-tab" data-bs-toggle="tab" data-bs-target="#system-status-panel" type="button" role="tab">📊 System</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="audio-controls-tab" data-bs-toggle="tab" data-bs-target="#audio-controls-panel" type="button" role="tab">🔊 Audio Controls</button>
+                <button class="nav-link" id="audio-controls-tab" data-bs-toggle="tab" data-bs-target="#audio-controls-panel" type="button" role="tab">🔊 Audio</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="schedule-management-tab" data-bs-toggle="tab" data-bs-target="#schedule-management-panel" type="button" role="tab">⏰ Schedule Management</button>
+                <button class="nav-link" id="schedule-management-tab" data-bs-toggle="tab" data-bs-target="#schedule-management-panel" type="button" role="tab">⏰ Schedule</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="announcement-queue-tab" data-bs-toggle="tab" data-bs-target="#announcement-queue-panel" type="button" role="tab">📋 Announcement Queue</button>
+                <button class="nav-link" id="announcement-queue-tab" data-bs-toggle="tab" data-bs-target="#announcement-queue-panel" type="button" role="tab">📋 Queue</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="user-api-management-tab" data-bs-toggle="tab" data-bs-target="#user-api-management-panel" type="button" role="tab">🔐 User & API Management</button>
@@ -615,236 +986,47 @@
                 </div>
             </div>
             
-            <!-- Lightning Trigger Tab -->
+            <!-- Lightning Alerts -->
             <div class="tab-pane fade" id="lightning-trigger-panel" role="tabpanel">
                 <div class="section">
-                    <h3>⚡ Lightning Alert System</h3>
-                    <p class="text-muted small">Thor Guard is life-safety critical. Failover policy is separate from feed-switch announcements. Disabling announce audio does not disable monitoring or the Red Alert lock.</p>
-                    <div id="lightning-unsaved-banner" class="alert alert-warning d-none py-2" role="status">
+                    <h3>⚡ Lightning Alerts</h3>
+                    <p class="text-muted small mb-2">Thor Guard monitoring, Red Alert lock, feeds, failover, audio, and operator override. Each settings card has its own Save — you do not need to scroll to the bottom.</p>
+                    <div class="lightning-unsaved-banner alert alert-warning d-none py-2" role="status">
                         Unsaved Lightning edits — live status still refreshes; form values will not be overwritten.
-                        <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="discard-lightning-edits">Discard &amp; reload form</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ms-2 discard-lightning-edits">Discard &amp; reload form</button>
                     </div>
+                    <nav class="lightning-jump mb-3" aria-label="Lightning sections">
+                        <a href="#lt-status">Status / Tests</a>
+                        <a href="#lt-monitor">Monitor</a>
+                        <a href="#lt-feeds">Feeds</a>
+                        <a href="#lt-failover">Failover</a>
+                        <a href="#lt-composite">Composite RA</a>
+                        <a href="#lt-announce">Announce toggles</a>
+                        <a href="#lt-policy">Red Alert policy</a>
+                        <a href="#lt-feed-switch">Feed-switch PA</a>
+                        <a href="#lt-audio">Condition audio</a>
+                    </nav>
 
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="card">
+                    <div class="row" id="lt-status">
+                        <div class="col-lg-8">
+                            <div class="card mb-3">
                                 <div class="card-header"><h5 class="card-title mb-0">Live Status</h5></div>
                                 <div class="card-body">
                                     <div id="lightning-status-content"><p>Loading lightning trigger status...</p></div>
                                 </div>
                             </div>
-
-                            <div class="card mt-3">
-                                <div class="card-header"><h5 class="card-title mb-0">Global Monitor Timing</h5></div>
-                                <div class="card-body">
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="lightning-enabled" checked>
-                                        <label class="form-check-label" for="lightning-enabled">Enable Lightning Monitoring</label>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label for="lightning-interval" class="form-label">Fetch Interval (seconds)</label>
-                                            <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="60">
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label for="lightning-timeout" class="form-label">Default Request Timeout (seconds)</label>
-                                            <input type="number" class="form-control" id="lightning-timeout" min="5" max="120" value="30">
-                                        </div>
-                                    </div>
-                                    <details class="mb-3">
-                                        <summary class="text-muted">Advanced timing</summary>
-                                        <div class="row mt-2">
-                                            <div class="col-md-6 mb-2">
-                                                <label class="form-label" for="announce-cooldown-same">Min seconds between same condition</label>
-                                                <input type="number" class="form-control" id="announce-cooldown-same" min="0" value="0">
-                                            </div>
-                                            <div class="col-md-6 mb-2">
-                                                <label class="form-label" for="announce-cooldown-any">Min seconds between any lightning announce</label>
-                                                <input type="number" class="form-control" id="announce-cooldown-any" min="0" value="0">
-                                            </div>
-                                            <div class="col-md-6 mb-2">
-                                                <label class="form-label" for="failover-failure-window">Failure window seconds (0=off)</label>
-                                                <input type="number" class="form-control" id="failover-failure-window" min="0" value="0">
-                                            </div>
-                                        </div>
-                                    </details>
-                                </div>
-                            </div>
-
-                            <div class="card mt-3 border-warning">
-                                <div class="card-header bg-warning"><h5 class="card-title mb-0">Failover &amp; Failback Policy</h5></div>
-                                <div class="card-body">
-                                    <p class="small text-muted">Controls <em>which</em> XML is trusted — not Red Alert meaning. No announcement controls here.</p>
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label" for="failover-consecutive">Consecutive failures before failover</label>
-                                            <input type="number" class="form-control" id="failover-consecutive" min="1" value="3">
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label" for="failover-failback-mode">Failback mode</label>
-                                            <select class="form-select" id="failover-failback-mode">
-                                                <option value="prefer_primary">prefer_primary</option>
-                                                <option value="prefer_highest_priority">prefer_highest_priority</option>
-                                                <option value="sticky">sticky</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label" for="failover-failback-successes">Failback after successes</label>
-                                            <input type="number" class="form-control" id="failover-failback-successes" min="1" value="2">
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label" for="failover-probe-interval">Failback probe interval (0=same cadence)</label>
-                                            <input type="number" class="form-control" id="failover-probe-interval" min="0" value="0">
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label" for="failover-min-dwell">Min dwell on feed (seconds)</label>
-                                            <input type="number" class="form-control" id="failover-min-dwell" min="0" value="0">
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label" for="failover-on-all-failed">When all feeds failed</label>
-                                            <select class="form-select" id="failover-on-all-failed">
-                                                <option value="hold_last_condition">hold_last_condition</option>
-                                                <option value="force_unknown_status">force_unknown_status</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <h6>Failure triggers</h6>
-                                    <div class="row small" id="failover-triggers">
-                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-http_error" checked><label class="form-check-label" for="trig-http_error">http_error</label></div></div>
-                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-http_status_not_ok" checked><label class="form-check-label" for="trig-http_status_not_ok">http_status_not_ok</label></div></div>
-                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-empty_body" checked><label class="form-check-label" for="trig-empty_body">empty_body</label></div></div>
-                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-encoding_error" checked><label class="form-check-label" for="trig-encoding_error">encoding_error</label></div></div>
-                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-missing_lightningalert" checked><label class="form-check-label" for="trig-missing_lightningalert">missing_lightningalert</label></div></div>
-                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-unknown_condition"><label class="form-check-label" for="trig-unknown_condition">unknown_condition</label></div></div>
-                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-displayname_mismatch"><label class="form-check-label" for="trig-displayname_mismatch">displayname_mismatch</label></div></div>
-                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-uniqueid_mismatch"><label class="form-check-label" for="trig-uniqueid_mismatch">uniqueid_mismatch</label></div></div>
-                                    </div>
-                                    <h6 class="mt-3">During Red Alert</h6>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="failover-allow-during-ra" checked>
-                                        <label class="form-check-label" for="failover-allow-during-ra">Allow active feed to switch while Red Alert is locked</label>
-                                    </div>
-                                    <div class="form-text mb-2">Monitoring only. If the active feed fails mid-alert, may switch to the next failover feed. Does <strong>not</strong> change who may unlock / All Clear (see release authority below). Off = stay pinned to the current feed until All Clear.</div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="failover-preserve-condition" checked>
-                                        <label class="form-check-label" for="failover-preserve-condition">Preserve condition across feed switch (no re-announce if same)</label>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label" for="allclear-release-mode">All Clear release authority</label>
-                                        <select class="form-select" id="allclear-release-mode">
-                                            <option value="primary_only">primary_only — Only Primary may clear Red Alert (recommended)</option>
-                                            <option value="failover_vote">failover_vote — Primary may clear alone; otherwise both Failover 1 and Failover 2 must each return All Clear</option>
-                                        </select>
-                                        <div class="form-text">Controls unlocking only. Failover feeds may still enter Red Alert under existing rules. Vote override requires exactly two All Clear results (Unknown or error does not count). Enabled feeds alone are not enough.</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card mt-3 border-info">
-                                <div class="card-header bg-info text-white"><h5 class="card-title mb-0">Feed-switch Announcements</h5></div>
-                                <div class="card-body">
-                                    <p class="small text-muted">Optional PA when active feed changes. Quiet by default. Distinct rules for primary→failover_1 vs primary→failover_2, optional sensor match. Does not change Red Alert lock.</p>
-                                    <div class="table-responsive">
-                                        <table class="table table-sm align-middle" id="feed-switch-table">
-                                            <thead><tr><th>On</th><th>From</th><th>To</th><th>Reason</th><th>Sensor</th><th>MP3</th><th></th></tr></thead>
-                                            <tbody id="feed-switch-tbody"></tbody>
-                                        </table>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-feed-switch-rule">+ Add rule</button>
-                                </div>
-                            </div>
-
-                            <div id="lightning-feeds-container"></div>
-
-                            <div class="mt-3 mb-3">
-                                <button type="button" class="btn btn-primary" id="save-lightning-monitor">💾 Save Monitor (timing + failover + feeds + switch rules)</button>
-                                <div id="lightning-config-message" class="mt-2"></div>
-                            </div>
-
-                            <div class="card mt-3 border-warning">
-                                <div class="card-header bg-warning"><h5 class="card-title mb-0">Global Condition Announcements</h5></div>
-                                <div class="card-body">
-                                    <p class="text-muted small mb-3">Used when a feed is set to inherit global toggles. Monitoring continues either way. Manual Test always plays.</p>
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-redalert" checked><label class="form-check-label" for="announce-redalert"><strong>Red Alert</strong></label></div>
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-warning"><label class="form-check-label" for="announce-warning"><strong>Warning</strong></label></div>
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-caution"><label class="form-check-label" for="announce-caution"><strong>Caution</strong></label></div>
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-allclear" checked><label class="form-check-label" for="announce-allclear"><strong>All Clear</strong></label></div>
-                                    <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="announce-unknown"><label class="form-check-label" for="announce-unknown"><strong>Unknown</strong></label></div>
-                                    <button type="button" class="btn btn-warning" id="save-condition-announce">💾 Save Condition Announcements</button>
-                                    <div id="condition-announce-message" class="mt-2"></div>
-                                </div>
-                            </div>
-
-                            <div class="card mt-3 border-primary">
-                                <div class="card-header bg-primary text-white"><h5 class="card-title mb-0">Global Condition Audio (horn + announce)</h5></div>
-                                <div class="card-body">
-                                    <p class="text-muted small mb-3">Play sequence: optional horn MP3, then announce MP3. Feeds may override Red Alert / All Clear horns independently.</p>
-                                    <div class="border rounded p-3 mb-3">
-                                        <h6>Red Alert</h6>
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-redalert-horn-enabled" checked><label class="form-check-label" for="ca-redalert-horn-enabled">Play horn before announce</label></div>
-                                        <div class="row">
-                                            <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-horn-file">Horn MP3</label><input class="form-control" list="lightning-mp3-options" id="ca-redalert-horn-file" value="Horn_RedAlert.mp3"></div>
-                                            <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-announce-file">Announce MP3</label><input class="form-control" list="lightning-mp3-options" id="ca-redalert-announce-file" value="Voice_RedAlert.mp3"></div>
-                                        </div>
-                                    </div>
-                                    <div class="border rounded p-3 mb-3">
-                                        <h6>All Clear</h6>
-                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-allclear-horn-enabled" checked><label class="form-check-label" for="ca-allclear-horn-enabled">Play horn before announce</label></div>
-                                        <div class="row">
-                                            <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-horn-file">Horn MP3</label><input class="form-control" list="lightning-mp3-options" id="ca-allclear-horn-file" value="Horn_AllClear.mp3"></div>
-                                            <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-announce-file">Announce MP3</label><input class="form-control" list="lightning-mp3-options" id="ca-allclear-announce-file" value="Voice_AllClear.mp3"></div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4 mb-2"><label class="form-label" for="ca-warning-announce-file">Warning announce MP3</label><input class="form-control form-control-sm" list="lightning-mp3-options" id="ca-warning-announce-file" value="Voice_Warning.mp3"></div>
-                                        <div class="col-md-4 mb-2"><label class="form-label" for="ca-caution-announce-file">Caution announce MP3</label><input class="form-control form-control-sm" list="lightning-mp3-options" id="ca-caution-announce-file" value="Voice_Caution.mp3"></div>
-                                        <div class="col-md-4 mb-2"><label class="form-label" for="ca-unknown-announce-file">Unknown announce MP3</label><input class="form-control form-control-sm" list="lightning-mp3-options" id="ca-unknown-announce-file" value="thor_unknown.mp3"></div>
-                                    </div>
-                                    <button type="button" class="btn btn-primary mt-2" id="save-condition-audio">💾 Save Condition Audio</button>
-                                    <div id="condition-audio-message" class="mt-2"></div>
-                                </div>
-                            </div>
-
-                            <div class="card mt-3 border-danger">
-                                <div class="card-header bg-danger text-white"><h5 class="card-title mb-0">THOR Guard Red Alert Policy</h5></div>
-                                <div class="card-body">
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-preempt" checked><label class="form-check-label" for="red-alert-preempt">Cancel queued/playing announcements on Red Alert</label></div>
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-suppress" checked><label class="form-check-label" for="red-alert-suppress">Suppress non-emergency until All Clear</label></div>
-                                    <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="red-alert-reminder-enabled" checked><label class="form-check-label" for="red-alert-reminder-enabled">Repeating Red Alert reminder</label></div>
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <label for="red-alert-reminder-interval" class="form-label">Reminder interval (minutes)</label>
-                                            <input type="number" class="form-control" id="red-alert-reminder-interval" min="1" max="120" value="5">
-                                        </div>
-                                        <div class="col-md-8 mb-3">
-                                            <label for="red-alert-reminder-file" class="form-label">Reminder MP3</label>
-                                            <input class="form-control" list="reminder-file-options" id="red-alert-reminder-file" value="Voice_RedAlert_Reminder.mp3">
-                                            <datalist id="reminder-file-options"></datalist>
-                                            <datalist id="lightning-mp3-options"></datalist>
-                                        </div>
-                                    </div>
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-reminder-horn"><label class="form-check-label" for="red-alert-reminder-horn">Play horn before each reminder</label></div>
-                                    <div class="mb-3">
-                                        <label for="red-alert-reminder-horn-file" class="form-label">Reminder horn MP3</label>
-                                        <input class="form-control" list="lightning-mp3-options" id="red-alert-reminder-horn-file" value="Horn_RedAlert.mp3">
-                                        <div class="form-text">Used only when the checkbox above is on. Defaults to the Red Alert horn from Condition Audio if left empty on save.</div>
-                                    </div>
-                                    <button type="button" class="btn btn-danger" id="save-red-alert-policy">💾 Save Red Alert Policy</button>
-                                    <button type="button" class="btn btn-outline-danger" id="test-red-alert-reminder">🔔 Play Reminder Now</button>
-                                    <div id="red-alert-policy-message" class="mt-2"></div>
-                                </div>
-                            </div>
                         </div>
-
-                        <div class="col-md-4">
-                            <div class="card">
+                        <div class="col-lg-4">
+                            <div class="card mb-3">
                                 <div class="card-header"><h5 class="card-title mb-0">Manual Tests &amp; Pin</h5></div>
                                 <div class="card-body">
-                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-danger" id="test-condition-redalert">Test Red Alert</button></div>
-                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-warning" id="test-condition-warning">Test Warning</button></div>
-                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-outline-warning" id="test-condition-caution">Test Caution</button></div>
-                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-success" id="test-condition-allclear">Test All Clear</button></div>
-                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-secondary" id="test-condition-unknown">Test Unknown</button></div>
+                                    <div class="d-grid gap-2 mb-3">
+                                        <button type="button" class="btn btn-danger" id="test-condition-redalert">Test Red Alert</button>
+                                        <button type="button" class="btn btn-warning" id="test-condition-warning">Test Warning</button>
+                                        <button type="button" class="btn btn-outline-warning" id="test-condition-caution">Test Caution</button>
+                                        <button type="button" class="btn btn-success" id="test-condition-allclear">Test All Clear</button>
+                                        <button type="button" class="btn btn-secondary" id="test-condition-unknown">Test Unknown</button>
+                                    </div>
                                     <hr>
                                     <label class="form-label" for="pin-active-feed">Pin active feed (drill)</label>
                                     <select class="form-select form-select-sm mb-2" id="pin-active-feed">
@@ -853,18 +1035,267 @@
                                         <option value="failover_1">failover_1</option>
                                         <option value="failover_2">failover_2</option>
                                     </select>
-                                    <button type="button" class="btn btn-sm btn-outline-primary mb-2" id="apply-pin-feed">Apply Pin</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary mb-2" id="unpin-feed">Unpin</button>
+                                    <div class="d-grid gap-2 mb-2">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="apply-pin-feed">Apply Pin</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="unpin-feed">Unpin</button>
+                                    </div>
                                     <hr>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="reset-lightning-state">♻️ Reset THOR Guard State</button>
-                                    <small class="text-muted d-block">Clears cached condition, Red Alert lock, and reminder timer</small>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="reset-lightning-state">♻️ Reset THOR Guard State</button>
+                                    <small class="text-muted d-block mt-2">Clears cached condition, Red Alert lock, reminder timer, and override flag</small>
+                                </div>
+                            </div>
+                            <div class="card mb-3 border-danger">
+                                <div class="card-header"><h5 class="card-title mb-0">Manual Override</h5></div>
+                                <div class="card-body">
+                                    <p class="small text-muted">When all Thor feeds have failed. Distinct from Manual Test (audio drill).</p>
+                                    <div id="lightning-override-status" class="alert alert-secondary py-2 small mb-3">Override: inactive</div>
+                                    <div class="d-grid gap-2">
+                                        <button type="button" class="btn btn-danger" id="override-force-redalert">Force Red Alert (override)</button>
+                                        <button type="button" class="btn btn-success" id="override-force-allclear">Force All Clear / unlock (override)</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="override-clear-flag">Clear override flag only</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="card mb-3" id="lt-monitor">
+                        <div class="card-header"><h5 class="card-title mb-0">1. Monitoring &amp; timing</h5></div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="lightning-enabled" checked>
+                                <label class="form-check-label" for="lightning-enabled">Enable Lightning Monitoring</label>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <label for="lightning-interval" class="form-label">Fetch Interval (seconds)</label>
+                                    <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="60">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label for="lightning-timeout" class="form-label">Request Timeout (seconds)</label>
+                                    <input type="number" class="form-control" id="lightning-timeout" min="5" max="120" value="30">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="form-label" for="failover-failure-window">Failure window seconds (0=off)</label>
+                                    <input type="number" class="form-control" id="failover-failure-window" min="0" value="0">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="form-label" for="announce-cooldown-same">Min seconds between same condition</label>
+                                    <input type="number" class="form-control" id="announce-cooldown-same" min="0" value="0">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <label class="form-label" for="announce-cooldown-any">Min seconds between any lightning announce</label>
+                                    <input type="number" class="form-control" id="announce-cooldown-any" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="mb-0 mt-2">
+                                <label class="form-label" for="allclear-release-mode">All Clear release authority</label>
+                                <select class="form-select" id="allclear-release-mode">
+                                    <option value="primary_only">primary_only — Only Primary may clear Red Alert (recommended)</option>
+                                    <option value="failover_vote">failover_vote — Primary may clear alone; otherwise both Failover 1 and Failover 2 must each return All Clear</option>
+                                </select>
+                                <div class="form-text text-muted">Unlock only. Failover may still enter Red Alert. Vote needs two All Clear results.</div>
+                            </div>
+                            <div class="lightning-section-save">
+                                <button type="button" class="btn btn-primary btn-sm save-lightning-monitor">💾 Save Monitor</button>
+                                <span class="lightning-inline-msg lightning-config-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="lt-feeds">
+                        <h5 class="mt-1 mb-2">2. Feeds (Primary / Failover)</h5>
+                        <div id="lightning-feeds-container"></div>
+                        <div class="lightning-section-save mb-3">
+                            <button type="button" class="btn btn-primary btn-sm save-lightning-monitor">💾 Save Monitor (feeds)</button>
+                            <span class="lightning-inline-msg lightning-config-message"></span>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-warning" id="lt-failover">
+                        <div class="card-header"><h5 class="card-title mb-0">3. Failover &amp; Failback Policy</h5></div>
+                        <div class="card-body">
+                            <p class="small text-muted">Controls <em>which</em> XML is trusted — not Red Alert meaning. All Clear unlock authority is above in Monitoring.</p>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label" for="failover-consecutive">Consecutive failures before failover</label>
+                                    <input type="number" class="form-control" id="failover-consecutive" min="1" value="3">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label" for="failover-failback-mode">Failback mode</label>
+                                    <select class="form-select" id="failover-failback-mode">
+                                        <option value="prefer_primary">prefer_primary</option>
+                                        <option value="prefer_highest_priority">prefer_highest_priority</option>
+                                        <option value="sticky">sticky</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label" for="failover-failback-successes">Failback after successes</label>
+                                    <input type="number" class="form-control" id="failover-failback-successes" min="1" value="2">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label" for="failover-probe-interval">Failback probe interval (0=same cadence)</label>
+                                    <input type="number" class="form-control" id="failover-probe-interval" min="0" value="0">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label" for="failover-min-dwell">Min dwell on feed (seconds)</label>
+                                    <input type="number" class="form-control" id="failover-min-dwell" min="0" value="0">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label" for="failover-on-all-failed">When all feeds failed</label>
+                                    <select class="form-select" id="failover-on-all-failed">
+                                        <option value="hold_last_condition">hold_last_condition</option>
+                                        <option value="force_unknown_status">force_unknown_status</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <h6>Failure triggers</h6>
+                            <div class="row small" id="failover-triggers">
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-http_error" checked><label class="form-check-label" for="trig-http_error">http_error</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-http_status_not_ok" checked><label class="form-check-label" for="trig-http_status_not_ok">http_status_not_ok</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-empty_body" checked><label class="form-check-label" for="trig-empty_body">empty_body</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-encoding_error" checked><label class="form-check-label" for="trig-encoding_error">encoding_error</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-missing_lightningalert" checked><label class="form-check-label" for="trig-missing_lightningalert">missing_lightningalert</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-unknown_condition"><label class="form-check-label" for="trig-unknown_condition">unknown_condition</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-displayname_mismatch"><label class="form-check-label" for="trig-displayname_mismatch">displayname_mismatch</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-uniqueid_mismatch"><label class="form-check-label" for="trig-uniqueid_mismatch">uniqueid_mismatch</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-stale_localtime" checked><label class="form-check-label" for="trig-stale_localtime">stale_localtime (XML date &gt;24h behind)</label></div></div>
+                            </div>
+                            <h6 class="mt-3">During Red Alert</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="failover-allow-during-ra" checked>
+                                <label class="form-check-label" for="failover-allow-during-ra">Allow active feed to switch while Red Alert is locked</label>
+                            </div>
+                            <div class="form-text mb-2 text-muted">Monitoring only — does not change who may unlock / All Clear.</div>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="failover-preserve-condition" checked>
+                                <label class="form-check-label" for="failover-preserve-condition">Preserve condition across feed switch (no re-announce if same)</label>
+                            </div>
+                            <div class="lightning-section-save">
+                                <button type="button" class="btn btn-primary btn-sm save-lightning-monitor">💾 Save Monitor (failover)</button>
+                                <span class="lightning-inline-msg lightning-config-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-danger" id="lt-composite">
+                        <div class="card-header"><h5 class="card-title mb-0">4. Composite Red Alert enter rules</h5></div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>Enter Red Alert lock when several feeds agree</strong> — useful when failovers are miles away and no single feed reports Red Alert.</p>
+                            <p class="small text-muted mb-3">This only affects <em>entering</em> Red Alert. Unlock / All Clear still follows the release authority above. Need at least two feeds checked.</p>
+                            <div id="composite-ra-list"></div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add-composite-ra-rule">+ Add enter rule</button>
+                            <div class="lightning-section-save">
+                                <button type="button" class="btn btn-primary btn-sm save-lightning-monitor">💾 Save Monitor (composite rules)</button>
+                                <span class="lightning-inline-msg lightning-config-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3" id="lt-announce">
+                        <div class="card-header"><h5 class="card-title mb-0">5. Which conditions may announce</h5></div>
+                        <div class="card-body">
+                            <p class="text-muted small mb-3">Monitoring continues either way. Manual Test always plays.</p>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-redalert" checked><label class="form-check-label" for="announce-redalert"><strong>Red Alert</strong></label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-warning"><label class="form-check-label" for="announce-warning"><strong>Warning</strong></label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-caution"><label class="form-check-label" for="announce-caution"><strong>Caution</strong></label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-allclear" checked><label class="form-check-label" for="announce-allclear"><strong>All Clear</strong></label></div>
+                            <div class="form-check mb-0"><input class="form-check-input" type="checkbox" id="announce-unknown"><label class="form-check-label" for="announce-unknown"><strong>Unknown</strong></label></div>
+                            <div class="lightning-section-save">
+                                <button type="button" class="btn btn-warning btn-sm save-condition-announce">💾 Save Announcements</button>
+                                <span class="lightning-inline-msg" id="condition-announce-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-danger" id="lt-policy">
+                        <div class="card-header"><h5 class="card-title mb-0">6. Red Alert Policy</h5></div>
+                        <div class="card-body">
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-preempt" checked><label class="form-check-label" for="red-alert-preempt">Cancel queued/playing announcements on Red Alert</label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-suppress" checked><label class="form-check-label" for="red-alert-suppress">Suppress non-emergency until All Clear</label></div>
+                            <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="red-alert-reminder-enabled" checked><label class="form-check-label" for="red-alert-reminder-enabled">Repeating Red Alert reminder</label></div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="red-alert-reminder-interval" class="form-label">Reminder interval (minutes)</label>
+                                    <input type="number" class="form-control" id="red-alert-reminder-interval" min="1" max="120" value="5">
+                                </div>
+                                <div class="col-md-8 mb-3">
+                                    <label for="red-alert-reminder-file" class="form-label">Reminder MP3</label>
+                                    <select class="form-select lightning-mp3-select" id="red-alert-reminder-file" data-allow-empty="0"></select>
+                                </div>
+                            </div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-reminder-horn"><label class="form-check-label" for="red-alert-reminder-horn">Play horn before each reminder</label></div>
+                            <div class="mb-2">
+                                <label for="red-alert-reminder-horn-file" class="form-label">Reminder horn MP3</label>
+                                <select class="form-select lightning-mp3-select" id="red-alert-reminder-horn-file" data-allow-empty="1"></select>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm" id="test-red-alert-reminder">🔔 Play Reminder Now</button>
+                            <div class="lightning-section-save">
+                                <button type="button" class="btn btn-danger btn-sm save-red-alert-policy">💾 Save Red Alert Policy</button>
+                                <span class="lightning-inline-msg" id="red-alert-policy-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-info" id="lt-feed-switch">
+                        <div class="card-header"><h5 class="card-title mb-0">7. Feed-switch Announcements</h5></div>
+                        <div class="card-body">
+                            <p class="small text-muted">Optional PA when active feed changes. Quiet by default. Does not change Red Alert lock.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle" id="feed-switch-table">
+                                    <thead><tr><th>On</th><th>From</th><th>To</th><th>Reason</th><th>Sensor</th><th>MP3</th><th></th></tr></thead>
+                                    <tbody id="feed-switch-tbody"></tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="add-feed-switch-rule">+ Add rule</button>
+                            <div class="lightning-section-save">
+                                <button type="button" class="btn btn-primary btn-sm save-lightning-monitor">💾 Save Monitor (feed-switch)</button>
+                                <span class="lightning-inline-msg lightning-config-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-primary" id="lt-audio">
+                        <div class="card-header"><h5 class="card-title mb-0">8. Global Condition Audio (horn + announce)</h5></div>
+                        <div class="card-body">
+                            <p class="text-muted small mb-3">Play sequence: optional horn MP3, then announce MP3.</p>
+                            <div class="border rounded p-3 mb-3">
+                                <h6>Red Alert</h6>
+                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-redalert-horn-enabled" checked><label class="form-check-label" for="ca-redalert-horn-enabled">Play horn before announce</label></div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-horn-file">Horn MP3</label><select class="form-select lightning-mp3-select" id="ca-redalert-horn-file" data-allow-empty="1"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-announce-file">Announce MP3</label><select class="form-select lightning-mp3-select" id="ca-redalert-announce-file" data-allow-empty="0"></select></div>
+                                </div>
+                            </div>
+                            <div class="border rounded p-3 mb-3">
+                                <h6>All Clear</h6>
+                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-allclear-horn-enabled" checked><label class="form-check-label" for="ca-allclear-horn-enabled">Play horn before announce</label></div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-horn-file">Horn MP3</label><select class="form-select lightning-mp3-select" id="ca-allclear-horn-file" data-allow-empty="1"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-announce-file">Announce MP3</label><select class="form-select lightning-mp3-select" id="ca-allclear-announce-file" data-allow-empty="0"></select></div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-warning-announce-file">Warning announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-warning-announce-file" data-allow-empty="1"></select></div>
+                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-caution-announce-file">Caution announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-caution-announce-file" data-allow-empty="1"></select></div>
+                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-unknown-announce-file">Unknown announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-unknown-announce-file" data-allow-empty="1"></select></div>
+                            </div>
+                            <div class="lightning-section-save">
+                                <button type="button" class="btn btn-primary btn-sm save-condition-audio">💾 Save Condition Audio</button>
+                                <span class="lightning-inline-msg" id="condition-audio-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lightning-save-bar">
+                        <button type="button" class="btn btn-primary save-lightning-monitor">💾 Save Monitor</button>
+                        <button type="button" class="btn btn-warning save-condition-announce">💾 Save Announcements</button>
+                        <button type="button" class="btn btn-danger save-red-alert-policy">💾 Save Red Alert Policy</button>
+                        <button type="button" class="btn btn-primary save-condition-audio">💾 Save Condition Audio</button>
+                        <div id="lightning-config-message" class="msg"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
         <!-- User Modal -->
         <div class="modal fade" id="userModal" tabindex="-1">
@@ -2713,8 +3144,9 @@
 
         function setLightningFormDirty(dirty) {
             lightningFormDirty = !!dirty;
-            const banner = document.getElementById('lightning-unsaved-banner');
-            if (banner) banner.classList.toggle('d-none', !lightningFormDirty);
+            document.querySelectorAll('.lightning-unsaved-banner').forEach(function(banner) {
+                banner.classList.toggle('d-none', !lightningFormDirty);
+            });
         }
 
         function markLightningFormDirty(event) {
@@ -2768,7 +3200,7 @@
                     }).join('') + '</div>' +
                     '<h6>Optional announce MP3 overrides</h6><div class="row">' +
                     ['RedAlert','Warning','Caution','AllClear','Unknown'].map(function(c) {
-                        return '<div class="col-md-4 mb-2"><label class="form-label">' + c + '</label><input class="form-control form-control-sm feed-audio-' + c + '" list="lightning-mp3-options" data-idx="' + idx + '" value="' + ((audio[c] || '') + '').replace(/"/g, '&quot;') + '"></div>';
+                        return '<div class="col-md-4 mb-2"><label class="form-label">' + c + '</label><select class="form-select form-select-sm lightning-mp3-select feed-audio-' + c + '" data-allow-empty="1" data-idx="' + idx + '">' + lightningMp3OptionsHtml((audio[c] || ''), true) + '</select></div>';
                     }).join('') + '</div>' +
                     '<h6 class="mt-2">Horn overrides (Red Alert / All Clear)</h6>' +
                     ['RedAlert','AllClear'].map(function(c) {
@@ -2780,7 +3212,7 @@
                             '<div class="form-check mb-1"><input class="form-check-input feed-horn-custom" type="radio" name="feed-horn-' + c + '-' + idx + '" data-idx="' + idx + '" data-cond="' + c + '" value="0"' + (!inherit ? ' checked' : '') + '><label class="form-check-label">Custom for this feed</label></div>' +
                             '<div class="feed-horn-custom-fields ps-2" data-idx="' + idx + '" data-cond="' + c + '" style="' + (inherit ? 'display:none' : '') + '">' +
                             '<div class="form-check mb-1"><input class="form-check-input feed-horn-enabled" type="checkbox" data-idx="' + idx + '" data-cond="' + c + '"' + (h.enabled ? ' checked' : '') + '><label class="form-check-label">Play horn</label></div>' +
-                            '<input class="form-control form-control-sm feed-horn-file" list="lightning-mp3-options" data-idx="' + idx + '" data-cond="' + c + '" placeholder="horn mp3" value="' + ((h.audio_file || '') + '').replace(/"/g, '&quot;') + '">' +
+                            '<select class="form-select form-select-sm lightning-mp3-select feed-horn-file" data-allow-empty="1" data-idx="' + idx + '" data-cond="' + c + '">' + lightningMp3OptionsHtml((h.audio_file || ''), true) + '</select>' +
                             '</div></div>';
                     }).join('') +
                     '</div></div>';
@@ -2908,7 +3340,7 @@
                     '<td><select class="form-select form-select-sm sw-to">' + feedOpts.replace('value="' + (r.to_feed_id || 'failover_1') + '"', 'value="' + (r.to_feed_id || 'failover_1') + '" selected') + '</select></td>' +
                     '<td><select class="form-select form-select-sm sw-reason">' + reasonOpts.replace('value="' + (r.reason || 'failover') + '"', 'value="' + (r.reason || 'failover') + '" selected') + '</select></td>' +
                     '<td><input class="form-control form-control-sm sw-sensor" placeholder="sensor id" value="' + (r.match_sensor_id || '') + '"></td>' +
-                    '<td><input class="form-control form-control-sm sw-audio" list="lightning-mp3-options" value="' + (r.audio_file || '') + '"></td>' +
+                    '<td><select class="form-select form-select-sm lightning-mp3-select sw-audio" data-allow-empty="1">' + lightningMp3OptionsHtml(r.audio_file || '', true) + '</select></td>' +
                     '<td><button type="button" class="btn btn-sm btn-outline-secondary sw-test">▶</button> <button type="button" class="btn btn-sm btn-outline-danger sw-del">×</button></td></tr>';
             }).join('');
             // Fix selected attributes properly
@@ -2955,6 +3387,42 @@
             });
         }
 
+
+        let lightningMp3Files = [];
+
+        function lightningMp3OptionsHtml(selected, allowEmpty) {
+            const files = lightningMp3Files || [];
+            let html = '';
+            if (allowEmpty) {
+                html += '<option value="">— none —</option>';
+            }
+            let found = !selected;
+            files.forEach(function(f) {
+                const sel = f === selected ? ' selected' : '';
+                if (f === selected) found = true;
+                html += '<option value="' + f.replace(/"/g, '&quot;') + '"' + sel + '>' + f + '</option>';
+            });
+            if (selected && !found) {
+                html += '<option value="' + String(selected).replace(/"/g, '&quot;') + '" selected>' + selected + ' (not on disk)</option>';
+            }
+            return html;
+        }
+
+        function fillLightningMp3Select(el, selected) {
+            if (!el) return;
+            const allowEmpty = el.getAttribute('data-allow-empty') === '1';
+            el.innerHTML = lightningMp3OptionsHtml(selected || '', allowEmpty);
+            if (selected) el.value = selected;
+        }
+
+        function refreshAllLightningMp3Selects(preferred) {
+            preferred = preferred || {};
+            document.querySelectorAll('select.lightning-mp3-select').forEach(function(el) {
+                const cur = preferred[el.id] != null ? preferred[el.id] : (el.value || '');
+                fillLightningMp3Select(el, cur);
+            });
+        }
+
         function applyLightningFormFromStatus(status) {
             setValue('lightning-interval', status.fetch_interval || 60);
             setValue('lightning-timeout', status.timeout || 30);
@@ -2984,6 +3452,7 @@
             setChecked('trig-unknown_condition', !!tr.unknown_condition);
             setChecked('trig-displayname_mismatch', !!tr.displayname_mismatch);
             setChecked('trig-uniqueid_mismatch', !!tr.uniqueid_mismatch);
+            setChecked('trig-stale_localtime', tr.stale_localtime !== false);
 
             const announce = status.condition_announce || {};
             setChecked('announce-redalert', announce.RedAlert !== false);
@@ -3012,22 +3481,24 @@
             setValue('ca-allclear-announce-file', ac.announce_file || 'Voice_AllClear.mp3');
             setValue('ca-warning-announce-file', (ca.Warning && ca.Warning.announce_file) || 'Voice_Warning.mp3');
             setValue('ca-caution-announce-file', (ca.Caution && ca.Caution.announce_file) || 'Voice_Caution.mp3');
-            setValue('ca-unknown-announce-file', (ca.Unknown && ca.Unknown.announce_file) || 'thor_unknown.mp3');
+            setValue('ca-unknown-announce-file', (ca.Unknown && ca.Unknown.announce_file) || 'Voice_Unknown.mp3');
 
-            const datalist = document.getElementById('reminder-file-options');
-            const mp3list = document.getElementById('lightning-mp3-options');
-            [datalist, mp3list].forEach(function(dl) {
-                if (!dl) return;
-                dl.innerHTML = '';
-                (status.available_reminder_files || []).forEach(function(fileName) {
-                    const option = document.createElement('option');
-                    option.value = fileName;
-                    dl.appendChild(option);
-                });
+            lightningMp3Files = status.available_reminder_files || [];
+            refreshAllLightningMp3Selects({
+                'red-alert-reminder-file': policy.reminder_audio_file || 'Voice_RedAlert_Reminder.mp3',
+                'red-alert-reminder-horn-file': policy.horn_audio_file || '',
+                'ca-redalert-horn-file': ra.horn_file || 'Horn_RedAlert.mp3',
+                'ca-redalert-announce-file': ra.announce_file || 'Voice_RedAlert.mp3',
+                'ca-allclear-horn-file': ac.horn_file || 'Horn_AllClear.mp3',
+                'ca-allclear-announce-file': ac.announce_file || 'Voice_AllClear.mp3',
+                'ca-warning-announce-file': (ca.Warning && ca.Warning.announce_file) || 'Voice_Warning.mp3',
+                'ca-caution-announce-file': (ca.Caution && ca.Caution.announce_file) || 'Voice_Caution.mp3',
+                'ca-unknown-announce-file': (ca.Unknown && ca.Unknown.announce_file) || 'Voice_Unknown.mp3'
             });
 
             renderFeedCards(status.feeds || []);
             renderFeedSwitchRows(status.feed_switch_announcements || []);
+            renderCompositeRaRows(status.composite_red_alert_rules || []);
             const pinSel = document.getElementById('pin-active-feed');
             if (pinSel) pinSel.value = status.pinned_feed_id || '';
             lightningFormLoaded = true;
@@ -3044,8 +3515,20 @@
 
             let banners = '';
             if (status.all_feeds_failed) banners += '<div class="alert alert-danger">All Thor feeds unreachable — holding last condition (never auto All Clear)</div>';
+            if (status.manual_override_active) banners += '<div class="alert alert-danger"><strong>MANUAL OVERRIDE ACTIVE</strong> — ' + (status.manual_override_condition || '') + ' since ' + (status.manual_override_at || '') + (status.manual_override_note ? ' (' + status.manual_override_note + ')' : '') + '</div>';
             if (status.on_failover) banners += '<div class="alert alert-warning">On failover feed: <strong>' + (status.active_feed_id || '') + '</strong></div>';
             if (status.pinned_feed_id) banners += '<div class="alert alert-info">PINNED active feed: <strong>' + status.pinned_feed_id + '</strong></div>';
+            if (status.last_composite_enter) banners += '<div class="alert alert-warning small">Last composite enter: ' + status.last_composite_enter + '</div>';
+            const ovEl = document.getElementById('lightning-override-status');
+            if (ovEl) {
+                if (status.manual_override_active) {
+                    ovEl.className = 'alert alert-danger py-2 small mb-3';
+                    ovEl.textContent = 'Override ACTIVE: ' + (status.manual_override_condition || '') + ' @ ' + (status.manual_override_at || '');
+                } else {
+                    ovEl.className = 'alert alert-secondary py-2 small mb-3';
+                    ovEl.textContent = 'Override: inactive';
+                }
+            }
 
             let healthRows = '';
             const feeds = status.feeds || [];
@@ -3140,9 +3623,85 @@
                     missing_lightningalert: document.getElementById('trig-missing_lightningalert').checked,
                     unknown_condition: document.getElementById('trig-unknown_condition').checked,
                     displayname_mismatch: document.getElementById('trig-displayname_mismatch').checked,
-                    uniqueid_mismatch: document.getElementById('trig-uniqueid_mismatch').checked
+                    uniqueid_mismatch: document.getElementById('trig-uniqueid_mismatch').checked,
+                    stale_localtime: document.getElementById('trig-stale_localtime').checked
                 }
             };
+        }
+
+        let compositeRaRulesState = [];
+
+        function craFeedChecked(feeds, id) {
+            return (feeds || []).indexOf(id) >= 0;
+        }
+
+        function renderCompositeRaRows(rules) {
+            const list = document.getElementById('composite-ra-list');
+            if (!list) return;
+            compositeRaRulesState = Array.isArray(rules) ? rules.slice() : [];
+            if (!compositeRaRulesState.length) {
+                list.innerHTML = '<div class="text-muted small border rounded p-3">No composite enter rules yet. Example: when Failover 1 and Failover 2 both report Warning → enter Red Alert.</div>';
+                return;
+            }
+            const condOpts = ['Warning', 'Caution', 'RedAlert'];
+            list.innerHTML = compositeRaRulesState.map(function(r, idx) {
+                const feeds = r.require_feed_ids || [];
+                const cond = r.require_condition || 'Warning';
+                const enabled = !!r.enabled;
+                const label = (r.label || '').replace(/"/g, '&quot;');
+                return '<div class="cra-rule-card' + (enabled ? '' : ' cra-disabled') + '" data-idx="' + idx + '">' +
+                    '<div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">' +
+                    '<div class="form-check form-switch mb-0">' +
+                    '<input class="form-check-input cra-enabled" type="checkbox" id="cra-en-' + idx + '"' + (enabled ? ' checked' : '') + '>' +
+                    '<label class="form-check-label" for="cra-en-' + idx + '">Rule ' + (idx + 1) + ' active</label></div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger cra-del">Remove</button></div>' +
+                    '<div class="cra-rule-sentence">' +
+                    '<span>When these feeds each report</span>' +
+                    '<select class="form-select form-select-sm cra-cond">' +
+                    condOpts.map(function(c) {
+                        return '<option value="' + c + '"' + (cond === c ? ' selected' : '') + '>' + c + '</option>';
+                    }).join('') +
+                    '</select>' +
+                    '<span>→ <strong>enter Red Alert</strong></span></div>' +
+                    '<div class="cra-feed-picks">' +
+                    '<span class="cra-pill"><input type="checkbox" class="form-check-input cra-feed" value="primary" id="cra-f-p-' + idx + '"' + (craFeedChecked(feeds, 'primary') ? ' checked' : '') + '> <label class="form-check-label mb-0" for="cra-f-p-' + idx + '">Primary</label></span>' +
+                    '<span class="cra-pill"><input type="checkbox" class="form-check-input cra-feed" value="failover_1" id="cra-f-1-' + idx + '"' + (craFeedChecked(feeds, 'failover_1') ? ' checked' : '') + '> <label class="form-check-label mb-0" for="cra-f-1-' + idx + '">Failover 1</label></span>' +
+                    '<span class="cra-pill"><input type="checkbox" class="form-check-input cra-feed" value="failover_2" id="cra-f-2-' + idx + '"' + (craFeedChecked(feeds, 'failover_2') ? ' checked' : '') + '> <label class="form-check-label mb-0" for="cra-f-2-' + idx + '">Failover 2</label></span>' +
+                    '</div>' +
+                    '<div class="mt-2"><label class="form-label small mb-1" for="cra-label-' + idx + '">Optional name (for logs)</label>' +
+                    '<input class="form-control form-control-sm cra-label" id="cra-label-' + idx + '" placeholder="e.g. Both failovers Warning" value="' + label + '"></div>' +
+                    '</div>';
+            }).join('');
+            list.querySelectorAll('.cra-del').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const card = btn.closest('.cra-rule-card');
+                    const idx = parseInt(card.getAttribute('data-idx'), 10);
+                    compositeRaRulesState.splice(idx, 1);
+                    renderCompositeRaRows(compositeRaRulesState);
+                    setLightningFormDirty(true);
+                });
+            });
+            list.querySelectorAll('.cra-enabled').forEach(function(cb) {
+                cb.addEventListener('change', function() {
+                    const card = cb.closest('.cra-rule-card');
+                    if (card) card.classList.toggle('cra-disabled', !cb.checked);
+                });
+            });
+        }
+
+        function collectCompositeRaRules() {
+            const list = document.getElementById('composite-ra-list');
+            const cards = list ? Array.from(list.querySelectorAll('.cra-rule-card[data-idx]')) : [];
+            return cards.map(function(card, idx) {
+                const feeds = Array.from(card.querySelectorAll('.cra-feed:checked')).map(function(el) { return el.value; });
+                return {
+                    id: (compositeRaRulesState[idx] && compositeRaRulesState[idx].id) || ('cra_' + idx),
+                    enabled: card.querySelector('.cra-enabled').checked,
+                    label: (card.querySelector('.cra-label').value || '').trim(),
+                    require_feed_ids: feeds,
+                    require_condition: card.querySelector('.cra-cond').value || 'Warning'
+                };
+            });
         }
 
         function getMonitorPayload() {
@@ -3155,6 +3714,7 @@
                 failover: getFailoverFromForm(),
                 feeds: feeds,
                 feed_switch_announcements: collectFeedSwitchRules(),
+                composite_red_alert_rules: collectCompositeRaRules(),
                 announce_timing: {
                     min_seconds_between_same_condition: parseInt(document.getElementById('announce-cooldown-same').value, 10) || 0,
                     min_seconds_between_any_lightning_announce: parseInt(document.getElementById('announce-cooldown-any').value, 10) || 0
@@ -3175,6 +3735,12 @@
                 }
             }
             if (payload.failover && payload.failover.consecutive_failures < 2) warns.push('consecutive_failures is less than 2 (may flap).');
+            (payload.composite_red_alert_rules || []).forEach(function(r, i) {
+                if (!r.enabled) return;
+                if (!r.require_feed_ids || r.require_feed_ids.length < 2) {
+                    warns.push('Composite rule ' + (i + 1) + ' needs at least two feeds checked.');
+                }
+            });
             if (!warns.length) return true;
             return confirm('Please confirm:\n\n- ' + warns.join('\n- ') + '\n\nSave anyway?');
         }
@@ -3361,10 +3927,31 @@
         }
 
         function showLightningMessage(message, type) {
-            const messageDiv = document.getElementById('lightning-config-message');
-            if (!messageDiv) return;
-            messageDiv.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' + message +
-                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+            const html = '<div class="alert alert-' + type + ' alert-dismissible fade show py-1 px-2 mb-0" role="alert">' + message +
+                '<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button></div>';
+            document.querySelectorAll('.lightning-config-message, #lightning-config-message').forEach(function(el) {
+                el.innerHTML = html;
+            });
+        }
+
+        function applyManualOverride(action) {
+            const labels = {
+                redalert: 'Force Red Alert (manual override)? This sets the real lock — not a Manual Test drill.',
+                allclear: 'Force All Clear / unlock (manual override)? This clears the Red Alert lock.',
+                clear: 'Clear the manual override flag only (lock/condition unchanged)?'
+            };
+            if (!confirm(labels[action] || ('Apply override: ' + action + '?'))) return;
+            fetch('/admin/lightning/override', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: action, note: 'admin_ui' })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                const ok = data.status === 'success';
+                showLightningMessage((ok ? '✅ ' : '❌ ') + (data.message || data.error || action), ok ? 'success' : 'danger');
+                loadLightningTriggerStatus();
+            }).catch(function(err) {
+                showLightningMessage('Override failed: ' + err.message, 'danger');
+            });
         }
 
         function applyPinFeed(feedId) {
@@ -3378,11 +3965,19 @@
             });
         }
 
-        // Lightning Event Listeners
-        document.getElementById('save-lightning-monitor').addEventListener('click', saveLightningMonitor);
-        document.getElementById('save-red-alert-policy').addEventListener('click', saveRedAlertPolicy);
-        document.getElementById('save-condition-announce').addEventListener('click', saveConditionAnnounce);
-        document.getElementById('save-condition-audio').addEventListener('click', saveConditionAudio);
+        // Lightning Event Listeners (class-based saves for Basic + Advanced sticky bars)
+        document.querySelectorAll('.save-lightning-monitor').forEach(function(btn) {
+            btn.addEventListener('click', saveLightningMonitor);
+        });
+        document.querySelectorAll('.save-red-alert-policy').forEach(function(btn) {
+            btn.addEventListener('click', saveRedAlertPolicy);
+        });
+        document.querySelectorAll('.save-condition-announce').forEach(function(btn) {
+            btn.addEventListener('click', saveConditionAnnounce);
+        });
+        document.querySelectorAll('.save-condition-audio').forEach(function(btn) {
+            btn.addEventListener('click', saveConditionAudio);
+        });
         document.getElementById('test-red-alert-reminder').addEventListener('click', testRedAlertReminder);
         document.getElementById('test-condition-redalert').addEventListener('click', function() { testLightningCondition('RedAlert'); });
         document.getElementById('test-condition-warning').addEventListener('click', function() { testLightningCondition('Warning'); });
@@ -3390,23 +3985,58 @@
         document.getElementById('test-condition-allclear').addEventListener('click', function() { testLightningCondition('AllClear'); });
         document.getElementById('test-condition-unknown').addEventListener('click', function() { testLightningCondition('Unknown'); });
         document.getElementById('reset-lightning-state').addEventListener('click', resetLightningState);
+        const ovRA = document.getElementById('override-force-redalert');
+        if (ovRA) ovRA.addEventListener('click', function() { applyManualOverride('redalert'); });
+        const ovAC = document.getElementById('override-force-allclear');
+        if (ovAC) ovAC.addEventListener('click', function() { applyManualOverride('allclear'); });
+        const ovClear = document.getElementById('override-clear-flag');
+        if (ovClear) ovClear.addEventListener('click', function() { applyManualOverride('clear'); });
         document.getElementById('add-feed-switch-rule').addEventListener('click', function() {
             feedSwitchRulesState.push({ id: 'rule_' + Date.now(), enabled: false, from_feed_id: 'primary', to_feed_id: 'failover_1', reason: 'failover', match_sensor_id: '', audio_file: '', label: '' });
             renderFeedSwitchRows(feedSwitchRulesState);
+            setLightningFormDirty(true);
+        });
+        const addCra = document.getElementById('add-composite-ra-rule');
+        if (addCra) addCra.addEventListener('click', function() {
+            compositeRaRulesState.push({
+                id: 'cra_' + Date.now(),
+                enabled: true,
+                label: 'Both failovers Warning → Red Alert',
+                require_feed_ids: ['failover_1', 'failover_2'],
+                require_condition: 'Warning'
+            });
+            renderCompositeRaRows(compositeRaRulesState);
             setLightningFormDirty(true);
         });
         document.getElementById('apply-pin-feed').addEventListener('click', function() {
             applyPinFeed(document.getElementById('pin-active-feed').value);
         });
         document.getElementById('unpin-feed').addEventListener('click', function() { applyPinFeed(''); });
-        document.getElementById('discard-lightning-edits').addEventListener('click', function() {
-            loadLightningTriggerStatus(true);
+        document.querySelectorAll('.discard-lightning-edits').forEach(function(btn) {
+            btn.addEventListener('click', function() { loadLightningTriggerStatus(true); });
         });
         (function wireLightningDirtyTracking() {
             const panel = document.getElementById('lightning-trigger-panel');
             if (!panel) return;
             panel.addEventListener('input', markLightningFormDirty);
             panel.addEventListener('change', markLightningFormDirty);
+        })();
+
+        (function initThemeToggle() {
+            const KEY = 'tarr-color-scheme';
+            const btn = document.getElementById('theme-toggle');
+            function current() {
+                return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            }
+            function apply(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                try { localStorage.setItem(KEY, theme); } catch (e) {}
+                if (btn) btn.textContent = theme === 'light' ? '☀️ Light' : '🌙 Dark';
+            }
+            apply(current());
+            if (btn) btn.addEventListener('click', function () {
+                apply(current() === 'dark' ? 'light' : 'dark');
+            });
         })();
 
         // Event Listeners
