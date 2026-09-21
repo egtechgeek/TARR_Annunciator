@@ -3,5 +3,6 @@
 *.tar.gz
 broward_thor_guard_sensors.csv
 /data/xml/
+/data/logs/
 *.deb
 /FromLiveRaspberryPi/

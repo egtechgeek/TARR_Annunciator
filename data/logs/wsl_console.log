@@ -160,3 +160,9 @@ ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) Unknown PCM default
 2026/09/20 20:27:00 Skipping scheduled safety announcement (outside operating hours)
 [GIN] 2026/09/20 - 20:27:02 | 200 |      4.0669ms |             ::1 | GET      "/lightning_status"
 [GIN] 2026/09/20 - 20:27:02 | 200 |      7.6268ms |             ::1 | GET      "/scheduler_status"
+2026/09/20 20:28:01 Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/20 - 20:28:02 | 200 |      5.7267ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/20 - 20:28:02 | 200 |     10.1774ms |             ::1 | GET      "/scheduler_status"
+2026/09/20 20:29:02 Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/20 - 20:29:02 | 200 |      4.8491ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/20 - 20:29:02 | 200 |      8.8896ms |             ::1 | GET      "/scheduler_status"
