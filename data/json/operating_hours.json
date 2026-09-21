@@ -1,15 +1,30 @@
 {
-    "enabled": false,
+    "enabled": true,
     "timezone": "America/New_York",
     "open_time": "09:00",
     "close_time": "16:00",
     "days": {
-        "sunday": {
+        "friday": {
             "enabled": true,
             "open": "09:00",
             "close": "16:00"
         },
         "monday": {
+            "enabled": true,
+            "open": "09:00",
+            "close": "16:00"
+        },
+        "saturday": {
+            "enabled": true,
+            "open": "09:00",
+            "close": "16:00"
+        },
+        "sunday": {
+            "enabled": true,
+            "open": "09:00",
+            "close": "16:00"
+        },
+        "thursday": {
             "enabled": true,
             "open": "09:00",
             "close": "16:00"
@@ -20,21 +35,6 @@
             "close": "16:00"
         },
         "wednesday": {
-            "enabled": true,
-            "open": "09:00",
-            "close": "16:00"
-        },
-        "thursday": {
-            "enabled": true,
-            "open": "09:00",
-            "close": "16:00"
-        },
-        "friday": {
-            "enabled": true,
-            "open": "09:00",
-            "close": "16:00"
-        },
-        "saturday": {
             "enabled": true,
             "open": "09:00",
             "close": "16:00"

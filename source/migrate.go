@@ -38,6 +38,19 @@ func runSchemaMigrations(fromVersion string) error {
 		}
 	}
 
+	// 1.1.2: multi-feed monitor, failover policy, browardtg catalog, audio filename remap
+	if compareSemver(fromVersion, "1.1.2") < 0 && compareSemver(toVersion, "1.1.2") >= 0 {
+		if err := migrateLightningMultiFeed(); err != nil {
+			return fmt.Errorf("lightning multi-feed migration: %w", err)
+		}
+		if err := migrateEnsureBrowardTGCatalog(""); err != nil {
+			return fmt.Errorf("browardtg catalog migration: %w", err)
+		}
+		if err := migrateLightningAudioFilenames(); err != nil {
+			return fmt.Errorf("lightning audio filename migration: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -74,6 +87,413 @@ func migrateLightningMonitorBlock() error {
 		return err
 	}
 	log.Printf("Migration: lightning.json added empty monitor block (set URL in Admin — not invented in code)")
+	return nil
+}
+
+func migrateLightningMultiFeed() error {
+	path := lightningConfigPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("Migration: lightning.json missing — skip multi-feed")
+			return nil
+		}
+		return err
+	}
+	var live map[string]interface{}
+	if err := json.Unmarshal(data, &live); err != nil {
+		return fmt.Errorf("parse lightning.json: %w", err)
+	}
+	mon, _ := live["monitor"].(map[string]interface{})
+	if mon == nil {
+		mon = map[string]interface{}{
+			"enabled":        false,
+			"url":            "",
+			"fetch_interval": 60,
+			"timeout":        30,
+		}
+		live["monitor"] = mon
+	}
+
+	changed := false
+	if _, ok := mon["feeds"]; !ok {
+		legacyURL, _ := mon["url"].(string)
+		enabled, _ := mon["enabled"].(bool)
+		primary := map[string]interface{}{
+			"id":                   "primary",
+			"label":                "Primary",
+			"enabled":              enabled && strings.TrimSpace(legacyURL) != "",
+			"sensor_id":            "",
+			"source":               "custom",
+			"expected_displayname": "",
+			"expected_uniqueid":    "",
+			"url":                  strings.TrimSpace(legacyURL),
+			"timeout_seconds":      0,
+			"announce": map[string]interface{}{"inherit_global": true},
+			"audio_by_condition":   map[string]interface{}{},
+			"horn_by_condition": map[string]interface{}{
+				"RedAlert": map[string]interface{}{"inherit_global": true, "enabled": true, "audio_file": ""},
+				"AllClear": map[string]interface{}{"inherit_global": true, "enabled": true, "audio_file": ""},
+			},
+		}
+		// Match catalog if available
+		_ = loadBrowardTGCatalog()
+		if s := findBrowardTGSensorByURL(legacyURL); s != nil {
+			primary["sensor_id"] = s.ID
+			primary["expected_displayname"] = s.DisplayName
+			primary["source"] = "catalog"
+		}
+		mon["feeds"] = []interface{}{
+			primary,
+			map[string]interface{}{
+				"id": "failover_1", "label": "Failover 1", "enabled": false, "sensor_id": "", "source": "custom",
+				"expected_displayname": "", "expected_uniqueid": "", "url": "", "timeout_seconds": 0,
+				"announce": map[string]interface{}{"inherit_global": true}, "audio_by_condition": map[string]interface{}{},
+				"horn_by_condition": map[string]interface{}{
+					"RedAlert": map[string]interface{}{"inherit_global": true, "enabled": true, "audio_file": ""},
+					"AllClear": map[string]interface{}{"inherit_global": true, "enabled": true, "audio_file": ""},
+				},
+			},
+			map[string]interface{}{
+				"id": "failover_2", "label": "Failover 2", "enabled": false, "sensor_id": "", "source": "custom",
+				"expected_displayname": "", "expected_uniqueid": "", "url": "", "timeout_seconds": 0,
+				"announce": map[string]interface{}{"inherit_global": true}, "audio_by_condition": map[string]interface{}{},
+				"horn_by_condition": map[string]interface{}{
+					"RedAlert": map[string]interface{}{"inherit_global": true, "enabled": true, "audio_file": ""},
+					"AllClear": map[string]interface{}{"inherit_global": true, "enabled": true, "audio_file": ""},
+				},
+			},
+		}
+		changed = true
+		log.Printf("Migration: lightning.json monitor.feeds created from legacy url")
+	}
+	if _, ok := mon["failover"]; !ok {
+		def := defaultLightningFailoverPolicy()
+		mon["failover"] = map[string]interface{}{
+			"consecutive_failures":             def.ConsecutiveFailures,
+			"failure_window_seconds":           def.FailureWindowSeconds,
+			"min_dwell_on_feed_seconds":        def.MinDwellOnFeedSeconds,
+			"failback_mode":                    def.FailbackMode,
+			"failback_after_successes":         def.FailbackAfterSuccesses,
+			"failback_probe_interval_seconds":  def.FailbackProbeIntervalSeconds,
+			"allow_failover_during_red_alert":  def.AllowFailoverDuringRedAlert,
+			"allclear_release_mode":            def.AllClearReleaseMode,
+			"require_allclear_from_same_feed":  false,
+			"preserve_condition_across_failover": def.PreserveConditionAcrossFail,
+			"on_all_feeds_failed":              def.OnAllFeedsFailed,
+			"triggers": map[string]interface{}{
+				"http_error": true, "http_status_not_ok": true, "empty_body": true, "encoding_error": true,
+				"missing_lightningalert": true, "unknown_condition": false, "displayname_mismatch": false, "uniqueid_mismatch": false,
+			},
+		}
+		changed = true
+		log.Printf("Migration: lightning.json monitor.failover defaults added")
+	}
+	if fo, ok := mon["failover"].(map[string]interface{}); ok {
+		if _, has := fo["allclear_release_mode"]; !has {
+			fo["allclear_release_mode"] = "primary_only"
+			fo["require_allclear_from_same_feed"] = false
+			changed = true
+			log.Printf("Migration: lightning.json allclear_release_mode defaulted to primary_only")
+		} else {
+			mode, _ := fo["allclear_release_mode"].(string)
+			fo["allclear_release_mode"] = normalizeAllClearReleaseMode(mode)
+			fo["require_allclear_from_same_feed"] = false
+		}
+	}
+	if _, ok := mon["feed_switch_announcements"]; !ok {
+		mon["feed_switch_announcements"] = []interface{}{
+			map[string]interface{}{"id": "p_to_f1", "enabled": false, "from_feed_id": "primary", "to_feed_id": "failover_1", "reason": "failover", "match_sensor_id": "", "match_displayname": "", "audio_file": "", "label": "Primary to Failover 1"},
+			map[string]interface{}{"id": "p_to_f2", "enabled": false, "from_feed_id": "primary", "to_feed_id": "failover_2", "reason": "failover", "match_sensor_id": "", "match_displayname": "", "audio_file": "", "label": "Primary to Failover 2"},
+		}
+		changed = true
+	}
+	if _, ok := live["announce_timing"]; !ok {
+		live["announce_timing"] = map[string]interface{}{
+			"min_seconds_between_same_condition":        0,
+			"min_seconds_between_any_lightning_announce": 0,
+		}
+		changed = true
+	}
+	if _, ok := live["displayname_overrides"]; !ok {
+		live["displayname_overrides"] = []interface{}{}
+		changed = true
+	}
+	if _, ok := live["condition_audio"]; !ok {
+		live["condition_audio"] = map[string]interface{}{
+			"RedAlert": map[string]interface{}{"horn_enabled": true, "horn_file": "Horn_RedAlert.mp3", "announce_file": "Voice_RedAlert.mp3"},
+			"AllClear": map[string]interface{}{"horn_enabled": true, "horn_file": "Horn_AllClear.mp3", "announce_file": "Voice_AllClear.mp3"},
+			"Warning":  map[string]interface{}{"horn_enabled": false, "horn_file": "", "announce_file": "Voice_Warning.mp3"},
+			"Caution":  map[string]interface{}{"horn_enabled": false, "horn_file": "", "announce_file": "Voice_Caution.mp3"},
+			"Unknown":  map[string]interface{}{"horn_enabled": false, "horn_file": "", "announce_file": ""},
+		}
+		changed = true
+		log.Printf("Migration: lightning.json condition_audio defaults added")
+	}
+	if feeds, ok := mon["feeds"].([]interface{}); ok {
+		for _, fi := range feeds {
+			fm, ok := fi.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if _, ok := fm["horn_by_condition"]; !ok {
+				fm["horn_by_condition"] = map[string]interface{}{
+					"RedAlert": map[string]interface{}{"inherit_global": true, "enabled": true, "audio_file": ""},
+					"AllClear": map[string]interface{}{"inherit_global": true, "enabled": true, "audio_file": ""},
+				}
+				changed = true
+			}
+		}
+	}
+	if !changed {
+		log.Printf("Migration: lightning.json multi-feed already present — leaving unchanged")
+		return nil
+	}
+	out, err := json.MarshalIndent(live, "", "    ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, out, 0644)
+}
+
+// lightningAudioRenameMap maps pre-1.1.2 Thor MP3 basenames to the Horn_/Voice_ names shipped in 1.1.2.
+// Custom operator filenames are left untouched. Unknown has no replacement file in 1.1.2.
+func lightningAudioRenameMap() map[string]string {
+	return map[string]string{
+		"thor_red_alert.mp3":  "Voice_RedAlert.mp3",
+		"redalert.mp3":        "Voice_RedAlert.mp3",
+		"thor_all_clear.mp3":  "Voice_AllClear.mp3",
+		"all_clear.mp3":       "Voice_AllClear.mp3",
+		"thor_warning.mp3":    "Voice_Warning.mp3",
+		"warning.mp3":         "Voice_Warning.mp3",
+		"thor_caution.mp3":    "Voice_Caution.mp3",
+		"thor_repeat1.mp3":    "Voice_RedAlert_Reminder.mp3",
+		// Legacy horn was the same file as the red-alert announce clip
+		"thor_red_alert_horn.mp3": "Horn_RedAlert.mp3",
+	}
+}
+
+func remapLightningAudioBasename(name string) (string, bool) {
+	base := strings.ToLower(strings.TrimSpace(filepath.Base(strings.ReplaceAll(name, "\\", "/"))))
+	if base == "" {
+		return name, false
+	}
+	if next, ok := lightningAudioRenameMap()[base]; ok {
+		return next, true
+	}
+	return name, false
+}
+
+func remapLightningAudioStringField(m map[string]interface{}, key string) bool {
+	if m == nil {
+		return false
+	}
+	raw, _ := m[key].(string)
+	if next, ok := remapLightningAudioBasename(raw); ok {
+		m[key] = next
+		return true
+	}
+	return false
+}
+
+// migrateLightningAudioFilenames remaps known legacy lightning MP3 names in lightning.json
+// so the Admin updater can install 1.1.2 Voice_/Horn_ assets without manual JSON edits.
+// Does not delete old files on disk (mergeCopyDir leaves them); only updates references.
+func migrateLightningAudioFilenames() error {
+	path := lightningConfigPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("Migration: lightning.json missing — skip audio filename remap")
+			return nil
+		}
+		return err
+	}
+	var live map[string]interface{}
+	if err := json.Unmarshal(data, &live); err != nil {
+		return fmt.Errorf("parse lightning.json: %w", err)
+	}
+	changed := false
+
+	if anns, ok := live["lightning_announcements"].([]interface{}); ok {
+		for _, item := range anns {
+			a, _ := item.(map[string]interface{})
+			if remapLightningAudioStringField(a, "audio_file") {
+				changed = true
+			}
+		}
+	}
+
+	if pol, ok := live["red_alert_policy"].(map[string]interface{}); ok {
+		if remapLightningAudioStringField(pol, "reminder_audio_file") {
+			changed = true
+		}
+		rawHorn, _ := pol["horn_audio_file"].(string)
+		hornBase := strings.ToLower(strings.TrimSpace(filepath.Base(rawHorn)))
+		if hornBase == "thor_red_alert.mp3" || hornBase == "redalert.mp3" {
+			pol["horn_audio_file"] = "Horn_RedAlert.mp3"
+			changed = true
+		} else if remapLightningAudioStringField(pol, "horn_audio_file") {
+			changed = true
+		}
+	}
+
+	if ca, ok := live["condition_audio"].(map[string]interface{}); ok {
+		for _, clip := range ca {
+			c, _ := clip.(map[string]interface{})
+			if remapLightningAudioStringField(c, "horn_file") {
+				changed = true
+			}
+			if remapLightningAudioStringField(c, "announce_file") {
+				changed = true
+			}
+		}
+	}
+
+	if mon, ok := live["monitor"].(map[string]interface{}); ok {
+		if feeds, ok := mon["feeds"].([]interface{}); ok {
+			for _, item := range feeds {
+				f, _ := item.(map[string]interface{})
+				if abc, ok := f["audio_by_condition"].(map[string]interface{}); ok {
+					for k, v := range abc {
+						s, _ := v.(string)
+						if next, ok := remapLightningAudioBasename(s); ok {
+							abc[k] = next
+							changed = true
+						}
+					}
+				}
+				if hbc, ok := f["horn_by_condition"].(map[string]interface{}); ok {
+					for _, hv := range hbc {
+						h, _ := hv.(map[string]interface{})
+						if remapLightningAudioStringField(h, "audio_file") {
+							changed = true
+						}
+					}
+				}
+			}
+		}
+		if rules, ok := mon["feed_switch_announcements"].([]interface{}); ok {
+			for _, item := range rules {
+				r, _ := item.(map[string]interface{})
+				if remapLightningAudioStringField(r, "audio_file") {
+					changed = true
+				}
+			}
+		}
+	}
+
+	if !changed {
+		log.Printf("Migration: lightning audio filenames already current — leaving unchanged")
+		return nil
+	}
+	out, err := json.MarshalIndent(live, "", "    ")
+	if err != nil {
+		return err
+	}
+	log.Printf("Migration: lightning.json remapped legacy Thor MP3 filenames to Voice_/Horn_ names")
+	return os.WriteFile(path, out, 0644)
+}
+
+// migrateEnsureBrowardTGCatalog copies/merges browardtg.json from package seed or data seed.
+// packageJSONDir empty → try sibling package paths / leave if present.
+func migrateEnsureBrowardTGCatalog(packageJSONDir string) error {
+	livePath := browardtgPath()
+	var seedPath string
+	if packageJSONDir != "" {
+		seedPath = filepath.Join(packageJSONDir, "browardtg.json")
+	}
+	if seedPath == "" || !fileExists(seedPath) {
+		// Try repo data path relative to binary cwd
+		candidates := []string{
+			filepath.Join("data", "json", "browardtg.json"),
+			filepath.Join("json", "browardtg.json"),
+		}
+		if app != nil && app.Config != nil && app.Config.BaseDir != "" {
+			candidates = append([]string{filepath.Join(app.Config.BaseDir, "json", "browardtg.json")}, candidates...)
+		}
+		for _, c := range candidates {
+			if fileExists(c) && c != livePath {
+				seedPath = c
+				break
+			}
+		}
+	}
+	if seedPath == "" || !fileExists(seedPath) {
+		if fileExists(livePath) {
+			log.Printf("Migration: browardtg.json already present")
+			_ = loadBrowardTGCatalog()
+			return nil
+		}
+		log.Printf("Migration: browardtg.json seed not found — catalog will be empty until packaged")
+		return nil
+	}
+
+	seedData, err := os.ReadFile(seedPath)
+	if err != nil {
+		return err
+	}
+	var seed BrowardTGCatalog
+	if err := json.Unmarshal(seedData, &seed); err != nil {
+		return fmt.Errorf("parse seed browardtg.json: %w", err)
+	}
+
+	if !fileExists(livePath) {
+		if err := os.MkdirAll(filepath.Dir(livePath), 0755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(livePath, seedData, 0644); err != nil {
+			return err
+		}
+		log.Printf("Migration: installed browardtg.json (%d sensors)", len(seed.Sensors))
+		_ = loadBrowardTGCatalog()
+		return nil
+	}
+
+	liveData, err := os.ReadFile(livePath)
+	if err != nil {
+		return err
+	}
+	var live BrowardTGCatalog
+	if err := json.Unmarshal(liveData, &live); err != nil {
+		return fmt.Errorf("parse live browardtg.json: %w", err)
+	}
+	byID := map[string]int{}
+	for i, s := range live.Sensors {
+		byID[s.ID] = i
+	}
+	changed := false
+	for _, s := range seed.Sensors {
+		if idx, ok := byID[s.ID]; ok {
+			// update known fields
+			if live.Sensors[idx].URL != s.URL || live.Sensors[idx].DisplayName != s.DisplayName || live.Sensors[idx].PathPrefix != s.PathPrefix {
+				live.Sensors[idx] = s
+				changed = true
+			}
+		} else {
+			live.Sensors = append(live.Sensors, s)
+			changed = true
+		}
+	}
+	if live.SchemaVersion == 0 {
+		live.SchemaVersion = seed.SchemaVersion
+		changed = true
+	}
+	if !changed {
+		log.Printf("Migration: browardtg.json merge — no changes")
+		_ = loadBrowardTGCatalog()
+		return nil
+	}
+	out, err := json.MarshalIndent(live, "", "  ")
+	if err != nil {
+		return err
+	}
+	out = append(out, '\n')
+	if err := os.WriteFile(livePath, out, 0644); err != nil {
+		return err
+	}
+	log.Printf("Migration: merged browardtg.json (%d sensors)", len(live.Sensors))
+	_ = loadBrowardTGCatalog()
 	return nil
 }
 
@@ -186,9 +606,9 @@ func defaultLightningSeed() map[string]interface{} {
 			"suppress_non_emergency":    true,
 			"reminder_enabled":          true,
 			"reminder_interval_minutes": 5,
-			"reminder_audio_file":       "thor_repeat1.mp3",
+			"reminder_audio_file":       "Voice_RedAlert_Reminder.mp3",
 			"reminder_include_horn":     false,
-			"horn_audio_file":           "thor_red_alert.mp3",
+			"horn_audio_file":           "Horn_RedAlert.mp3",
 		},
 		"lightning_announcements": []interface{}{
 			map[string]interface{}{
@@ -196,7 +616,7 @@ func defaultLightningSeed() map[string]interface{} {
 				"name":        "THOR Caution",
 				"description": "THOR system caution - lightning risk developing",
 				"category":    "system_alert",
-				"audio_file":  "thor_caution.mp3",
+				"audio_file":  "Voice_Caution.mp3",
 				"tts_text":    "THOR Caution: Lightning monitoring system reports developing weather risk. Remain aware of changing conditions.",
 				"priority":    6,
 				"enabled":     false,
@@ -206,7 +626,7 @@ func defaultLightningSeed() map[string]interface{} {
 				"name":        "THOR Warning",
 				"description": "THOR system warning - elevated lightning risk",
 				"category":    "system_alert",
-				"audio_file":  "thor_warning.mp3",
+				"audio_file":  "Voice_Warning.mp3",
 				"tts_text":    "THOR Warning: Lightning activity detected by monitoring system. Exercise caution and be prepared to seek shelter.",
 				"priority":    8,
 				"enabled":     false,
@@ -230,6 +650,10 @@ func loadJSONSeedFile(path string) (map[string]interface{}, error) {
 func migrateFromPackageSeeds(packageJSONDir string) error {
 	if packageJSONDir == "" {
 		return nil
+	}
+
+	if err := migrateEnsureBrowardTGCatalog(packageJSONDir); err != nil {
+		log.Printf("Warning: browardtg catalog migrate from package: %v", err)
 	}
 
 	// operating_hours: create only if missing

@@ -3,7 +3,169 @@
         "enabled": true,
         "url": "https://broward.thormobile4.net/tp/FL0115.xml",
         "fetch_interval": 60,
-        "timeout": 30
+        "timeout": 30,
+        "failover": {
+            "consecutive_failures": 5,
+            "failure_window_seconds": 0,
+            "min_dwell_on_feed_seconds": 0,
+            "failback_mode": "prefer_primary",
+            "failback_after_successes": 5,
+            "failback_probe_interval_seconds": 0,
+            "allow_failover_during_red_alert": true,
+            "allclear_release_mode": "primary_only",
+            "preserve_condition_across_failover": true,
+            "on_all_feeds_failed": "hold_last_condition",
+            "triggers": {
+                "http_error": true,
+                "http_status_not_ok": true,
+                "empty_body": true,
+                "encoding_error": true,
+                "missing_lightningalert": true,
+                "unknown_condition": true,
+                "displayname_mismatch": false,
+                "uniqueid_mismatch": false
+            }
+        },
+        "feeds": [
+            {
+                "id": "primary",
+                "label": "Primary",
+                "enabled": true,
+                "sensor_id": "FL0115",
+                "source": "catalog",
+                "expected_displayname": "Tradewinds Park",
+                "expected_uniqueid": "",
+                "url": "https://broward.thormobile4.net/tp/FL0115.xml",
+                "timeout_seconds": 0,
+                "announce": {
+                    "inherit_global": true,
+                    "RedAlert": true,
+                    "Warning": false,
+                    "Caution": false,
+                    "AllClear": true,
+                    "Unknown": false
+                },
+                "audio_by_condition": {
+                    "AllClear": "",
+                    "Caution": "",
+                    "RedAlert": "",
+                    "Unknown": "",
+                    "Warning": ""
+                },
+                "horn_by_condition": {
+                    "AllClear": {
+                        "inherit_global": true,
+                        "enabled": true,
+                        "audio_file": ""
+                    },
+                    "RedAlert": {
+                        "inherit_global": true,
+                        "enabled": true,
+                        "audio_file": ""
+                    }
+                }
+            },
+            {
+                "id": "failover_1",
+                "label": "Failover 1",
+                "enabled": true,
+                "sensor_id": "FL0110",
+                "source": "catalog",
+                "expected_displayname": "Quiet Waters",
+                "expected_uniqueid": "",
+                "url": "https://broward.thormobile4.net/qwp/FL0110.xml",
+                "timeout_seconds": 0,
+                "announce": {
+                    "inherit_global": true,
+                    "RedAlert": false,
+                    "Warning": false,
+                    "Caution": false,
+                    "AllClear": false,
+                    "Unknown": false
+                },
+                "audio_by_condition": {
+                    "AllClear": "",
+                    "Caution": "",
+                    "RedAlert": "",
+                    "Unknown": "",
+                    "Warning": ""
+                },
+                "horn_by_condition": {
+                    "AllClear": {
+                        "inherit_global": true,
+                        "enabled": true,
+                        "audio_file": ""
+                    },
+                    "RedAlert": {
+                        "inherit_global": true,
+                        "enabled": true,
+                        "audio_file": ""
+                    }
+                }
+            },
+            {
+                "id": "failover_2",
+                "label": "Failover 2",
+                "enabled": true,
+                "sensor_id": "FL0105",
+                "source": "catalog",
+                "expected_displayname": "Forest Fern",
+                "expected_uniqueid": "",
+                "url": "https://broward.thormobile4.net/ff/FL0105.xml",
+                "timeout_seconds": 0,
+                "announce": {
+                    "inherit_global": true,
+                    "RedAlert": false,
+                    "Warning": false,
+                    "Caution": false,
+                    "AllClear": false,
+                    "Unknown": false
+                },
+                "audio_by_condition": {
+                    "AllClear": "",
+                    "Caution": "",
+                    "RedAlert": "",
+                    "Unknown": "",
+                    "Warning": ""
+                },
+                "horn_by_condition": {
+                    "AllClear": {
+                        "inherit_global": true,
+                        "enabled": true,
+                        "audio_file": ""
+                    },
+                    "RedAlert": {
+                        "inherit_global": true,
+                        "enabled": true,
+                        "audio_file": ""
+                    }
+                }
+            }
+        ],
+        "feed_switch_announcements": [
+            {
+                "id": "p_to_f1",
+                "enabled": false,
+                "from_feed_id": "primary",
+                "to_feed_id": "failover_1",
+                "reason": "failover",
+                "match_sensor_id": "",
+                "match_displayname": "",
+                "audio_file": "",
+                "label": "primary → failover_1"
+            },
+            {
+                "id": "p_to_f2",
+                "enabled": false,
+                "from_feed_id": "primary",
+                "to_feed_id": "failover_2",
+                "reason": "failover",
+                "match_sensor_id": "",
+                "match_displayname": "",
+                "audio_file": "",
+                "label": "primary → failover_2"
+            }
+        ]
     },
     "lightning_announcements": [
         {
@@ -11,7 +173,7 @@
             "name": "THOR Red Alert",
             "description": "THOR system red alert - highest lightning danger",
             "category": "system_alert",
-            "audio_file": "thor_red_alert.mp3",
+            "audio_file": "Voice_RedAlert.mp3",
             "tts_text": "THOR RED ALERT: Extreme lightning danger detected. All personnel must take immediate shelter. Suspend all outdoor activities immediately.",
             "priority": 10,
             "enabled": true
@@ -21,7 +183,7 @@
             "name": "THOR Warning",
             "description": "THOR system warning - elevated lightning risk",
             "category": "system_alert",
-            "audio_file": "thor_warning.mp3",
+            "audio_file": "Voice_Warning.mp3",
             "tts_text": "THOR Warning: Lightning activity detected by monitoring system. Exercise caution and be prepared to seek shelter.",
             "priority": 8,
             "enabled": false
@@ -31,7 +193,7 @@
             "name": "THOR Caution",
             "description": "THOR system caution - lightning risk developing",
             "category": "system_alert",
-            "audio_file": "thor_caution.mp3",
+            "audio_file": "Voice_Caution.mp3",
             "tts_text": "THOR Caution: Lightning monitoring system reports developing weather risk. Remain aware of changing conditions.",
             "priority": 6,
             "enabled": false
@@ -41,7 +203,7 @@
             "name": "THOR All Clear",
             "description": "THOR system all clear - lightning threat reduced",
             "category": "system_alert",
-            "audio_file": "thor_all_clear.mp3",
+            "audio_file": "Voice_AllClear.mp3",
             "tts_text": "THOR All Clear: Lightning threat has diminished. Normal operations may resume with continued monitoring.",
             "priority": 9,
             "enabled": true
@@ -51,10 +213,10 @@
             "name": "THOR Unknown Status",
             "description": "THOR system unknown status - system connectivity issue",
             "category": "system_alert",
-            "audio_file": "thor_unknown.mp3",
+            "audio_file": "",
             "tts_text": "THOR System Alert: Lightning monitoring system status unknown. Exercise extreme caution until system connectivity is restored.",
             "priority": 7,
-            "enabled": true
+            "enabled": false
         }
     ],
     "red_alert_policy": {
@@ -62,13 +224,45 @@
         "suppress_non_emergency": true,
         "reminder_enabled": true,
         "reminder_interval_minutes": 5,
-        "reminder_audio_file": "thor_repeat1.mp3",
+        "reminder_audio_file": "Voice_RedAlert_Reminder.mp3",
         "reminder_include_horn": false,
-        "horn_audio_file": "thor_red_alert.mp3"
+        "horn_audio_file": "Horn_RedAlert.mp3"
     },
+    "condition_audio": {
+        "RedAlert": {
+            "horn_enabled": true,
+            "horn_file": "Horn_RedAlert.mp3",
+            "announce_file": "Voice_RedAlert.mp3"
+        },
+        "AllClear": {
+            "horn_enabled": true,
+            "horn_file": "Horn_AllClear.mp3",
+            "announce_file": "Voice_AllClear.mp3"
+        },
+        "Warning": {
+            "horn_enabled": false,
+            "horn_file": "",
+            "announce_file": "Voice_Warning.mp3"
+        },
+        "Caution": {
+            "horn_enabled": false,
+            "horn_file": "",
+            "announce_file": "Voice_Caution.mp3"
+        },
+        "Unknown": {
+            "horn_enabled": false,
+            "horn_file": "",
+            "announce_file": ""
+        }
+    },
+    "announce_timing": {
+        "min_seconds_between_same_condition": 0,
+        "min_seconds_between_any_lightning_announce": 0
+    },
+    "displayname_overrides": [],
     "metadata": {
-        "version": "1.1",
-        "last_updated": "2025-09-01T16:40:00Z",
+        "version": "1.1.2",
+        "last_updated": "2026-09-20T20:00:00Z",
         "total_announcements": 20,
         "categories": [
             "detection",

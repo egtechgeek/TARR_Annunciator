@@ -349,6 +349,8 @@ func setupWebRoutes() {
 	app.Router.GET("/admin/logout", adminLogoutHandler)
 	app.Router.GET("/admin", requireAuth(), adminHandler)
 	app.Router.POST("/admin", requireAuth(), adminPostHandler)
+	app.Router.GET("/admin/api-docs", requireAuth(), apiDocsHandler)
+	app.Router.GET("/api/docs", requireAuth(), apiDocsHandler) // legacy URL → same auth gate
 
 	// Audio control routes (admin only)
 	app.Router.GET("/audio/devices", requireAuth(), getAudioDevicesHandler)
@@ -409,6 +411,9 @@ func setupWebRoutes() {
 	app.Router.POST("/admin/lightning/test-condition/:condition", requireAuth(), testLightningConditionHandler)
 	app.Router.POST("/admin/lightning/test-reminder", requireAuth(), testRedAlertReminderHandler)
 	app.Router.POST("/admin/lightning/reset", requireAuth(), resetLightningStateHandler)
+	app.Router.GET("/admin/lightning/sensors", requireAuth(), getLightningSensorsHandler)
+	app.Router.POST("/admin/lightning/active-feed", requireAuth(), pinLightningActiveFeedHandler)
+	app.Router.POST("/admin/lightning/test-feed-switch-audio", requireAuth(), testFeedSwitchAudioHandler)
 
 	app.Router.GET("/admin/time-status", requireAuth(), getTimeStatusHandler)
 	app.Router.POST("/admin/time-sync", requireAuth(), syncTimeHandler)
@@ -422,7 +427,7 @@ func setupAPIRoutes() {
 	// Public endpoints
 	api.GET("/status", apiStatusHandler)
 	api.GET("/platform", apiPlatformInfoHandler)
-	api.GET("/docs", apiDocsHandler)
+	// /api/docs is not public — use /admin/api-docs (session auth)
 
 	// Authenticated endpoints
 	authAPI := api.Group("", requireAPIKey())
@@ -1484,11 +1489,18 @@ func playQueueHTTPStatus(err error) int {
 func publicLightningStatusHandler(c *gin.Context) {
 	status := getLightningTriggerStatus()
 	c.JSON(http.StatusOK, gin.H{
-		"red_alert_active": status["red_alert_active"],
-		"last_condition":   status["last_condition"],
-		"red_alert_since":  status["red_alert_since"],
-		"next_reminder":    status["next_reminder"],
-		"reminder_count":   status["reminder_count"],
+		"red_alert_active":          status["red_alert_active"],
+		"last_condition":            status["last_condition"],
+		"red_alert_since":           status["red_alert_since"],
+		"next_reminder":             status["next_reminder"],
+		"reminder_count":            status["reminder_count"],
+		"active_displayname":        status["active_displayname"],
+		"active_feed_id":            status["active_feed_id"],
+		"on_failover":               status["on_failover"],
+		"feed_health":               status["feed_health"],
+		"feeds":                     status["feeds"],
+		"allclear_release_mode":     status["allclear_release_mode"],
+		"entered_red_alert_on_feed": status["entered_red_alert_on_feed"],
 	})
 }
 
@@ -1515,92 +1527,188 @@ func testRedAlertReminderHandler(c *gin.Context) {
 }
 
 func updateLightningTriggerConfigHandler(c *gin.Context) {
-	var config struct {
-		URL               string          `json:"url"`
-		FetchInterval     int             `json:"fetch_interval"`
-		Timeout           int             `json:"timeout"`
-		Enabled           bool            `json:"enabled"`
-		RedAlertPolicy    *RedAlertPolicy `json:"red_alert_policy,omitempty"`
-		ConditionAnnounce map[string]bool `json:"condition_announce,omitempty"`
-	}
-
-	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "error",
-			"error":  "Invalid request format: " + err.Error(),
-		})
+	var raw map[string]json.RawMessage
+	if err := c.ShouldBindJSON(&raw); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": "Invalid request format: " + err.Error()})
 		return
 	}
 
-	// Validate inputs
-	if config.URL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "error",
-			"error":  "URL is required",
-		})
+	section := "monitor"
+	if sRaw, ok := raw["section"]; ok {
+		_ = json.Unmarshal(sRaw, &section)
+	}
+
+	if lightningTrigger == nil || lightningConfig == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": "Lightning trigger not available"})
 		return
 	}
 
-	if config.FetchInterval < 30 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "error",
-			"error":  "Fetch interval must be at least 30 seconds",
-		})
+	switch section {
+	case "condition_announce":
+		var body struct {
+			ConditionAnnounce map[string]bool `json:"condition_announce"`
+		}
+		data, _ := json.Marshal(raw)
+		if err := json.Unmarshal(data, &body); err != nil || body.ConditionAnnounce == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": "condition_announce required"})
+			return
+		}
+		for cond, enabled := range body.ConditionAnnounce {
+			setConditionAnnounceEnabled(cond, enabled)
+		}
+		if err := saveLightningConfig(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Condition announcements saved", "data": getLightningTriggerStatus()})
 		return
-	}
 
-	if config.Timeout < 5 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "error",
-			"error":  "Timeout must be at least 5 seconds",
-		})
+	case "condition_audio":
+		var body struct {
+			ConditionAudio *ConditionAudioConfig `json:"condition_audio"`
+		}
+		data, _ := json.Marshal(raw)
+		if err := json.Unmarshal(data, &body); err != nil || body.ConditionAudio == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": "condition_audio required"})
+			return
+		}
+		lightningConfig.ConditionAudio = *body.ConditionAudio
+		lightningConfig.ensurePolicyDefaults()
+		if err := saveLightningConfig(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Condition audio (horn + announce) saved", "data": getLightningTriggerStatus()})
 		return
-	}
 
-	// Update lightning trigger configuration
-	if lightningTrigger != nil {
-		if err := lightningTrigger.UpdateConfig(config.URL, config.FetchInterval, config.Timeout, config.Enabled); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status": "error",
-				"error":  "Failed to update lightning trigger configuration: " + err.Error(),
-			})
+	case "red_alert_policy":
+		var body struct {
+			RedAlertPolicy *RedAlertPolicy `json:"red_alert_policy"`
+		}
+		data, _ := json.Marshal(raw)
+		if err := json.Unmarshal(data, &body); err != nil || body.RedAlertPolicy == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": "red_alert_policy required"})
+			return
+		}
+		if err := applyRedAlertPolicy(*body.RedAlertPolicy); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Red Alert policy saved", "data": getLightningTriggerStatus()})
+		return
+
+	default: // monitor
+		var body struct {
+			URL                     string                   `json:"url"`
+			FetchInterval           int                      `json:"fetch_interval"`
+			Timeout                 int                      `json:"timeout"`
+			Enabled                 bool                     `json:"enabled"`
+			Failover                *LightningFailoverPolicy `json:"failover"`
+			Feeds                   []LightningFeedConfig    `json:"feeds"`
+			FeedSwitchAnnouncements []FeedSwitchAnnouncement `json:"feed_switch_announcements"`
+			AnnounceTiming          *LightningAnnounceTiming `json:"announce_timing"`
+			DisplaynameOverrides    []DisplaynameOverride    `json:"displayname_overrides"`
+		}
+		data, _ := json.Marshal(raw)
+		if err := json.Unmarshal(data, &body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": err.Error()})
 			return
 		}
 
-		if config.ConditionAnnounce != nil {
-			for cond, enabled := range config.ConditionAnnounce {
-				setConditionAnnounceEnabled(cond, enabled)
+		mon := getLightningMonitorConfig()
+		if body.FetchInterval > 0 {
+			mon.FetchInterval = body.FetchInterval
+		}
+		if body.Timeout > 0 {
+			mon.Timeout = body.Timeout
+		}
+		mon.Enabled = body.Enabled
+		if body.Failover != nil {
+			mon.Failover = *body.Failover
+		}
+		if len(body.Feeds) > 0 {
+			mon.Feeds = body.Feeds
+		} else if strings.TrimSpace(body.URL) != "" {
+			// Legacy flat URL update
+			if len(mon.Feeds) == 0 {
+				mon.Feeds = defaultFeedSlots()
 			}
-			if err := saveLightningConfig(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"status": "error",
-					"error":  "Failed to save condition announce settings: " + err.Error(),
-				})
-				return
-			}
+			mon.Feeds[0].URL = strings.TrimSpace(body.URL)
+			mon.Feeds[0].Enabled = body.Enabled
+			mon.URL = mon.Feeds[0].URL
+		}
+		if body.FeedSwitchAnnouncements != nil {
+			mon.FeedSwitchAnnouncements = body.FeedSwitchAnnouncements
+		}
+		mon.URL = primaryFeedURL(mon)
+
+		var timing *LightningAnnounceTiming
+		if body.AnnounceTiming != nil {
+			timing = body.AnnounceTiming
+		}
+		var overrides []DisplaynameOverride
+		if body.DisplaynameOverrides != nil {
+			overrides = body.DisplaynameOverrides
 		}
 
-		if config.RedAlertPolicy != nil {
-			if err := applyRedAlertPolicy(*config.RedAlertPolicy); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"status": "error",
-					"error":  "Failed to save Red Alert policy: " + err.Error(),
-				})
-				return
-			}
+		if err := lightningTrigger.ApplyMonitorConfig(mon, timing, overrides); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": err.Error()})
+			return
 		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "success",
-			"message": "Lightning trigger configuration updated successfully",
-			"data":    getLightningTriggerStatus(),
-		})
-	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status": "error",
-			"error":  "Lightning trigger system not initialized",
-		})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Lightning monitor configuration saved", "data": getLightningTriggerStatus()})
+		return
 	}
+}
+
+func getLightningSensorsHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"sensors": getBrowardTGSensors(),
+		"catalog": getBrowardTGCatalog(),
+	})
+}
+
+func pinLightningActiveFeedHandler(c *gin.Context) {
+	var body struct {
+		FeedID string `json:"feed_id"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": err.Error()})
+		return
+	}
+	if lightningTrigger == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": "Lightning trigger not available"})
+		return
+	}
+	if err := lightningTrigger.PinActiveFeed(body.FeedID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Active feed pin updated", "data": getLightningTriggerStatus()})
+}
+
+func testFeedSwitchAudioHandler(c *gin.Context) {
+	var body struct {
+		AudioFile string `json:"audio_file"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || strings.TrimSpace(body.AudioFile) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error", "error": "audio_file required"})
+		return
+	}
+	if announcementManager == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error", "error": "Announcement manager not available"})
+		return
+	}
+	params := map[string]interface{}{
+		"condition":      "feed_switch",
+		"audio_files":    []string{body.AudioFile},
+		"trigger_source": "FEED_SWITCH_TEST",
+	}
+	if _, err := announcementManager.QueueAnnouncement(TypeLightning, AnnouncementPriority(10), params, time.Now()); err != nil {
+		c.JSON(playQueueHTTPStatus(err), gin.H{"status": "error", "error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Feed-switch test audio queued"})
 }
 
 // API handlers for lightning trigger
@@ -1617,6 +1725,7 @@ func apiUpdateLightningConfigHandler(c *gin.Context) {
 func testLightningFetchHandler(c *gin.Context) {
 	var config struct {
 		URL     string `json:"url"`
+		FeedID  string `json:"feed_id"`
 		Timeout int    `json:"timeout"`
 	}
 
@@ -1628,24 +1737,32 @@ func testLightningFetchHandler(c *gin.Context) {
 		return
 	}
 
+	if config.URL == "" && config.FeedID != "" {
+		mon := getLightningMonitorConfig()
+		if f := feedByID(mon, config.FeedID); f != nil {
+			config.URL = f.URL
+			if config.Timeout == 0 && f.TimeoutSeconds >= 5 {
+				config.Timeout = f.TimeoutSeconds
+			}
+		}
+	}
+
 	if config.URL == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
-			"message": "URL is required",
+			"message": "URL or feed_id is required",
 		})
 		return
 	}
 
 	if config.Timeout == 0 {
-		config.Timeout = 30 // Default timeout
+		config.Timeout = 30
 	}
 
-	// Create HTTP client with timeout
 	client := &http.Client{
 		Timeout: time.Duration(config.Timeout) * time.Second,
 	}
 
-	// Fetch XML
 	resp, err := client.Get(config.URL)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -1664,7 +1781,6 @@ func testLightningFetchHandler(c *gin.Context) {
 		return
 	}
 
-	// Read response body
 	xmlData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -1674,7 +1790,6 @@ func testLightningFetchHandler(c *gin.Context) {
 		return
 	}
 
-	// Convert XML from UTF-16 to UTF-8 if needed
 	xmlStr, err := convertXMLEncodingTest(xmlData)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -1684,52 +1799,32 @@ func testLightningFetchHandler(c *gin.Context) {
 		return
 	}
 
-	// Debug: Log XML preview for debugging
-	xmlPreview := xmlStr
-	if len(xmlStr) > 1000 {
-		xmlPreview = xmlStr[:1000] + "..."
-	}
-	log.Printf("Test Lightning XML preview (converted): %s", xmlPreview)
-
-	// Check for lightningalert tag
-	startTag := "<lightningalert>"
-	endTag := "</lightningalert>"
-
-	startIndex := strings.Index(xmlStr, startTag)
-	var lightningAlert string
-
-	if startIndex != -1 {
-		startIndex += len(startTag)
-		endIndex := strings.Index(xmlStr[startIndex:], endTag)
-		if endIndex != -1 {
-			lightningAlert = strings.TrimSpace(xmlStr[startIndex : startIndex+endIndex])
-			log.Printf("Test Lightning: Successfully found value: '%s'", lightningAlert)
-		}
-	} else {
-		// Check for case-insensitive version
-		lowerXML := strings.ToLower(xmlStr)
-		if strings.Contains(lowerXML, "<lightningalert>") {
-			log.Printf("Test Lightning: Found lightningalert tag in different case")
-		} else {
-			log.Printf("Test Lightning: No lightningalert tag found")
-		}
-	}
+	lightningAlert := extractXMLTag(xmlStr, "lightningalert")
+	displayname := extractXMLTag(xmlStr, "displayname")
+	uniqueid := extractXMLTag(xmlStr, "uniqueid")
 
 	if lightningAlert != "" {
 		c.JSON(http.StatusOK, gin.H{
 			"status":          "success",
 			"message":         "Test successful! Lightning alert tag found in XML.",
 			"lightningalert":  lightningAlert,
+			"displayname":     displayname,
+			"uniqueid":        uniqueid,
 			"xml_size":        len(xmlData),
 			"response_status": resp.Status,
+			"url":             config.URL,
+			"feed_id":         config.FeedID,
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"status":          "warning",
 			"message":         "Test completed, but no lightningalert tag found in XML.",
+			"displayname":     displayname,
+			"uniqueid":        uniqueid,
 			"xml_size":        len(xmlData),
 			"response_status": resp.Status,
-			"xml_preview":     xmlPreview,
+			"url":             config.URL,
+			"feed_id":         config.FeedID,
 		})
 	}
 }

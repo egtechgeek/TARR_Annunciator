@@ -18,6 +18,7 @@
             <h1>TARR Annunciator Admin Interface</h1>
             <div>
                 <a href="/" class="btn btn-outline-secondary me-2">🏠 Main Interface</a>
+                <a href="/admin/api-docs" class="btn btn-outline-primary me-2">📚 API Docs</a>
                 <a href="/admin/logout" class="btn btn-outline-danger">🚪 Logout</a>
             </div>
         </div>
@@ -70,13 +71,12 @@
                         <div class="card-body">
                             <p class="mb-1"><strong>Running:</strong> <span id="update-local-version">Loading...</span></p>
                             <p class="mb-1"><strong>Newest listed:</strong> <span id="update-remote-version">Not checked</span></p>
-                            <p class="mb-3 text-muted small" id="update-status-text">Check GitHub Releases, then choose which thin Pi package to install (you are not forced to take the newest tag).</p>
+                            <p class="mb-3 text-muted small" id="update-status-text">Check for available releases, then choose which version to install.</p>
                             <div class="mb-3">
                                 <label for="update-release-select" class="form-label">Target release</label>
                                 <select class="form-select" id="update-release-select" disabled>
                                     <option value="">Check for updates to load releases…</option>
                                 </select>
-                                <div class="form-text">Example: leave a test build as <code>v1.1.5</code> on GitHub but install only <code>v1.1.3</code> in production.</div>
                             </div>
                             <div class="d-flex flex-wrap gap-2 mb-3">
                                 <button type="button" class="btn btn-outline-primary" id="check-updates-btn">🔍 Check for Updates</button>
@@ -619,114 +619,198 @@
             <div class="tab-pane fade" id="lightning-trigger-panel" role="tabpanel">
                 <div class="section">
                     <h3>⚡ Lightning Alert System</h3>
-                    
+                    <p class="text-muted small">Thor Guard is life-safety critical. Failover policy is separate from feed-switch announcements. Disabling announce audio does not disable monitoring or the Red Alert lock.</p>
+                    <div id="lightning-unsaved-banner" class="alert alert-warning d-none py-2" role="status">
+                        Unsaved Lightning edits — live status still refreshes; form values will not be overwritten.
+                        <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="discard-lightning-edits">Discard &amp; reload form</button>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-8">
                             <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Lightning Trigger Status</h5>
-                                </div>
+                                <div class="card-header"><h5 class="card-title mb-0">Live Status</h5></div>
                                 <div class="card-body">
-                                    <div id="lightning-status-content">
-                                        <p>Loading lightning trigger status...</p>
-                                    </div>
+                                    <div id="lightning-status-content"><p>Loading lightning trigger status...</p></div>
                                 </div>
                             </div>
-                            
+
                             <div class="card mt-3">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Lightning Trigger Configuration</h5>
-                                </div>
+                                <div class="card-header"><h5 class="card-title mb-0">Global Monitor Timing</h5></div>
                                 <div class="card-body">
-                                    <form id="lightning-config-form">
-                                        <div class="mb-3">
-                                            <label for="lightning-url" class="form-label">XML URL</label>
-                                            <input type="url" class="form-control" id="lightning-url" placeholder="Set in lightning.json or paste Thor Guard XML URL" required>
-                                            <div class="form-text">Stored only in <code>json/lightning.json</code> (<code>monitor.url</code>). Default seed uses Tradewinds Park FL0115.</div>
-                                        </div>
-                                        
-                                        <div class="mb-3">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="lightning-enabled" checked>
+                                        <label class="form-check-label" for="lightning-enabled">Enable Lightning Monitoring</label>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
                                             <label for="lightning-interval" class="form-label">Fetch Interval (seconds)</label>
-                                            <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="60" required>
-                                            <div class="form-text">How often to check for lightning alerts (minimum 30 seconds)</div>
+                                            <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="60">
                                         </div>
-                                        
-                                        <div class="mb-3">
-                                            <label for="lightning-timeout" class="form-label">Request Timeout (seconds)</label>
-                                            <input type="number" class="form-control" id="lightning-timeout" min="5" max="120" value="30" required>
-                                            <div class="form-text">HTTP request timeout (minimum 5 seconds)</div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="lightning-timeout" class="form-label">Default Request Timeout (seconds)</label>
+                                            <input type="number" class="form-control" id="lightning-timeout" min="5" max="120" value="30">
                                         </div>
-                                        
-                                        <div class="mb-3">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="lightning-enabled" checked>
-                                                <label class="form-check-label" for="lightning-enabled">
-                                                    Enable Lightning Monitoring
-                                                </label>
+                                    </div>
+                                    <details class="mb-3">
+                                        <summary class="text-muted">Advanced timing</summary>
+                                        <div class="row mt-2">
+                                            <div class="col-md-6 mb-2">
+                                                <label class="form-label" for="announce-cooldown-same">Min seconds between same condition</label>
+                                                <input type="number" class="form-control" id="announce-cooldown-same" min="0" value="0">
+                                            </div>
+                                            <div class="col-md-6 mb-2">
+                                                <label class="form-label" for="announce-cooldown-any">Min seconds between any lightning announce</label>
+                                                <input type="number" class="form-control" id="announce-cooldown-any" min="0" value="0">
+                                            </div>
+                                            <div class="col-md-6 mb-2">
+                                                <label class="form-label" for="failover-failure-window">Failure window seconds (0=off)</label>
+                                                <input type="number" class="form-control" id="failover-failure-window" min="0" value="0">
                                             </div>
                                         </div>
-                                        
-                                        <button type="submit" class="btn btn-primary">💾 Update Configuration</button>
-                                        <button type="button" class="btn btn-outline-secondary" id="test-lightning-fetch">🧪 Test Fetch</button>
-                                    </form>
-                                    
-                                    <div id="lightning-config-message" class="mt-2"></div>
+                                    </details>
                                 </div>
                             </div>
 
                             <div class="card mt-3 border-warning">
-                                <div class="card-header bg-warning">
-                                    <h5 class="card-title mb-0">Condition Announcements (auto-play)</h5>
-                                </div>
+                                <div class="card-header bg-warning"><h5 class="card-title mb-0">Failover &amp; Failback Policy</h5></div>
                                 <div class="card-body">
-                                    <p class="text-muted small mb-3">
-                                        When a Thor Guard XML condition <em>changes</em>, play the matching announcement only if enabled below.
-                                        Monitoring still tracks status either way. <strong>All Clear</strong> audio still only plays after a Red Alert (lock release);
-                                        disable it here if you do not want that audio. Manual <em>Test</em> buttons always play for verification.
-                                    </p>
+                                    <p class="small text-muted">Controls <em>which</em> XML is trusted — not Red Alert meaning. No announcement controls here.</p>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="failover-consecutive">Consecutive failures before failover</label>
+                                            <input type="number" class="form-control" id="failover-consecutive" min="1" value="3">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="failover-failback-mode">Failback mode</label>
+                                            <select class="form-select" id="failover-failback-mode">
+                                                <option value="prefer_primary">prefer_primary</option>
+                                                <option value="prefer_highest_priority">prefer_highest_priority</option>
+                                                <option value="sticky">sticky</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="failover-failback-successes">Failback after successes</label>
+                                            <input type="number" class="form-control" id="failover-failback-successes" min="1" value="2">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="failover-probe-interval">Failback probe interval (0=same cadence)</label>
+                                            <input type="number" class="form-control" id="failover-probe-interval" min="0" value="0">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="failover-min-dwell">Min dwell on feed (seconds)</label>
+                                            <input type="number" class="form-control" id="failover-min-dwell" min="0" value="0">
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label" for="failover-on-all-failed">When all feeds failed</label>
+                                            <select class="form-select" id="failover-on-all-failed">
+                                                <option value="hold_last_condition">hold_last_condition</option>
+                                                <option value="force_unknown_status">force_unknown_status</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <h6>Failure triggers</h6>
+                                    <div class="row small" id="failover-triggers">
+                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-http_error" checked><label class="form-check-label" for="trig-http_error">http_error</label></div></div>
+                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-http_status_not_ok" checked><label class="form-check-label" for="trig-http_status_not_ok">http_status_not_ok</label></div></div>
+                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-empty_body" checked><label class="form-check-label" for="trig-empty_body">empty_body</label></div></div>
+                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-encoding_error" checked><label class="form-check-label" for="trig-encoding_error">encoding_error</label></div></div>
+                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-missing_lightningalert" checked><label class="form-check-label" for="trig-missing_lightningalert">missing_lightningalert</label></div></div>
+                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-unknown_condition"><label class="form-check-label" for="trig-unknown_condition">unknown_condition</label></div></div>
+                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-displayname_mismatch"><label class="form-check-label" for="trig-displayname_mismatch">displayname_mismatch</label></div></div>
+                                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-uniqueid_mismatch"><label class="form-check-label" for="trig-uniqueid_mismatch">uniqueid_mismatch</label></div></div>
+                                    </div>
+                                    <h6 class="mt-3">During Red Alert</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="failover-allow-during-ra" checked>
+                                        <label class="form-check-label" for="failover-allow-during-ra">Allow active feed to switch while Red Alert is locked</label>
+                                    </div>
+                                    <div class="form-text mb-2">Monitoring only. If the active feed fails mid-alert, may switch to the next failover feed. Does <strong>not</strong> change who may unlock / All Clear (see release authority below). Off = stay pinned to the current feed until All Clear.</div>
                                     <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="announce-redalert" checked>
-                                        <label class="form-check-label" for="announce-redalert"><strong>Red Alert</strong> — extreme danger / starts lock</label>
+                                        <input class="form-check-input" type="checkbox" id="failover-preserve-condition" checked>
+                                        <label class="form-check-label" for="failover-preserve-condition">Preserve condition across feed switch (no re-announce if same)</label>
                                     </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="announce-warning">
-                                        <label class="form-check-label" for="announce-warning"><strong>Warning</strong> — elevated risk (optional; off by default)</label>
+                                    <div class="mb-2">
+                                        <label class="form-label" for="allclear-release-mode">All Clear release authority</label>
+                                        <select class="form-select" id="allclear-release-mode">
+                                            <option value="primary_only">primary_only — Only Primary may clear Red Alert (recommended)</option>
+                                            <option value="failover_vote">failover_vote — Primary may clear alone; otherwise both Failover 1 and Failover 2 must each return All Clear</option>
+                                        </select>
+                                        <div class="form-text">Controls unlocking only. Failover feeds may still enter Red Alert under existing rules. Vote override requires exactly two All Clear results (Unknown or error does not count). Enabled feeds alone are not enough.</div>
                                     </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="announce-caution">
-                                        <label class="form-check-label" for="announce-caution"><strong>Caution</strong> — developing risk (optional; off by default)</label>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3 border-info">
+                                <div class="card-header bg-info text-white"><h5 class="card-title mb-0">Feed-switch Announcements</h5></div>
+                                <div class="card-body">
+                                    <p class="small text-muted">Optional PA when active feed changes. Quiet by default. Distinct rules for primary→failover_1 vs primary→failover_2, optional sensor match. Does not change Red Alert lock.</p>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle" id="feed-switch-table">
+                                            <thead><tr><th>On</th><th>From</th><th>To</th><th>Reason</th><th>Sensor</th><th>MP3</th><th></th></tr></thead>
+                                            <tbody id="feed-switch-tbody"></tbody>
+                                        </table>
                                     </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="announce-allclear" checked>
-                                        <label class="form-check-label" for="announce-allclear"><strong>All Clear</strong> — after Red Alert only (optional audio)</label>
-                                    </div>
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="announce-unknown">
-                                        <label class="form-check-label" for="announce-unknown"><strong>Unknown</strong> — normally ignored as fetch noise</label>
-                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-feed-switch-rule">+ Add rule</button>
+                                </div>
+                            </div>
+
+                            <div id="lightning-feeds-container"></div>
+
+                            <div class="mt-3 mb-3">
+                                <button type="button" class="btn btn-primary" id="save-lightning-monitor">💾 Save Monitor (timing + failover + feeds + switch rules)</button>
+                                <div id="lightning-config-message" class="mt-2"></div>
+                            </div>
+
+                            <div class="card mt-3 border-warning">
+                                <div class="card-header bg-warning"><h5 class="card-title mb-0">Global Condition Announcements</h5></div>
+                                <div class="card-body">
+                                    <p class="text-muted small mb-3">Used when a feed is set to inherit global toggles. Monitoring continues either way. Manual Test always plays.</p>
+                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-redalert" checked><label class="form-check-label" for="announce-redalert"><strong>Red Alert</strong></label></div>
+                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-warning"><label class="form-check-label" for="announce-warning"><strong>Warning</strong></label></div>
+                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-caution"><label class="form-check-label" for="announce-caution"><strong>Caution</strong></label></div>
+                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="announce-allclear" checked><label class="form-check-label" for="announce-allclear"><strong>All Clear</strong></label></div>
+                                    <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="announce-unknown"><label class="form-check-label" for="announce-unknown"><strong>Unknown</strong></label></div>
                                     <button type="button" class="btn btn-warning" id="save-condition-announce">💾 Save Condition Announcements</button>
                                     <div id="condition-announce-message" class="mt-2"></div>
                                 </div>
                             </div>
 
-                            <div class="card mt-3 border-danger">
-                                <div class="card-header bg-danger text-white">
-                                    <h5 class="card-title mb-0">THOR Guard Red Alert Policy</h5>
-                                </div>
+                            <div class="card mt-3 border-primary">
+                                <div class="card-header bg-primary text-white"><h5 class="card-title mb-0">Global Condition Audio (horn + announce)</h5></div>
                                 <div class="card-body">
-                                    <p class="text-muted">When Red Alert is active, critical safety audio takes priority until All Clear is received.</p>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="red-alert-preempt" checked>
-                                        <label class="form-check-label" for="red-alert-preempt">Cancel queued and playing announcements when Red Alert is triggered</label>
+                                    <p class="text-muted small mb-3">Play sequence: optional horn MP3, then announce MP3. Feeds may override Red Alert / All Clear horns independently.</p>
+                                    <div class="border rounded p-3 mb-3">
+                                        <h6>Red Alert</h6>
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-redalert-horn-enabled" checked><label class="form-check-label" for="ca-redalert-horn-enabled">Play horn before announce</label></div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-horn-file">Horn MP3</label><input class="form-control" list="lightning-mp3-options" id="ca-redalert-horn-file" value="Horn_RedAlert.mp3"></div>
+                                            <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-announce-file">Announce MP3</label><input class="form-control" list="lightning-mp3-options" id="ca-redalert-announce-file" value="Voice_RedAlert.mp3"></div>
+                                        </div>
                                     </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="checkbox" id="red-alert-suppress" checked>
-                                        <label class="form-check-label" for="red-alert-suppress">Ignore station, promo, safety, and scheduled announcements until All Clear</label>
+                                    <div class="border rounded p-3 mb-3">
+                                        <h6>All Clear</h6>
+                                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-allclear-horn-enabled" checked><label class="form-check-label" for="ca-allclear-horn-enabled">Play horn before announce</label></div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-horn-file">Horn MP3</label><input class="form-control" list="lightning-mp3-options" id="ca-allclear-horn-file" value="Horn_AllClear.mp3"></div>
+                                            <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-announce-file">Announce MP3</label><input class="form-control" list="lightning-mp3-options" id="ca-allclear-announce-file" value="Voice_AllClear.mp3"></div>
+                                        </div>
                                     </div>
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="red-alert-reminder-enabled" checked>
-                                        <label class="form-check-label" for="red-alert-reminder-enabled">Play a Red Alert reminder on a repeating interval</label>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-2"><label class="form-label" for="ca-warning-announce-file">Warning announce MP3</label><input class="form-control form-control-sm" list="lightning-mp3-options" id="ca-warning-announce-file" value="Voice_Warning.mp3"></div>
+                                        <div class="col-md-4 mb-2"><label class="form-label" for="ca-caution-announce-file">Caution announce MP3</label><input class="form-control form-control-sm" list="lightning-mp3-options" id="ca-caution-announce-file" value="Voice_Caution.mp3"></div>
+                                        <div class="col-md-4 mb-2"><label class="form-label" for="ca-unknown-announce-file">Unknown announce MP3</label><input class="form-control form-control-sm" list="lightning-mp3-options" id="ca-unknown-announce-file" value="thor_unknown.mp3"></div>
                                     </div>
+                                    <button type="button" class="btn btn-primary mt-2" id="save-condition-audio">💾 Save Condition Audio</button>
+                                    <div id="condition-audio-message" class="mt-2"></div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3 border-danger">
+                                <div class="card-header bg-danger text-white"><h5 class="card-title mb-0">THOR Guard Red Alert Policy</h5></div>
+                                <div class="card-body">
+                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-preempt" checked><label class="form-check-label" for="red-alert-preempt">Cancel queued/playing announcements on Red Alert</label></div>
+                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-suppress" checked><label class="form-check-label" for="red-alert-suppress">Suppress non-emergency until All Clear</label></div>
+                                    <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="red-alert-reminder-enabled" checked><label class="form-check-label" for="red-alert-reminder-enabled">Repeating Red Alert reminder</label></div>
                                     <div class="row">
                                         <div class="col-md-4 mb-3">
                                             <label for="red-alert-reminder-interval" class="form-label">Reminder interval (minutes)</label>
@@ -734,14 +818,16 @@
                                         </div>
                                         <div class="col-md-8 mb-3">
                                             <label for="red-alert-reminder-file" class="form-label">Reminder MP3</label>
-                                            <input class="form-control" list="reminder-file-options" id="red-alert-reminder-file" placeholder="thor_repeat1.mp3" value="thor_repeat1.mp3">
+                                            <input class="form-control" list="reminder-file-options" id="red-alert-reminder-file" value="Voice_RedAlert_Reminder.mp3">
                                             <datalist id="reminder-file-options"></datalist>
-                                            <div class="form-text">File in <code>static/mp3/lightning/</code>. Type a custom filename if needed.</div>
+                                            <datalist id="lightning-mp3-options"></datalist>
                                         </div>
                                     </div>
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="red-alert-reminder-horn">
-                                        <label class="form-check-label" for="red-alert-reminder-horn">Play horn (<code>thor_red_alert.mp3</code>) before each reminder</label>
+                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-reminder-horn"><label class="form-check-label" for="red-alert-reminder-horn">Play horn before each reminder</label></div>
+                                    <div class="mb-3">
+                                        <label for="red-alert-reminder-horn-file" class="form-label">Reminder horn MP3</label>
+                                        <input class="form-control" list="lightning-mp3-options" id="red-alert-reminder-horn-file" value="Horn_RedAlert.mp3">
+                                        <div class="form-text">Used only when the checkbox above is on. Defaults to the Red Alert horn from Condition Audio if left empty on save.</div>
                                     </div>
                                     <button type="button" class="btn btn-danger" id="save-red-alert-policy">💾 Save Red Alert Policy</button>
                                     <button type="button" class="btn btn-outline-danger" id="test-red-alert-reminder">🔔 Play Reminder Now</button>
@@ -749,48 +835,29 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4">
                             <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title mb-0">Lightning Alert Types</h5>
-                                </div>
+                                <div class="card-header"><h5 class="card-title mb-0">Manual Tests &amp; Pin</h5></div>
                                 <div class="card-body">
-                                    <div class="mb-2">
-                                        <strong>🔴 Red Alert:</strong>
-                                        <small class="text-muted d-block">Extreme danger - immediate shelter required</small>
-                                        <small class="text-muted d-block">Cancels the queue and blocks non-emergency announcements until All Clear.</small>
-                                        <button type="button" class="btn btn-sm btn-danger mt-1" id="test-condition-redalert">Test Red Alert</button>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>🟡 Warning:</strong>
-                                        <small class="text-muted d-block">Lightning activity detected - use caution</small>
-                                        <button type="button" class="btn btn-sm btn-warning mt-1" id="test-condition-warning">Test Warning</button>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>🟠 Caution:</strong>
-                                        <small class="text-muted d-block">Developing lightning risk — announcement only, no lock</small>
-                                        <button type="button" class="btn btn-sm btn-outline-warning mt-1" id="test-condition-caution">Test Caution</button>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>🟢 All Clear:</strong>
-                                        <small class="text-muted d-block">Sounds only if the previous condition was Red Alert, then releases the lock</small>
-                                        <button type="button" class="btn btn-sm btn-success mt-1" id="test-condition-allclear">Test All Clear</button>
-                                    </div>
-                                    <div class="mb-2">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="reset-lightning-state">♻️ Reset THOR Guard State</button>
-                                        <small class="text-muted d-block">Clears the cached condition, Red Alert lock, and reminder timer</small>
-                                    </div>
-                                    
+                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-danger" id="test-condition-redalert">Test Red Alert</button></div>
+                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-warning" id="test-condition-warning">Test Warning</button></div>
+                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-outline-warning" id="test-condition-caution">Test Caution</button></div>
+                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-success" id="test-condition-allclear">Test All Clear</button></div>
+                                    <div class="mb-2"><button type="button" class="btn btn-sm btn-secondary" id="test-condition-unknown">Test Unknown</button></div>
                                     <hr>
-                                    
-                                    <h6>System Information</h6>
-                                    <p class="small text-muted">
-                                        The system monitors XML data for a <code>&lt;lightningalert&gt;</code> tag and plays announcements when conditions change.
-                                    </p>
-                                    <p class="small text-muted">
-                                        During Red Alert, a reminder repeats on the configured interval until All Clear. Emergency and lightning/weather announcements are still allowed.
-                                    </p>
+                                    <label class="form-label" for="pin-active-feed">Pin active feed (drill)</label>
+                                    <select class="form-select form-select-sm mb-2" id="pin-active-feed">
+                                        <option value="">(auto)</option>
+                                        <option value="primary">primary</option>
+                                        <option value="failover_1">failover_1</option>
+                                        <option value="failover_2">failover_2</option>
+                                    </select>
+                                    <button type="button" class="btn btn-sm btn-outline-primary mb-2" id="apply-pin-feed">Apply Pin</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mb-2" id="unpin-feed">Unpin</button>
+                                    <hr>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="reset-lightning-state">♻️ Reset THOR Guard State</button>
+                                    <small class="text-muted d-block">Clears cached condition, Red Alert lock, and reminder timer</small>
                                 </div>
                             </div>
                         </div>
@@ -2637,90 +2704,392 @@
             });
         }
 
-        // Lightning Trigger Functions
-        function loadLightningTriggerStatus() {
-            fetch('/admin/lightning/status', {
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
-                const content = document.getElementById('lightning-status-content');
-                
-                if (data.status === 'success' && data.data) {
-                    const status = data.data;
-                    let statusHtml = '<div class="row">';
-                    
-                    statusHtml += '<div class="col-md-6">';
-                    statusHtml += `<p><strong>Status:</strong> <span class="badge ${status.running ? 'bg-success' : 'bg-secondary'}">${status.running ? 'Running' : 'Stopped'}</span></p>`;
-                    statusHtml += `<p><strong>Enabled:</strong> ${status.enabled ? '✅ Yes' : '❌ No'}</p>`;
-                    statusHtml += `<p><strong>URL:</strong> <code class="small">${status.url || 'Not configured'}</code></p>`;
-                    statusHtml += `<p><strong>Fetch Interval:</strong> ${status.fetch_interval || 60} seconds</p>`;
-                    statusHtml += '</div>';
-                    
-                    statusHtml += '<div class="col-md-6">';
-                    statusHtml += `<p><strong>Last Fetch:</strong> ${status.last_fetch || 'Never'}</p>`;
-                    statusHtml += `<p><strong>Current Condition:</strong> <span class="badge ${getConditionBadgeClass(status.last_condition)}">${status.last_condition || 'None'}</span></p>`;
-                    statusHtml += `<p><strong>Last Condition Change:</strong> ${status.last_condition_time || 'Never'}</p>`;
-                    statusHtml += `<p><strong>Timeout:</strong> ${status.timeout || 30} seconds</p>`;
-                    statusHtml += '</div>';
-                    statusHtml += '</div>';
+        // Lightning Trigger Functions (v1.1.2 multi-feed)
+        let knownLightningSensors = [];
+        let lightningFeedsState = [];
+        let feedSwitchRulesState = [];
+        let lightningFormDirty = false;
+        let lightningFormLoaded = false;
 
-                    if (status.red_alert_active) {
-                        statusHtml += '<div class="alert alert-danger mt-3 mb-0">';
-                        statusHtml += '<strong>THOR GUARD RED ALERT ACTIVE</strong>';
-                        statusHtml += `<div>Since: ${status.red_alert_since || 'now'}</div>`;
-                        statusHtml += `<div>Reminders played: ${status.reminder_count || 0}</div>`;
-                        statusHtml += `<div>Next reminder: ${status.next_reminder || 'pending'}</div>`;
-                        if (status.last_reminder) {
-                            statusHtml += `<div>Last reminder: ${status.last_reminder}</div>`;
-                        }
-                        statusHtml += '</div>';
+        function setLightningFormDirty(dirty) {
+            lightningFormDirty = !!dirty;
+            const banner = document.getElementById('lightning-unsaved-banner');
+            if (banner) banner.classList.toggle('d-none', !lightningFormDirty);
+        }
+
+        function markLightningFormDirty(event) {
+            if (!event || !event.target) return;
+            // Live status HTML is display-only; ignore interactions inside it.
+            if (event.target.closest && event.target.closest('#lightning-status-content')) return;
+            // Action buttons (save/test/pin/reset) are not form edits.
+            if (event.target.closest && event.target.closest('button')) return;
+            setLightningFormDirty(true);
+        }
+
+        function feedSelectOptions(selectedSensorId, selectedSource) {
+            let html = '<option value="__custom__"' + (selectedSource === 'custom' || !selectedSensorId ? ' selected' : '') + '>— Custom URL… —</option>';
+            (knownLightningSensors || []).forEach(function(s) {
+                const sel = selectedSensorId === s.id ? ' selected' : '';
+                html += '<option value="' + s.id + '"' + sel + '>' + s.display_name + ' (' + s.id + ')</option>';
+            });
+            return html;
+        }
+
+        function renderFeedCards(feeds) {
+            const container = document.getElementById('lightning-feeds-container');
+            if (!container) return;
+            const ids = ['primary', 'failover_1', 'failover_2'];
+            const byId = {};
+            (feeds || []).forEach(function(f) { byId[f.id] = f; });
+            lightningFeedsState = ids.map(function(id) {
+                return byId[id] || { id: id, label: id, enabled: false, url: '', source: 'custom', announce: { inherit_global: true }, audio_by_condition: {} };
+            });
+            container.innerHTML = lightningFeedsState.map(function(f, idx) {
+                const ann = f.announce || { inherit_global: true };
+                const audio = f.audio_by_condition || {};
+                const horns = f.horn_by_condition || {};
+                return '<div class="card mt-3" data-feed-idx="' + idx + '">' +
+                    '<div class="card-header"><h5 class="card-title mb-0">' + (f.label || f.id) + ' <code>' + f.id + '</code></h5></div>' +
+                    '<div class="card-body">' +
+                    '<div class="form-check mb-2"><input class="form-check-input feed-enabled" type="checkbox" data-idx="' + idx + '"' + (f.enabled ? ' checked' : '') + '><label class="form-check-label">Enabled</label></div>' +
+                    '<div class="mb-2"><label class="form-label">Sensor</label><select class="form-select feed-sensor" data-idx="' + idx + '">' + feedSelectOptions(f.sensor_id, f.source) + '</select></div>' +
+                    '<div class="mb-2"><label class="form-label">XML URL</label><input type="url" class="form-control feed-url" data-idx="' + idx + '" value="' + (f.url || '').replace(/"/g, '&quot;') + '"></div>' +
+                    '<div class="row"><div class="col-md-6 mb-2"><label class="form-label">Expected displayname</label><input class="form-control feed-displayname" data-idx="' + idx + '" value="' + (f.expected_displayname || '').replace(/"/g, '&quot;') + '"></div>' +
+                    '<div class="col-md-6 mb-2"><label class="form-label">Expected uniqueid</label><input class="form-control feed-uniqueid" data-idx="' + idx + '" value="' + (f.expected_uniqueid || '').replace(/"/g, '&quot;') + '"></div></div>' +
+                    '<div class="mb-2"><label class="form-label">Timeout override (0=global)</label><input type="number" class="form-control feed-timeout" data-idx="' + idx + '" min="0" value="' + (f.timeout_seconds || 0) + '"></div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-secondary mb-3 feed-test-btn" data-idx="' + idx + '">🧪 Test Fetch</button>' +
+                    '<h6>Announcements for this feed</h6>' +
+                    '<div class="form-check"><input class="form-check-input feed-inherit" type="radio" name="feed-ann-' + idx + '" data-idx="' + idx + '" value="1"' + (ann.inherit_global !== false ? ' checked' : '') + '><label class="form-check-label">Inherit global</label></div>' +
+                    '<div class="form-check mb-2"><input class="form-check-input feed-custom-ann" type="radio" name="feed-ann-' + idx + '" data-idx="' + idx + '" value="0"' + (ann.inherit_global === false ? ' checked' : '') + '><label class="form-check-label">Custom for this feed</label></div>' +
+                    '<div class="feed-custom-flags ps-3 mb-2" data-idx="' + idx + '" style="' + (ann.inherit_global === false ? '' : 'display:none') + '">' +
+                    ['RedAlert','Warning','Caution','AllClear','Unknown'].map(function(c) {
+                        const checked = !!ann[c] ? ' checked' : '';
+                        return '<div class="form-check form-check-inline"><input class="form-check-input feed-ann-' + c + '" type="checkbox" data-idx="' + idx + '"' + checked + '><label class="form-check-label">' + c + '</label></div>';
+                    }).join('') + '</div>' +
+                    '<h6>Optional announce MP3 overrides</h6><div class="row">' +
+                    ['RedAlert','Warning','Caution','AllClear','Unknown'].map(function(c) {
+                        return '<div class="col-md-4 mb-2"><label class="form-label">' + c + '</label><input class="form-control form-control-sm feed-audio-' + c + '" list="lightning-mp3-options" data-idx="' + idx + '" value="' + ((audio[c] || '') + '').replace(/"/g, '&quot;') + '"></div>';
+                    }).join('') + '</div>' +
+                    '<h6 class="mt-2">Horn overrides (Red Alert / All Clear)</h6>' +
+                    ['RedAlert','AllClear'].map(function(c) {
+                        const h = horns[c] || { inherit_global: true, enabled: true, audio_file: '' };
+                        const inherit = h.inherit_global !== false;
+                        return '<div class="border rounded p-2 mb-2" data-horn-cond="' + c + '">' +
+                            '<div class="fw-semibold mb-1">' + c + ' horn</div>' +
+                            '<div class="form-check"><input class="form-check-input feed-horn-inherit" type="radio" name="feed-horn-' + c + '-' + idx + '" data-idx="' + idx + '" data-cond="' + c + '" value="1"' + (inherit ? ' checked' : '') + '><label class="form-check-label">Inherit global Condition Audio</label></div>' +
+                            '<div class="form-check mb-1"><input class="form-check-input feed-horn-custom" type="radio" name="feed-horn-' + c + '-' + idx + '" data-idx="' + idx + '" data-cond="' + c + '" value="0"' + (!inherit ? ' checked' : '') + '><label class="form-check-label">Custom for this feed</label></div>' +
+                            '<div class="feed-horn-custom-fields ps-2" data-idx="' + idx + '" data-cond="' + c + '" style="' + (inherit ? 'display:none' : '') + '">' +
+                            '<div class="form-check mb-1"><input class="form-check-input feed-horn-enabled" type="checkbox" data-idx="' + idx + '" data-cond="' + c + '"' + (h.enabled ? ' checked' : '') + '><label class="form-check-label">Play horn</label></div>' +
+                            '<input class="form-control form-control-sm feed-horn-file" list="lightning-mp3-options" data-idx="' + idx + '" data-cond="' + c + '" placeholder="horn mp3" value="' + ((h.audio_file || '') + '').replace(/"/g, '&quot;') + '">' +
+                            '</div></div>';
+                    }).join('') +
+                    '</div></div>';
+            }).join('');
+
+            container.querySelectorAll('.feed-sensor').forEach(function(sel) {
+                sel.addEventListener('change', function() {
+                    const idx = parseInt(sel.getAttribute('data-idx'), 10);
+                    const sid = sel.value;
+                    if (sid === '__custom__') {
+                        lightningFeedsState[idx].source = 'custom';
+                        lightningFeedsState[idx].sensor_id = '';
+                        return;
                     }
-                    
-                    content.innerHTML = statusHtml;
-                    
-                    // Update form with current values unless the operator is editing them
-                    setValueIfNotFocused('lightning-url', status.url || '');
-                    setValueIfNotFocused('lightning-interval', status.fetch_interval || 60);
-                    setValueIfNotFocused('lightning-timeout', status.timeout || 30);
-                    setCheckedIfNotFocused('lightning-enabled', status.enabled || false);
-
-                    const announce = status.condition_announce || {};
-                    setCheckedIfNotFocused('announce-redalert', announce.RedAlert !== false);
-                    setCheckedIfNotFocused('announce-warning', !!announce.Warning);
-                    setCheckedIfNotFocused('announce-caution', !!announce.Caution);
-                    setCheckedIfNotFocused('announce-allclear', announce.AllClear !== false);
-                    setCheckedIfNotFocused('announce-unknown', !!announce.Unknown);
-
-                    const policy = status.red_alert_policy || {};
-                    setCheckedIfNotFocused('red-alert-preempt', policy.preempt_queue !== false);
-                    setCheckedIfNotFocused('red-alert-suppress', policy.suppress_non_emergency !== false);
-                    setCheckedIfNotFocused('red-alert-reminder-enabled', policy.reminder_enabled !== false);
-                    setValueIfNotFocused('red-alert-reminder-interval', policy.reminder_interval_minutes || 5);
-                    setValueIfNotFocused('red-alert-reminder-file', policy.reminder_audio_file || 'thor_repeat1.mp3');
-                    setCheckedIfNotFocused('red-alert-reminder-horn', !!policy.reminder_include_horn);
-
-                    const datalist = document.getElementById('reminder-file-options');
-                    if (datalist) {
-                        datalist.innerHTML = '';
-                        (status.available_reminder_files || []).forEach(function(fileName) {
-                            const option = document.createElement('option');
-                            option.value = fileName;
-                            datalist.appendChild(option);
-                        });
+                    const sensor = (knownLightningSensors || []).find(function(s) { return s.id === sid; });
+                    if (sensor) {
+                        lightningFeedsState[idx].source = 'catalog';
+                        lightningFeedsState[idx].sensor_id = sensor.id;
+                        lightningFeedsState[idx].expected_displayname = sensor.display_name;
+                        const urlEl = container.querySelector('.feed-url[data-idx="' + idx + '"]');
+                        const dnEl = container.querySelector('.feed-displayname[data-idx="' + idx + '"]');
+                        if (urlEl) urlEl.value = sensor.url;
+                        if (dnEl) dnEl.value = sensor.display_name;
                     }
-                } else {
-                    content.innerHTML = '<p class="text-danger">Error loading lightning trigger status</p>';
-                }
-            })
-            .catch(error => {
-                document.getElementById('lightning-status-content').innerHTML = 
-                    '<p class="text-danger">Failed to load lightning trigger status</p>';
+                });
+            });
+            container.querySelectorAll('.feed-url').forEach(function(inp) {
+                inp.addEventListener('input', function() {
+                    const idx = parseInt(inp.getAttribute('data-idx'), 10);
+                    const sel = container.querySelector('.feed-sensor[data-idx="' + idx + '"]');
+                    if (sel) sel.value = '__custom__';
+                    lightningFeedsState[idx].source = 'custom';
+                    lightningFeedsState[idx].sensor_id = '';
+                });
+            });
+            container.querySelectorAll('.feed-inherit, .feed-custom-ann').forEach(function(r) {
+                r.addEventListener('change', function() {
+                    const idx = r.getAttribute('data-idx');
+                    const box = container.querySelector('.feed-custom-flags[data-idx="' + idx + '"]');
+                    if (box) box.style.display = r.classList.contains('feed-custom-ann') && r.checked ? '' : 'none';
+                });
+            });
+            container.querySelectorAll('.feed-horn-inherit, .feed-horn-custom').forEach(function(r) {
+                r.addEventListener('change', function() {
+                    const idx = r.getAttribute('data-idx');
+                    const cond = r.getAttribute('data-cond');
+                    const box = container.querySelector('.feed-horn-custom-fields[data-idx="' + idx + '"][data-cond="' + cond + '"]');
+                    if (box) box.style.display = r.classList.contains('feed-horn-custom') && r.checked ? '' : 'none';
+                });
+            });
+            container.querySelectorAll('.feed-test-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                    const url = container.querySelector('.feed-url[data-idx="' + idx + '"]').value;
+                    const timeout = parseInt(container.querySelector('.feed-timeout[data-idx="' + idx + '"]').value, 10) || parseInt(document.getElementById('lightning-timeout').value, 10) || 30;
+                    testLightningFetchUrl(url, timeout, lightningFeedsState[idx].id);
+                });
             });
         }
-        
+
+        function collectFeedsFromForm() {
+            const container = document.getElementById('lightning-feeds-container');
+            return lightningFeedsState.map(function(f, idx) {
+                const inherit = container.querySelector('.feed-inherit[data-idx="' + idx + '"]');
+                const inheritGlobal = !inherit || inherit.checked;
+                const announce = { inherit_global: inheritGlobal };
+                ['RedAlert','Warning','Caution','AllClear','Unknown'].forEach(function(c) {
+                    const el = container.querySelector('.feed-ann-' + c + '[data-idx="' + idx + '"]');
+                    announce[c] = !!(el && el.checked);
+                });
+                const audio = {};
+                ['RedAlert','Warning','Caution','AllClear','Unknown'].forEach(function(c) {
+                    const el = container.querySelector('.feed-audio-' + c + '[data-idx="' + idx + '"]');
+                    audio[c] = el ? el.value.trim() : '';
+                });
+                const horns = {};
+                ['RedAlert','AllClear'].forEach(function(c) {
+                    const inheritEl = container.querySelector('.feed-horn-inherit[data-idx="' + idx + '"][data-cond="' + c + '"]');
+                    const enabledEl = container.querySelector('.feed-horn-enabled[data-idx="' + idx + '"][data-cond="' + c + '"]');
+                    const fileEl = container.querySelector('.feed-horn-file[data-idx="' + idx + '"][data-cond="' + c + '"]');
+                    horns[c] = {
+                        inherit_global: !!(inheritEl && inheritEl.checked),
+                        enabled: !!(enabledEl && enabledEl.checked),
+                        audio_file: fileEl ? fileEl.value.trim() : ''
+                    };
+                });
+                const sensorSel = container.querySelector('.feed-sensor[data-idx="' + idx + '"]');
+                let sensorId = '';
+                let source = 'custom';
+                if (sensorSel && sensorSel.value !== '__custom__') {
+                    sensorId = sensorSel.value;
+                    source = 'catalog';
+                }
+                return {
+                    id: f.id,
+                    label: f.label || f.id,
+                    enabled: !!(container.querySelector('.feed-enabled[data-idx="' + idx + '"]') || {}).checked,
+                    sensor_id: sensorId,
+                    source: source,
+                    expected_displayname: (container.querySelector('.feed-displayname[data-idx="' + idx + '"]') || {}).value || '',
+                    expected_uniqueid: (container.querySelector('.feed-uniqueid[data-idx="' + idx + '"]') || {}).value || '',
+                    url: ((container.querySelector('.feed-url[data-idx="' + idx + '"]') || {}).value || '').trim(),
+                    timeout_seconds: parseInt((container.querySelector('.feed-timeout[data-idx="' + idx + '"]') || {}).value, 10) || 0,
+                    announce: announce,
+                    audio_by_condition: audio,
+                    horn_by_condition: horns
+                };
+            });
+        }
+
+        function renderFeedSwitchRows(rules) {
+            feedSwitchRulesState = (rules && rules.length) ? rules.slice() : [];
+            const tbody = document.getElementById('feed-switch-tbody');
+            if (!tbody) return;
+            const feedOpts = ['*','primary','failover_1','failover_2'].map(function(v) {
+                return '<option value="' + v + '">' + v + '</option>';
+            }).join('');
+            const reasonOpts = ['any','failover','failback','pin'].map(function(v) {
+                return '<option value="' + v + '">' + v + '</option>';
+            }).join('');
+            tbody.innerHTML = feedSwitchRulesState.map(function(r, idx) {
+                return '<tr data-sw-idx="' + idx + '">' +
+                    '<td><input type="checkbox" class="form-check-input sw-enabled"' + (r.enabled ? ' checked' : '') + '></td>' +
+                    '<td><select class="form-select form-select-sm sw-from">' + feedOpts.replace('value="' + (r.from_feed_id || 'primary') + '"', 'value="' + (r.from_feed_id || 'primary') + '" selected') + '</select></td>' +
+                    '<td><select class="form-select form-select-sm sw-to">' + feedOpts.replace('value="' + (r.to_feed_id || 'failover_1') + '"', 'value="' + (r.to_feed_id || 'failover_1') + '" selected') + '</select></td>' +
+                    '<td><select class="form-select form-select-sm sw-reason">' + reasonOpts.replace('value="' + (r.reason || 'failover') + '"', 'value="' + (r.reason || 'failover') + '" selected') + '</select></td>' +
+                    '<td><input class="form-control form-control-sm sw-sensor" placeholder="sensor id" value="' + (r.match_sensor_id || '') + '"></td>' +
+                    '<td><input class="form-control form-control-sm sw-audio" list="lightning-mp3-options" value="' + (r.audio_file || '') + '"></td>' +
+                    '<td><button type="button" class="btn btn-sm btn-outline-secondary sw-test">▶</button> <button type="button" class="btn btn-sm btn-outline-danger sw-del">×</button></td></tr>';
+            }).join('');
+            // Fix selected attributes properly
+            tbody.querySelectorAll('tr').forEach(function(tr, idx) {
+                const r = feedSwitchRulesState[idx];
+                if (!r) return;
+                tr.querySelector('.sw-from').value = r.from_feed_id || 'primary';
+                tr.querySelector('.sw-to').value = r.to_feed_id || 'failover_1';
+                tr.querySelector('.sw-reason').value = r.reason || 'failover';
+                tr.querySelector('.sw-del').onclick = function() {
+                    feedSwitchRulesState.splice(idx, 1);
+                    renderFeedSwitchRows(feedSwitchRulesState);
+                    setLightningFormDirty(true);
+                };
+                tr.querySelector('.sw-test').onclick = function() {
+                    const file = tr.querySelector('.sw-audio').value.trim();
+                    if (!file) { showLightningMessage('Set an MP3 filename first', 'warning'); return; }
+                    fetch('/admin/lightning/test-feed-switch-audio', {
+                        method: 'POST', credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio_file: file })
+                    }).then(function(r) { return r.json(); }).then(function(data) {
+                        showLightningMessage(data.message || data.error || 'queued', data.status === 'success' ? 'success' : 'danger');
+                    });
+                };
+            });
+        }
+
+        function collectFeedSwitchRules() {
+            const tbody = document.getElementById('feed-switch-tbody');
+            const rows = tbody ? Array.from(tbody.querySelectorAll('tr')) : [];
+            return rows.map(function(tr, idx) {
+                return {
+                    id: (feedSwitchRulesState[idx] && feedSwitchRulesState[idx].id) || ('rule_' + idx),
+                    enabled: tr.querySelector('.sw-enabled').checked,
+                    from_feed_id: tr.querySelector('.sw-from').value,
+                    to_feed_id: tr.querySelector('.sw-to').value,
+                    reason: tr.querySelector('.sw-reason').value,
+                    match_sensor_id: tr.querySelector('.sw-sensor').value.trim(),
+                    match_displayname: '',
+                    audio_file: tr.querySelector('.sw-audio').value.trim(),
+                    label: tr.querySelector('.sw-from').value + ' → ' + tr.querySelector('.sw-to').value
+                };
+            });
+        }
+
+        function applyLightningFormFromStatus(status) {
+            setValue('lightning-interval', status.fetch_interval || 60);
+            setValue('lightning-timeout', status.timeout || 30);
+            setChecked('lightning-enabled', !!status.enabled);
+
+            const at = status.announce_timing || {};
+            setValue('announce-cooldown-same', at.min_seconds_between_same_condition || 0);
+            setValue('announce-cooldown-any', at.min_seconds_between_any_lightning_announce || 0);
+
+            const fo = status.failover || {};
+            setValue('failover-consecutive', fo.consecutive_failures || 3);
+            setValue('failover-failback-mode', fo.failback_mode || 'prefer_primary');
+            setValue('failover-failback-successes', fo.failback_after_successes || 2);
+            setValue('failover-probe-interval', fo.failback_probe_interval_seconds || 0);
+            setValue('failover-min-dwell', fo.min_dwell_on_feed_seconds || 0);
+            setValue('failover-failure-window', fo.failure_window_seconds || 0);
+            setValue('failover-on-all-failed', fo.on_all_feeds_failed || 'hold_last_condition');
+            setChecked('failover-allow-during-ra', fo.allow_failover_during_red_alert !== false);
+            setChecked('failover-preserve-condition', fo.preserve_condition_across_failover !== false);
+            setValue('allclear-release-mode', fo.allclear_release_mode === 'failover_vote' ? 'failover_vote' : 'primary_only');
+            const tr = fo.triggers || {};
+            setChecked('trig-http_error', tr.http_error !== false);
+            setChecked('trig-http_status_not_ok', tr.http_status_not_ok !== false);
+            setChecked('trig-empty_body', tr.empty_body !== false);
+            setChecked('trig-encoding_error', tr.encoding_error !== false);
+            setChecked('trig-missing_lightningalert', tr.missing_lightningalert !== false);
+            setChecked('trig-unknown_condition', !!tr.unknown_condition);
+            setChecked('trig-displayname_mismatch', !!tr.displayname_mismatch);
+            setChecked('trig-uniqueid_mismatch', !!tr.uniqueid_mismatch);
+
+            const announce = status.condition_announce || {};
+            setChecked('announce-redalert', announce.RedAlert !== false);
+            setChecked('announce-warning', !!announce.Warning);
+            setChecked('announce-caution', !!announce.Caution);
+            setChecked('announce-allclear', announce.AllClear !== false);
+            setChecked('announce-unknown', !!announce.Unknown);
+
+            const policy = status.red_alert_policy || {};
+            setChecked('red-alert-preempt', policy.preempt_queue !== false);
+            setChecked('red-alert-suppress', policy.suppress_non_emergency !== false);
+            setChecked('red-alert-reminder-enabled', policy.reminder_enabled !== false);
+            setValue('red-alert-reminder-interval', policy.reminder_interval_minutes || 5);
+            setValue('red-alert-reminder-file', policy.reminder_audio_file || 'Voice_RedAlert_Reminder.mp3');
+            setChecked('red-alert-reminder-horn', !!policy.reminder_include_horn);
+            setValue('red-alert-reminder-horn-file', policy.horn_audio_file || 'Horn_RedAlert.mp3');
+
+            const ca = status.condition_audio || {};
+            const ra = ca.RedAlert || {};
+            const ac = ca.AllClear || {};
+            setChecked('ca-redalert-horn-enabled', ra.horn_enabled !== false);
+            setValue('ca-redalert-horn-file', ra.horn_file || 'Horn_RedAlert.mp3');
+            setValue('ca-redalert-announce-file', ra.announce_file || 'Voice_RedAlert.mp3');
+            setChecked('ca-allclear-horn-enabled', ac.horn_enabled !== false);
+            setValue('ca-allclear-horn-file', ac.horn_file || 'Horn_AllClear.mp3');
+            setValue('ca-allclear-announce-file', ac.announce_file || 'Voice_AllClear.mp3');
+            setValue('ca-warning-announce-file', (ca.Warning && ca.Warning.announce_file) || 'Voice_Warning.mp3');
+            setValue('ca-caution-announce-file', (ca.Caution && ca.Caution.announce_file) || 'Voice_Caution.mp3');
+            setValue('ca-unknown-announce-file', (ca.Unknown && ca.Unknown.announce_file) || 'thor_unknown.mp3');
+
+            const datalist = document.getElementById('reminder-file-options');
+            const mp3list = document.getElementById('lightning-mp3-options');
+            [datalist, mp3list].forEach(function(dl) {
+                if (!dl) return;
+                dl.innerHTML = '';
+                (status.available_reminder_files || []).forEach(function(fileName) {
+                    const option = document.createElement('option');
+                    option.value = fileName;
+                    dl.appendChild(option);
+                });
+            });
+
+            renderFeedCards(status.feeds || []);
+            renderFeedSwitchRows(status.feed_switch_announcements || []);
+            const pinSel = document.getElementById('pin-active-feed');
+            if (pinSel) pinSel.value = status.pinned_feed_id || '';
+            lightningFormLoaded = true;
+            setLightningFormDirty(false);
+        }
+
+        function renderLightningStatusOnly(status) {
+            const content = document.getElementById('lightning-status-content');
+            if (!content) return;
+            if (status.error && !status.id) {
+                content.innerHTML = '<p class="text-danger">' + status.error + '</p>';
+                return;
+            }
+
+            let banners = '';
+            if (status.all_feeds_failed) banners += '<div class="alert alert-danger">All Thor feeds unreachable — holding last condition (never auto All Clear)</div>';
+            if (status.on_failover) banners += '<div class="alert alert-warning">On failover feed: <strong>' + (status.active_feed_id || '') + '</strong></div>';
+            if (status.pinned_feed_id) banners += '<div class="alert alert-info">PINNED active feed: <strong>' + status.pinned_feed_id + '</strong></div>';
+
+            let healthRows = '';
+            const feeds = status.feeds || [];
+            const health = status.feed_health || {};
+            feeds.forEach(function(f) {
+                const h = health[f.id] || {};
+                const lastStatus = h.last_alert || '';
+                const statusBadge = lastStatus
+                    ? '<span class="badge ' + getConditionBadgeClass(lastStatus) + '">' + lastStatus + '</span>'
+                    : '—';
+                healthRows += '<tr><td>' + f.id + '</td><td>' + (f.enabled ? 'yes' : 'no') + '</td><td>' + (h.last_ok || '—') + '</td><td>' + (h.consecutive_failures || 0) + '</td><td class="small">' + (h.last_error || '—') + '</td><td>' + statusBadge + '</td><td>' + (h.last_displayname || '—') + '</td></tr>';
+            });
+
+            content.innerHTML = banners +
+                '<div><strong>Running:</strong> ' + !!status.running + ' · <strong>Enabled:</strong> ' + !!status.enabled + '</div>' +
+                '<div><strong>Active feed:</strong> ' + (status.active_feed_id || '—') + ' · <strong>Displayname:</strong> ' + (status.active_displayname || '—') + '</div>' +
+                '<div><strong>Condition:</strong> <span class="badge ' + getConditionBadgeClass(status.last_condition) + '">' + (status.last_condition || '—') + '</span> · changed ' + (status.last_condition_time || '') + '</div>' +
+                '<div><strong>All Clear release:</strong> ' + (status.allclear_release_mode || 'primary_only') + (status.entered_red_alert_on_feed ? ' · entered on <code>' + status.entered_red_alert_on_feed + '</code>' : '') + '</div>' +
+                '<div><strong>URL:</strong> <code class="small">' + (status.active_url || status.url || '') + '</code></div>' +
+                (status.last_fetch_error ? '<div class="text-danger small">Last error: ' + status.last_fetch_error + '</div>' : '') +
+                (status.last_allclear_vote ? '<div class="small text-muted">Last vote: ' + status.last_allclear_vote + '</div>' : '') +
+                (status.red_alert_active ? '<div class="alert alert-danger mt-2 mb-2"><strong>RED ALERT ACTIVE</strong> since ' + (status.red_alert_since || '') + ' · next reminder ' + (status.next_reminder || '') + '</div>' : '') +
+                '<div class="table-responsive mt-2"><table class="table table-sm"><thead><tr><th>Feed</th><th>Enabled</th><th>Last OK</th><th>Fails</th><th>Last error</th><th>Last Status</th><th>Displayname</th></tr></thead><tbody>' + healthRows + '</tbody></table></div>';
+        }
+
+        function loadLightningTriggerStatus(forceFormReload) {
+            fetch('/admin/lightning/status', { credentials: 'same-origin' })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                const status = data.data || data;
+                knownLightningSensors = status.known_sensors || knownLightningSensors || [];
+                renderLightningStatusOnly(status);
+                if (forceFormReload || !lightningFormLoaded || !lightningFormDirty) {
+                    applyLightningFormFromStatus(status);
+                }
+            })
+            .catch(function() {
+                const content = document.getElementById('lightning-status-content');
+                if (content) content.innerHTML = '<p class="text-danger">Failed to load lightning trigger status</p>';
+            });
+        }
+
         function getConditionBadgeClass(condition) {
-            switch (condition?.toLowerCase()) {
+            switch ((condition || '').toLowerCase()) {
                 case 'redalert': return 'bg-danger';
                 case 'warning': return 'bg-warning';
                 case 'caution': return 'bg-info';
@@ -2729,19 +3098,15 @@
             }
         }
 
-        function setValueIfNotFocused(id, value) {
+        function setValue(id, value) {
             const el = document.getElementById(id);
-            if (!el || document.activeElement === el) {
-                return;
-            }
+            if (!el) return;
             el.value = value;
         }
 
-        function setCheckedIfNotFocused(id, checked) {
+        function setChecked(id, checked) {
             const el = document.getElementById(id);
-            if (!el || document.activeElement === el) {
-                return;
-            }
+            if (!el) return;
             el.checked = checked;
         }
 
@@ -2755,42 +3120,100 @@
             };
         }
 
-        function getLightningConfigPayload() {
+        function getFailoverFromForm() {
             return {
-                url: document.getElementById('lightning-url').value,
+                consecutive_failures: parseInt(document.getElementById('failover-consecutive').value, 10) || 3,
+                failure_window_seconds: parseInt(document.getElementById('failover-failure-window').value, 10) || 0,
+                min_dwell_on_feed_seconds: parseInt(document.getElementById('failover-min-dwell').value, 10) || 0,
+                failback_mode: document.getElementById('failover-failback-mode').value,
+                failback_after_successes: parseInt(document.getElementById('failover-failback-successes').value, 10) || 2,
+                failback_probe_interval_seconds: parseInt(document.getElementById('failover-probe-interval').value, 10) || 0,
+                allow_failover_during_red_alert: document.getElementById('failover-allow-during-ra').checked,
+                allclear_release_mode: document.getElementById('allclear-release-mode').value || 'primary_only',
+                preserve_condition_across_failover: document.getElementById('failover-preserve-condition').checked,
+                on_all_feeds_failed: document.getElementById('failover-on-all-failed').value,
+                triggers: {
+                    http_error: document.getElementById('trig-http_error').checked,
+                    http_status_not_ok: document.getElementById('trig-http_status_not_ok').checked,
+                    empty_body: document.getElementById('trig-empty_body').checked,
+                    encoding_error: document.getElementById('trig-encoding_error').checked,
+                    missing_lightningalert: document.getElementById('trig-missing_lightningalert').checked,
+                    unknown_condition: document.getElementById('trig-unknown_condition').checked,
+                    displayname_mismatch: document.getElementById('trig-displayname_mismatch').checked,
+                    uniqueid_mismatch: document.getElementById('trig-uniqueid_mismatch').checked
+                }
+            };
+        }
+
+        function getMonitorPayload() {
+            const feeds = collectFeedsFromForm();
+            return {
+                section: 'monitor',
+                enabled: document.getElementById('lightning-enabled').checked,
                 fetch_interval: parseInt(document.getElementById('lightning-interval').value, 10),
                 timeout: parseInt(document.getElementById('lightning-timeout').value, 10),
-                enabled: document.getElementById('lightning-enabled').checked,
-                red_alert_policy: getRedAlertPolicyFromForm(),
-                condition_announce: getConditionAnnounceFromForm()
+                failover: getFailoverFromForm(),
+                feeds: feeds,
+                feed_switch_announcements: collectFeedSwitchRules(),
+                announce_timing: {
+                    min_seconds_between_same_condition: parseInt(document.getElementById('announce-cooldown-same').value, 10) || 0,
+                    min_seconds_between_any_lightning_announce: parseInt(document.getElementById('announce-cooldown-any').value, 10) || 0
+                },
+                url: (feeds[0] && feeds[0].url) || ''
             };
+        }
+
+        function softConfirmMonitorSave(payload) {
+            const warns = [];
+            const enabledFeeds = (payload.feeds || []).filter(function(f) { return f.enabled && f.url; });
+            if (payload.enabled && enabledFeeds.length < 1) warns.push('Monitoring enabled but no feed has an enabled URL.');
+            if (payload.failover && payload.failover.allclear_release_mode === 'failover_vote') {
+                const ids = { primary: false, failover_1: false, failover_2: false };
+                enabledFeeds.forEach(function(f) { if (ids.hasOwnProperty(f.id)) ids[f.id] = true; });
+                if (!ids.primary || !ids.failover_1 || !ids.failover_2) {
+                    warns.push('failover_vote requires primary, failover_1, and failover_2 all enabled with URLs. Vote still needs two All Clear results at unlock time.');
+                }
+            }
+            if (payload.failover && payload.failover.consecutive_failures < 2) warns.push('consecutive_failures is less than 2 (may flap).');
+            if (!warns.length) return true;
+            return confirm('Please confirm:\n\n- ' + warns.join('\n- ') + '\n\nSave anyway?');
+        }
+
+        function saveLightningMonitor() {
+            const payload = getMonitorPayload();
+            if (!softConfirmMonitorSave(payload)) return;
+            fetch('/admin/lightning/config', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                const ok = data.status === 'success';
+                showLightningMessage(ok ? 'Monitor configuration saved' : ('Failed: ' + (data.error || 'unknown')), ok ? 'success' : 'danger');
+                if (ok) loadLightningTriggerStatus(true);
+            }).catch(function(err) {
+                showLightningMessage('Error: ' + err.message, 'danger');
+            });
         }
 
         function saveConditionAnnounce() {
             fetch('/admin/lightning/config', {
-                method: 'POST',
-                credentials: 'same-origin',
+                method: 'POST', credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(getLightningConfigPayload())
-            })
-            .then(response => response.json())
-            .then(data => {
+                body: JSON.stringify({ section: 'condition_announce', condition_announce: getConditionAnnounceFromForm() })
+            }).then(function(r) { return r.json(); }).then(function(data) {
                 const ok = data.status === 'success';
-                showConditionAnnounceMessage(ok ? 'Condition announcement settings saved' : (`Failed: ${data.error || 'unknown'}`), ok ? 'success' : 'danger');
-                if (ok) {
-                    loadLightningTriggerStatus();
-                }
-            })
-            .catch(error => {
-                showConditionAnnounceMessage(`Error: ${error.message}`, 'danger');
+                showConditionAnnounceMessage(ok ? 'Condition announcement settings saved' : ('Failed: ' + (data.error || 'unknown')), ok ? 'success' : 'danger');
+                if (ok) loadLightningTriggerStatus(true);
+            }).catch(function(error) {
+                showConditionAnnounceMessage('Error: ' + error.message, 'danger');
             });
         }
 
         function showConditionAnnounceMessage(message, type) {
             const el = document.getElementById('condition-announce-message');
             if (!el) return;
-            el.innerHTML = `<div class="alert alert-${type} py-2 mb-0">${message}</div>`;
-            setTimeout(() => { el.innerHTML = ''; }, 4000);
+            el.innerHTML = '<div class="alert alert-' + type + ' py-2 mb-0">' + message + '</div>';
+            setTimeout(function() { el.innerHTML = ''; }, 4000);
         }
 
         function getRedAlertPolicyFromForm() {
@@ -2799,174 +3222,192 @@
                 suppress_non_emergency: document.getElementById('red-alert-suppress').checked,
                 reminder_enabled: document.getElementById('red-alert-reminder-enabled').checked,
                 reminder_interval_minutes: parseInt(document.getElementById('red-alert-reminder-interval').value, 10) || 5,
-                reminder_audio_file: (document.getElementById('red-alert-reminder-file').value || 'thor_repeat1.mp3').trim(),
+                reminder_audio_file: (document.getElementById('red-alert-reminder-file').value || 'Voice_RedAlert_Reminder.mp3').trim(),
                 reminder_include_horn: document.getElementById('red-alert-reminder-horn').checked,
-                horn_audio_file: 'thor_red_alert.mp3'
+                horn_audio_file: (document.getElementById('red-alert-reminder-horn-file').value || '').trim()
             };
+        }
+
+        function getConditionAudioFromForm() {
+            return {
+                RedAlert: {
+                    horn_enabled: document.getElementById('ca-redalert-horn-enabled').checked,
+                    horn_file: (document.getElementById('ca-redalert-horn-file').value || '').trim(),
+                    announce_file: (document.getElementById('ca-redalert-announce-file').value || '').trim()
+                },
+                AllClear: {
+                    horn_enabled: document.getElementById('ca-allclear-horn-enabled').checked,
+                    horn_file: (document.getElementById('ca-allclear-horn-file').value || '').trim(),
+                    announce_file: (document.getElementById('ca-allclear-announce-file').value || '').trim()
+                },
+                Warning: {
+                    horn_enabled: false,
+                    horn_file: '',
+                    announce_file: (document.getElementById('ca-warning-announce-file').value || '').trim()
+                },
+                Caution: {
+                    horn_enabled: false,
+                    horn_file: '',
+                    announce_file: (document.getElementById('ca-caution-announce-file').value || '').trim()
+                },
+                Unknown: {
+                    horn_enabled: false,
+                    horn_file: '',
+                    announce_file: (document.getElementById('ca-unknown-announce-file').value || '').trim()
+                }
+            };
+        }
+
+        function saveConditionAudio() {
+            fetch('/admin/lightning/config', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ section: 'condition_audio', condition_audio: getConditionAudioFromForm() })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                const ok = data.status === 'success';
+                showConditionAudioMessage(ok ? 'Condition audio (horn + announce) saved' : ('Failed: ' + (data.error || 'unknown')), ok ? 'success' : 'danger');
+                if (ok) loadLightningTriggerStatus(true);
+            }).catch(function(error) {
+                showConditionAudioMessage('Error: ' + error.message, 'danger');
+            });
+        }
+
+        function showConditionAudioMessage(message, type) {
+            const el = document.getElementById('condition-audio-message');
+            if (!el) return;
+            el.innerHTML = '<div class="alert alert-' + type + ' py-2 mb-0">' + message + '</div>';
+            setTimeout(function() { el.innerHTML = ''; }, 4000);
         }
 
         function saveRedAlertPolicy() {
             fetch('/admin/lightning/config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(getLightningConfigPayload())
-            })
-            .then(response => response.json())
-            .then(data => {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ section: 'red_alert_policy', red_alert_policy: getRedAlertPolicyFromForm() })
+            }).then(function(r) { return r.json(); }).then(function(data) {
                 if (data.status === 'success') {
                     showRedAlertPolicyMessage('Red Alert policy saved', 'success');
-                    loadLightningTriggerStatus();
+                    loadLightningTriggerStatus(true);
                 } else {
-                    showRedAlertPolicyMessage(`Failed to save policy: ${data.error}`, 'danger');
+                    showRedAlertPolicyMessage('Failed to save policy: ' + data.error, 'danger');
                 }
-            })
-            .catch(error => {
-                showRedAlertPolicyMessage(`Error saving policy: ${error.message}`, 'danger');
+            }).catch(function(error) {
+                showRedAlertPolicyMessage('Error saving policy: ' + error.message, 'danger');
             });
         }
 
         function testLightningCondition(condition) {
-            fetch('/admin/lightning/test-condition/' + condition, {
-                method: 'POST',
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
+            fetch('/admin/lightning/test-condition/' + condition, { method: 'POST', credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 const ok = data.status === 'success' || data.success;
                 const warning = data.status === 'warning';
-                const type = ok ? 'success' : (warning ? 'warning' : 'danger');
-                const prefix = ok ? '✅ ' : (warning ? '⚠️ ' : '❌ ');
-                showLightningMessage(prefix + (data.message || data.error || condition), type);
+                showLightningMessage((ok ? '✅ ' : (warning ? '⚠️ ' : '❌ ')) + (data.message || data.error || condition), ok ? 'success' : (warning ? 'warning' : 'danger'));
                 loadLightningTriggerStatus();
-            })
-            .catch(error => {
-                showLightningMessage(`Test failed: ${error.message}`, 'danger');
+            }).catch(function(error) {
+                showLightningMessage('Test failed: ' + error.message, 'danger');
             });
         }
 
         function resetLightningState() {
-            fetch('/admin/lightning/reset', {
-                method: 'POST',
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
+            if (!confirm('Reset THOR Guard cached condition, Red Alert lock, and reminder timer?')) return;
+            fetch('/admin/lightning/reset', { method: 'POST', credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 const ok = data.status === 'success';
                 showLightningMessage((ok ? '✅ ' : '❌ ') + (data.message || data.error || 'Reset failed'), ok ? 'success' : 'danger');
                 loadLightningTriggerStatus();
-            })
-            .catch(error => {
-                showLightningMessage(`Reset failed: ${error.message}`, 'danger');
+            }).catch(function(error) {
+                showLightningMessage('Reset failed: ' + error.message, 'danger');
             });
         }
 
         function testRedAlertReminder() {
-            fetch('/admin/lightning/test-reminder', {
-                method: 'POST',
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(data => {
+            fetch('/admin/lightning/test-reminder', { method: 'POST', credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 const ok = data.status === 'success';
                 showRedAlertPolicyMessage((ok ? '✅ ' : '❌ ') + (data.message || data.error), ok ? 'success' : 'danger');
                 loadLightningTriggerStatus();
-            })
-            .catch(error => {
-                showRedAlertPolicyMessage(`Reminder test failed: ${error.message}`, 'danger');
+            }).catch(function(error) {
+                showRedAlertPolicyMessage('Reminder test failed: ' + error.message, 'danger');
             });
         }
 
         function showRedAlertPolicyMessage(message, type) {
             const messageDiv = document.getElementById('red-alert-policy-message');
-            if (!messageDiv) {
-                return;
-            }
-            messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>`;
+            if (!messageDiv) return;
+            messageDiv.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' + message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
         }
-        
-        function updateLightningTriggerConfig(event) {
-            event.preventDefault();
-            
-            fetch('/admin/lightning/config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify(getLightningConfigPayload())
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showLightningMessage('Lightning trigger configuration updated successfully', 'success');
-                    loadLightningTriggerStatus(); // Reload status
-                } else {
-                    showLightningMessage(`Failed to update configuration: ${data.error}`, 'danger');
-                }
-            })
-            .catch(error => {
-                showLightningMessage(`Error updating configuration: ${error.message}`, 'danger');
-            });
-        }
-        
-        function testLightningFetch() {
+
+        function testLightningFetchUrl(url, timeout, feedId) {
             showLightningMessage('Testing lightning fetch...', 'info');
-            
-            const url = document.getElementById('lightning-url').value;
-            const timeout = parseInt(document.getElementById('lightning-timeout').value);
-            
-            // Use server-side test endpoint to avoid CORS issues
             fetch('/admin/lightning/test', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    url: url,
-                    timeout: timeout
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url, timeout: timeout, feed_id: feedId || '' })
+            }).then(function(r) { return r.json(); }).then(function(data) {
                 if (data.status === 'success') {
-                    showLightningMessage(`✅ ${data.message} Current value: ${data.lightningalert}`, 'success');
+                    showLightningMessage('✅ ' + data.message + ' alert=' + data.lightningalert + ' displayname=' + (data.displayname || '') + ' uniqueid=' + (data.uniqueid || ''), 'success');
                 } else if (data.status === 'warning') {
-                    showLightningMessage(`⚠️ ${data.message}`, 'warning');
+                    showLightningMessage('⚠️ ' + data.message + ' displayname=' + (data.displayname || ''), 'warning');
                 } else {
-                    showLightningMessage(`❌ ${data.message}`, 'danger');
+                    showLightningMessage('❌ ' + data.message, 'danger');
                 }
-            })
-            .catch(error => {
-                showLightningMessage(`❌ Test failed: ${error.message}`, 'danger');
+            }).catch(function(error) {
+                showLightningMessage('❌ Test failed: ' + error.message, 'danger');
             });
         }
-        
+
         function showLightningMessage(message, type) {
             const messageDiv = document.getElementById('lightning-config-message');
-            messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>`;
+            if (!messageDiv) return;
+            messageDiv.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' + message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
         }
-        
+
+        function applyPinFeed(feedId) {
+            fetch('/admin/lightning/active-feed', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ feed_id: feedId || '' })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                showLightningMessage(data.message || data.error || 'pin updated', data.status === 'success' ? 'success' : 'danger');
+                loadLightningTriggerStatus();
+            });
+        }
+
         // Lightning Event Listeners
-        document.getElementById('lightning-config-form').addEventListener('submit', updateLightningTriggerConfig);
-        document.getElementById('test-lightning-fetch').addEventListener('click', testLightningFetch);
+        document.getElementById('save-lightning-monitor').addEventListener('click', saveLightningMonitor);
         document.getElementById('save-red-alert-policy').addEventListener('click', saveRedAlertPolicy);
         document.getElementById('save-condition-announce').addEventListener('click', saveConditionAnnounce);
+        document.getElementById('save-condition-audio').addEventListener('click', saveConditionAudio);
         document.getElementById('test-red-alert-reminder').addEventListener('click', testRedAlertReminder);
         document.getElementById('test-condition-redalert').addEventListener('click', function() { testLightningCondition('RedAlert'); });
         document.getElementById('test-condition-warning').addEventListener('click', function() { testLightningCondition('Warning'); });
         document.getElementById('test-condition-caution').addEventListener('click', function() { testLightningCondition('Caution'); });
         document.getElementById('test-condition-allclear').addEventListener('click', function() { testLightningCondition('AllClear'); });
+        document.getElementById('test-condition-unknown').addEventListener('click', function() { testLightningCondition('Unknown'); });
         document.getElementById('reset-lightning-state').addEventListener('click', resetLightningState);
+        document.getElementById('add-feed-switch-rule').addEventListener('click', function() {
+            feedSwitchRulesState.push({ id: 'rule_' + Date.now(), enabled: false, from_feed_id: 'primary', to_feed_id: 'failover_1', reason: 'failover', match_sensor_id: '', audio_file: '', label: '' });
+            renderFeedSwitchRows(feedSwitchRulesState);
+            setLightningFormDirty(true);
+        });
+        document.getElementById('apply-pin-feed').addEventListener('click', function() {
+            applyPinFeed(document.getElementById('pin-active-feed').value);
+        });
+        document.getElementById('unpin-feed').addEventListener('click', function() { applyPinFeed(''); });
+        document.getElementById('discard-lightning-edits').addEventListener('click', function() {
+            loadLightningTriggerStatus(true);
+        });
+        (function wireLightningDirtyTracking() {
+            const panel = document.getElementById('lightning-trigger-panel');
+            if (!panel) return;
+            panel.addEventListener('input', markLightningFormDirty);
+            panel.addEventListener('change', markLightningFormDirty);
+        })();
 
         // Event Listeners
         document.getElementById('restart-app-btn').addEventListener('click', restartApplication);

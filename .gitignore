@@ -1,3 +1,7 @@
 # Local release artifacts (do not commit large binaries/tarballs)
 /releases/
 *.tar.gz
+broward_thor_guard_sensors.csv
+/data/xml/
+*.deb
+/FromLiveRaspberryPi/

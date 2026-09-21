@@ -5,7 +5,46 @@ All notable changes to TARR Annunciator are documented here.
 Product versions match `AppVersion` in `source/version.go` and GitHub Release tags (`vX.Y.Z`).
 Target platform going forward: **Raspberry Pi OS 64-bit (`linux/arm64`)**.
 
-Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** (current).
+Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** (current).
+
+---
+
+## [1.1.2] - 2026-09-20
+
+Thor Guard multi-feed failover with full Admin control (life-safety).
+
+### Added
+
+- Up to **three XML feeds** (primary + failover_1 + failover_2) with ordered failover/failback
+- Configurable failover **triggers**, failback mode, dwell, and Red Alert interaction flags
+- **All Clear release authority** (`allclear_release_mode`): `primary_only` (default, 1.1.1-compatible on primary) or `failover_vote` (primary clears alone; otherwise both failovers must return All Clear — Unknown/error does not count)
+- Separate **feed-switch announcement matrix** (per from→to / reason / optional sensor) — quiet by default
+- Per-feed announce inherit/custom + optional per-condition MP3 overrides
+- **Global Condition Audio** (horn + announce MP3 pairs) for Red Alert / All Clear / Warning / Caution / Unknown — Admin-owned, not hardcoded in the player
+- Per-feed **horn overrides** for Red Alert and All Clear (inherit global or custom enable + file)
+- Reminder policy exposes editable **reminder horn MP3** (was previously hardcoded on save)
+- Admin Live Status **Last Status** column (last successfully parsed Thor condition per feed)
+- Public main UI **tab navigation** (Dashboard / Station / Promo / Safety); Dashboard shows simplified lightning status + announcement controls
+- Public index **dynamic** audio/scheduler status (same operating-hours labels as Admin, e.g. “Paused (outside operating hours)”)
+- `browardtg.json` catalog loader + Admin sensor dropdown (correct path prefixes)
+- Live status: active feed, displayname, feed health table, pin for drills
+- Scoped Admin saves: `monitor` | `condition_announce` | `condition_audio` | `red_alert_policy`
+- Additive migration from 1.1.1 single `monitor.url`; in-app update installs/merges catalog
+- **Lightning MP3 rename migration** on upgrade: remaps known legacy `thor_*.mp3` / `redalert.mp3` paths in `lightning.json` to `Voice_*` / `Horn_*` (custom filenames left alone). Updater merges new static assets; old files on disk are left in place. No manual file copy required for standard 1.1.1 → 1.1.2 updates.
+
+### Changed
+
+- Lightning play sequence is assembled from `condition_audio` (+ per-feed overrides): optional horn then announce
+- Announcement queue no longer hardcodes `thor_red_alert.mp3`+`redalert.mp3` / All Clear pairs
+- Replaced legacy `require_allclear_from_same_feed` with `allclear_release_mode` (unlock-only; does not change Red Alert enter)
+- API Docs moved behind Admin session (`/admin/api-docs`); removed from public index
+- Public `/lightning_status` includes `active_displayname`, `on_failover`, feed health for Dashboard
+- `AppVersion` **1.1.2**
+
+### Safety
+
+- No Thor URL invented in Go; never auto-All-Clear on total outage; announce-off ≠ monitor/lock-off
+- All Clear release modes are unlock-only; v1.1.1 `shouldAcceptAllClear` / Unknown-ignore / Red Alert enter rules preserved
 
 ---
 
@@ -31,13 +70,13 @@ Thor Guard lightning announce controls and persisted monitor config (post–fiel
 - Status API includes `condition_announce` snapshot
 - `lightning.json` **`monitor`** block (`enabled`, `url`, `fetch_interval`, `timeout`) — XML URL no longer only in-memory/hardcoded
 - Additive migration `migrateLightningMonitorBlock` for upgrades to 1.1.1
-- Planning doc: [`docs/plan_v1.1.5.md`](docs/plan_v1.1.5.md) (multi-feed failover, `<displayname>`, per-sensor MP3 overrides)
+- Planning doc: [`docs/plan_v1.1.2.md`](docs/plan_v1.1.2.md) (multi-feed failover, `<displayname>`, per-sensor MP3 overrides)
 
 ### Changed
 
 - Automatic lightning announces respect per-condition enable flags; Red Alert **lock** enter/exit still applies when All Clear is accepted after Red Alert even if All Clear audio is disabled
 - Thor Guard XML URL is **not hardcoded in Go** — only `lightning.json` → `monitor.url` (seed still defaults to Tradewinds FL0115)
-- Admin **Software Updates**: list GitHub thin Pi releases and install a **selected** tag (not forced to newest), e.g. pin production to `v1.1.3` while `v1.1.5` exists for testing
+- Admin **Software Updates**: list GitHub thin Pi releases and install a **selected** tag (not forced to newest)
 - `AppVersion` → **1.1.1**
 
 ### Config location note
@@ -145,11 +184,7 @@ This baseline includes the Go rewrite and the former internal milestones documen
 
 ## [Unreleased]
 
-### Planned for 1.1.5
-- Thor Guard multi-feed failover, `<displayname>` in Admin, optional per-sensor MP3 overrides — see [`docs/plan_v1.1.5.md`](docs/plan_v1.1.5.md)
-- Broward sensor catalog: `data/json/browardtg.json` (from `broward_thor_guard_sensors.csv`); Admin dropdown + custom XML URL
-
-- Publish additional semver thin packages (`v1.2.0+`) for Admin in-app updates after `1.1.0` is on the Pi
+- Publish additional semver thin packages (`v1.1.3+` / `v1.2.0+`) for Admin in-app updates after `1.1.2` is on the Pi
 - Optional: prune accumulated `update_backup_*` folders on long-lived units
 
 ---

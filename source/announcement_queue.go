@@ -226,7 +226,6 @@ func (am *AnnouncementManager) buildAudioSequence(announcementType AnnouncementT
 		}
 
 	case TypeLightning:
-		// Lightning announcement (emergency priority, lightning audio files)
 		condition, hasCondition := parameters["condition"].(string)
 		if !hasCondition {
 			return nil, fmt.Errorf("lightning announcement requires 'condition' parameter")
@@ -234,41 +233,59 @@ func (am *AnnouncementManager) buildAudioSequence(announcementType AnnouncementT
 
 		log.Printf("DEBUG: Lightning announcement for condition: %s", condition)
 
-		// Build lightning-specific audio sequence based on condition
-		switch strings.ToLower(condition) {
-		case "redalert":
-			audioFiles = []string{
-				lightningAudioPath("thor_red_alert.mp3"),
-				lightningAudioPath("redalert.mp3"),
+		if files, ok := parameters["audio_files"].([]string); ok && len(files) > 0 {
+			for _, f := range files {
+				audioFiles = append(audioFiles, lightningAudioPath(f))
 			}
-		case "redalert_reminder":
-			if includeHorn, _ := parameters["include_horn"].(bool); includeHorn {
-				hornFile := "thor_red_alert.mp3"
-				if named, ok := parameters["horn_file"].(string); ok && named != "" {
-					hornFile = named
+		} else if filesIface, ok := parameters["audio_files"].([]interface{}); ok && len(filesIface) > 0 {
+			for _, fi := range filesIface {
+				if s, ok := fi.(string); ok && s != "" {
+					audioFiles = append(audioFiles, lightningAudioPath(s))
 				}
-				audioFiles = append(audioFiles, lightningAudioPath(hornFile))
 			}
-			reminderFile := "thor_repeat1.mp3"
-			if named, ok := parameters["audio_file"].(string); ok && named != "" {
-				reminderFile = named
+		}
+
+		if len(audioFiles) == 0 {
+			switch strings.ToLower(condition) {
+			case "redalert", "allclear", "warning", "caution", "unknown":
+				// Build from Admin-owned condition_audio (+ empty feed) — no hardcoded MP3 pairs.
+				for _, f := range resolveLightningAudioFiles(nil, condition, "") {
+					audioFiles = append(audioFiles, lightningAudioPath(f))
+				}
+				if len(audioFiles) == 0 {
+					return nil, fmt.Errorf("no audio configured for lightning condition: %s", condition)
+				}
+			case "redalert_reminder":
+				if includeHorn, _ := parameters["include_horn"].(bool); includeHorn {
+					hornFile := ""
+					if named, ok := parameters["horn_file"].(string); ok {
+						hornFile = strings.TrimSpace(named)
+					}
+					if hornFile == "" {
+						if clip, ok := getConditionAudioClip("RedAlert"); ok {
+							hornFile = clip.HornFile
+						}
+					}
+					if hornFile != "" {
+						audioFiles = append(audioFiles, lightningAudioPath(hornFile))
+					}
+				}
+				reminderFile := ""
+				if named, ok := parameters["audio_file"].(string); ok {
+					reminderFile = strings.TrimSpace(named)
+				}
+				if reminderFile == "" {
+					reminderFile = getRedAlertPolicy().ReminderAudioFile
+				}
+				if reminderFile == "" {
+					return nil, fmt.Errorf("redalert_reminder requires reminder audio_file")
+				}
+				audioFiles = append(audioFiles, lightningAudioPath(reminderFile))
+			case "feed_switch":
+				return nil, fmt.Errorf("feed_switch requires audio_files parameter")
+			default:
+				return nil, fmt.Errorf("unsupported lightning condition: %s", condition)
 			}
-			audioFiles = append(audioFiles, lightningAudioPath(reminderFile))
-		case "allclear":
-			audioFiles = []string{
-				lightningAudioPath("thor_all_clear.mp3"),
-				lightningAudioPath("all_clear.mp3"),
-			}
-		case "warning":
-			audioFiles = []string{
-				lightningAudioPath("warning.mp3"),
-			}
-		case "caution":
-			audioFiles = []string{
-				lightningAudioPath("thor_caution.mp3"),
-			}
-		default:
-			return nil, fmt.Errorf("unsupported lightning condition: %s", condition)
 		}
 
 		log.Printf("DEBUG: Lightning audio sequence: %v", audioFiles)

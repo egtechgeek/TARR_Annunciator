@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>TARR Annunciator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,13 +17,23 @@
             padding: 20px;
             margin: 15px auto;
             border-radius: 8px;
-            max-width: 600px;
+            max-width: 720px;
         }
         label { display: block; margin: 10px 0 5px; }
-        select, button { width: 100%; padding: 10px; margin-bottom: 10px; }
-        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
+        select, .section button[type="submit"] { width: 100%; padding: 10px; margin-bottom: 10px; }
+        .section button[type="submit"], .ctrl-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 10px 14px;
+        }
+        .section button[type="submit"]:hover, .ctrl-btn:hover { background-color: #45a049; }
         .status { text-align: center; margin-bottom: 20px; color: #4CAF50; }
+        .status .status-ok { color: #4CAF50; }
+        .status .status-warn { color: #ff9800; }
+        .status .status-error { color: #f44336; }
         #red-alert-banner {
             display: none;
             background: #b71c1c;
@@ -30,95 +41,139 @@
             text-align: center;
             padding: 14px 18px;
             margin: 0 auto 16px;
-            max-width: 600px;
+            max-width: 720px;
             border-radius: 8px;
             font-weight: bold;
         }
+        .nav-tabs .nav-link { color: #ccc; }
+        .nav-tabs .nav-link.active { background: #2a2a2a; color: #fff; border-color: #444 #444 #2a2a2a; }
+        .nav-tabs { border-bottom-color: #444; max-width: 720px; margin: 0 auto 12px; }
+        .tab-content { max-width: 720px; margin: 0 auto; }
+        .badge-cond { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; }
+        .bg-danger { background: #c62828; }
+        .bg-warning { background: #f9a825; color: #222; }
+        .bg-info { background: #0288d1; }
+        .bg-success { background: #2e7d32; }
+        .bg-secondary { background: #616161; }
+        table.lightning-mini { width: 100%; font-size: 0.9rem; }
+        table.lightning-mini th, table.lightning-mini td { padding: 4px 6px; border-bottom: 1px solid #444; }
     </style>
 </head>
 <body>
     <h1>TARR Annunciator Control</h1>
     <div id="red-alert-banner">THOR GUARD RED ALERT ACTIVE — station, promo, safety, and scheduled announcements are suspended until All Clear</div>
-    
+
     <div class="status">
-        <p>🎵 Audio System: Active | 🕒 Scheduler: Running | ⚙️ <a href="/admin" style="color: #4CAF50;">🔒 Admin Panel (Protected)</a> | 🔗 <a href="/api/docs" style="color: #4CAF50;">API Docs</a></p>
+        <p>
+            🎵 Audio System: <span id="audio-system-status">Loading…</span>
+            |
+            🕒 Scheduler: <span id="scheduler-status">Loading…</span>
+            |
+            ⚙️ <a href="/admin" style="color: #4CAF50;">🔒 Admin Panel (Protected)</a>
+        </p>
     </div>
 
-    <!-- Announcement Control Buttons -->
-    <div class="section" style="text-align: center; padding: 15px;">
-        <h3>Announcement Controls</h3>
-        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button type="button" id="pause-announcements-btn" style="background-color: #ff9800;">⏸️ Pause Announcement Queue</button>
-            <button type="button" id="resume-announcements-btn" style="background-color: #4CAF50;">▶️ Resume All Announcements</button>
-            <button type="button" id="stop-current-btn" style="background-color: #f44336;">⏹️ Stop Current Announcement</button>
+    <ul class="nav nav-tabs" id="main-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-panel" type="button" role="tab">Dashboard</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="station-tab" data-bs-toggle="tab" data-bs-target="#station-panel" type="button" role="tab">Station</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="promo-tab" data-bs-toggle="tab" data-bs-target="#promo-panel" type="button" role="tab">Promo</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="safety-tab" data-bs-toggle="tab" data-bs-target="#safety-panel" type="button" role="tab">Safety</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="dashboard-panel" role="tabpanel">
+            <div class="section">
+                <h3>⚡ Lightning Alert Status</h3>
+                <div id="lightning-dashboard-status"><p class="text-muted mb-0">Loading…</p></div>
+            </div>
+            <div class="section" style="text-align: center; padding: 15px;">
+                <h3>Announcement Controls</h3>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" class="ctrl-btn" id="pause-announcements-btn" style="background-color: #ff9800;">⏸️ Pause Announcement Queue</button>
+                    <button type="button" class="ctrl-btn" id="resume-announcements-btn" style="background-color: #4CAF50;">▶️ Resume All Announcements</button>
+                    <button type="button" class="ctrl-btn" id="stop-current-btn" style="background-color: #f44336;">⏹️ Stop Current Announcement</button>
+                </div>
+                <div id="announcement-control-message" style="margin-top: 10px;"></div>
+            </div>
         </div>
-        <div id="announcement-control-message" style="margin-top: 10px;"></div>
+
+        <div class="tab-pane fade" id="station-panel" role="tabpanel">
+            <div class="section">
+                <h2>Station Announcement</h2>
+                <form id="stationForm">
+                    <label for="train">Train Number:</label>
+                    <select name="train_number" id="train">
+                        {{range .trains}}
+                            <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+
+                    <label for="direction">Direction:</label>
+                    <select name="direction" id="direction">
+                        {{range .directions}}
+                            <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+
+                    <label for="destination">Destination:</label>
+                    <select name="destination" id="destination">
+                        {{range .destinations}}
+                            <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+
+                    <label for="track">Track Number:</label>
+                    <select name="track_number" id="track">
+                        {{range .tracks}}
+                            <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+
+                    <button type="submit">Play Station Announcement</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="promo-panel" role="tabpanel">
+            <div class="section">
+                <h2>Promo Announcement</h2>
+                <form id="promoForm">
+                    <label for="promo">Select Promo:</label>
+                    <select name="file" id="promo">
+                        {{range .promo_announcements}}
+                            <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+                    <button type="submit">Play Promo</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="safety-panel" role="tabpanel">
+            <div class="section">
+                <h2>Safety Announcement</h2>
+                <form id="safetyForm">
+                    <label for="language">Select Language:</label>
+                    <select name="language" id="language">
+                        {{range .safety_languages}}
+                            <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+                    <button type="submit">Play Safety Announcement</button>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <!-- Station Announcement -->
-    <div class="section">
-        <h2>Station Announcement</h2>
-        <form id="stationForm">
-            <label for="train">Train Number:</label>
-            <select name="train_number" id="train">
-                {{range .trains}}
-                    <option value="{{.ID}}">{{.Name}}</option>
-                {{end}}
-            </select>
-
-            <label for="direction">Direction:</label>
-            <select name="direction" id="direction">
-                {{range .directions}}
-                    <option value="{{.ID}}">{{.Name}}</option>
-                {{end}}
-            </select>
-
-            <label for="destination">Destination:</label>
-            <select name="destination" id="destination">
-                {{range .destinations}}
-                    <option value="{{.ID}}">{{.Name}}</option>
-                {{end}}
-            </select>
-
-            <label for="track">Track Number:</label>
-            <select name="track_number" id="track">
-                {{range .tracks}}
-                    <option value="{{.ID}}">{{.Name}}</option>
-                {{end}}
-            </select>
-
-            <button type="submit">Play Station Announcement</button>
-        </form>
-    </div>
-
-    <!-- Promo Announcement -->
-    <div class="section">
-        <h2>Promo Announcement</h2>
-        <form id="promoForm">
-            <label for="promo">Select Promo:</label>
-            <select name="file" id="promo">
-                {{range .promo_announcements}}
-                    <option value="{{.ID}}">{{.Name}}</option>
-                {{end}}
-            </select>
-            <button type="submit">Play Promo</button>
-        </form>
-    </div>
-
-    <!-- Safety Announcement -->
-    <div class="section">
-        <h2>Safety Announcement</h2>
-        <form id="safetyForm">
-            <label for="language">Select Language:</label>
-            <select name="language" id="language">
-                {{range .safety_languages}}
-                    <option value="{{.ID}}">{{.Name}}</option>
-                {{end}}
-            </select>
-            <button type="submit">Play Safety Announcement</button>
-        </form>
-    </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         async function postForm(formId, endpoint) {
             const form = document.getElementById(formId);
@@ -150,7 +205,6 @@
             postForm('safetyForm', '/play_safety_announcement');
         });
 
-        // Announcement control functions
         function showAnnouncementControlMessage(message, type = 'info') {
             const messageDiv = document.getElementById('announcement-control-message');
             const colorMap = {
@@ -159,13 +213,9 @@
                 'warning': '#ff9800',
                 'info': '#2196F3'
             };
-            
-            messageDiv.innerHTML = `<p style="color: ${colorMap[type]}; font-weight: bold; margin: 5px 0;">${message}</p>`;
-            
-            // Clear message after 5 seconds
-            setTimeout(() => {
-                messageDiv.innerHTML = '';
-            }, 5000);
+            messageDiv.style.color = colorMap[type] || colorMap.info;
+            messageDiv.textContent = message;
+            setTimeout(() => { messageDiv.textContent = ''; }, 4000);
         }
 
         async function pauseAnnouncements() {
@@ -178,8 +228,7 @@
                     }
                 });
                 const data = await resp.json();
-                
-                if (data.success) {
+                if (data.success || data.status === 'success') {
                     showAnnouncementControlMessage('All announcements paused', 'success');
                 } else {
                     showAnnouncementControlMessage('Failed to pause announcements: ' + (data.error || 'Unknown error'), 'error');
@@ -199,8 +248,7 @@
                     }
                 });
                 const data = await resp.json();
-                
-                if (data.success) {
+                if (data.success || data.status === 'success') {
                     showAnnouncementControlMessage('All announcements resumed', 'success');
                 } else {
                     showAnnouncementControlMessage('Failed to resume announcements: ' + (data.error || 'Unknown error'), 'error');
@@ -220,8 +268,7 @@
                     }
                 });
                 const data = await resp.json();
-                
-                if (data.success) {
+                if (data.success || data.status === 'success') {
                     showAnnouncementControlMessage('Current announcement stopped', 'success');
                 } else {
                     showAnnouncementControlMessage('Failed to stop current announcement: ' + (data.error || 'Unknown error'), 'error');
@@ -231,27 +278,98 @@
             }
         }
 
-        // Event listeners for announcement control buttons
         document.getElementById('pause-announcements-btn').addEventListener('click', pauseAnnouncements);
         document.getElementById('resume-announcements-btn').addEventListener('click', resumeAnnouncements);
         document.getElementById('stop-current-btn').addEventListener('click', stopCurrentAnnouncement);
 
-        async function refreshRedAlertBanner() {
-            try {
-                const resp = await fetch('/lightning_status');
-                const data = await resp.json();
-                const banner = document.getElementById('red-alert-banner');
-                if (!banner) {
-                    return;
-                }
-                banner.style.display = data.red_alert_active ? 'block' : 'none';
-            } catch (err) {
-                // Banner is informational only
+        function conditionBadgeClass(condition) {
+            switch ((condition || '').toLowerCase()) {
+                case 'redalert': return 'bg-danger';
+                case 'warning': return 'bg-warning';
+                case 'caution': return 'bg-info';
+                case 'allclear': return 'bg-success';
+                default: return 'bg-secondary';
             }
         }
 
-        refreshRedAlertBanner();
-        setInterval(refreshRedAlertBanner, 5000);
+        async function refreshHeaderStatus() {
+            const audioEl = document.getElementById('audio-system-status');
+            const schedEl = document.getElementById('scheduler-status');
+            try {
+                const resp = await fetch('/scheduler_status');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const data = await resp.json();
+                const hours = data.operating_hours || {};
+                if (audioEl) {
+                    const ok = !!data.audio_available;
+                    audioEl.textContent = ok ? 'Active' : 'Unavailable';
+                    audioEl.className = ok ? 'status-ok' : 'status-warn';
+                }
+                if (schedEl) {
+                    const label = hours.label || (data.scheduler_running ? 'Running' : 'Paused');
+                    schedEl.textContent = label;
+                    schedEl.className = hours.scheduler_active ? 'status-ok' : 'status-warn';
+                }
+            } catch (err) {
+                if (audioEl) {
+                    audioEl.textContent = 'Unknown';
+                    audioEl.className = 'status-error';
+                }
+                if (schedEl) {
+                    schedEl.textContent = 'Unknown';
+                    schedEl.className = 'status-error';
+                }
+            }
+        }
+
+        async function refreshLightningDashboard() {
+            const el = document.getElementById('lightning-dashboard-status');
+            try {
+                const resp = await fetch('/lightning_status');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const data = await resp.json();
+                const banner = document.getElementById('red-alert-banner');
+                if (banner) {
+                    banner.style.display = data.red_alert_active ? 'block' : 'none';
+                }
+                if (!el) return;
+                const health = data.feed_health || {};
+                const feeds = Array.isArray(data.feeds) ? data.feeds : [];
+                let rows = '';
+                const list = feeds.length
+                    ? feeds
+                    : Object.keys(health).map(function(id) { return { id: id, enabled: true }; });
+                list.forEach(function(f) {
+                    const h = health[f.id] || {};
+                    const last = h.last_alert || '';
+                    const badge = last
+                        ? '<span class="badge-cond ' + conditionBadgeClass(last) + '">' + last + '</span>'
+                        : '—';
+                    rows += '<tr><td>' + (f.id || '—') + '</td><td>' + (f.enabled ? 'yes' : 'no') + '</td><td>' + badge + '</td><td>' + (h.last_displayname || '—') + '</td></tr>';
+                });
+                el.innerHTML =
+                    '<div><strong>Active feed:</strong> ' + (data.active_feed_id || '—') +
+                    (data.active_displayname ? ' · ' + data.active_displayname : '') +
+                    (data.on_failover ? ' · <span style="color:#ff9800">on failover</span>' : '') + '</div>' +
+                    '<div class="mt-1"><strong>Condition:</strong> <span class="badge-cond ' + conditionBadgeClass(data.last_condition) + '">' + (data.last_condition || '—') + '</span>' +
+                    (data.red_alert_active ? ' · <strong style="color:#ff5252">LOCK ON</strong>' : '') + '</div>' +
+                    '<div class="table-responsive mt-2"><table class="lightning-mini"><thead><tr><th>Feed</th><th>Enabled</th><th>Last Status</th><th>Displayname</th></tr></thead><tbody>' +
+                    (rows || '<tr><td colspan="4">No feed data</td></tr>') +
+                    '</tbody></table></div>';
+            } catch (err) {
+                if (el) {
+                    el.innerHTML = '<p class="mb-0" style="color:#f44336">Unable to load lightning status</p>';
+                }
+            }
+        }
+
+        function refreshPublicStatus() {
+            refreshHeaderStatus();
+            refreshLightningDashboard();
+        }
+
+        refreshPublicStatus();
+        setInterval(refreshPublicStatus, 5000);
     </script>
 </body>
 </html>

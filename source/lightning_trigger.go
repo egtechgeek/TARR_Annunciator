@@ -21,7 +21,7 @@ type LightningTrigger struct {
 	ID                string    `json:"id"`
 	Name              string    `json:"name"`
 	Enabled           bool      `json:"enabled"`
-	URL               string    `json:"url"`
+	URL               string    `json:"url"` // compatibility: active or primary URL
 	FetchInterval     int       `json:"fetch_interval"` // seconds
 	Timeout           int       `json:"timeout"`        // seconds
 	LastCondition     string    `json:"last_condition"`
@@ -29,18 +29,36 @@ type LightningTrigger struct {
 	LastConditionTime time.Time `json:"last_condition_time"`
 
 	// Internal state
-	isRunning          bool
-	stopChan           chan bool
-	mu                 sync.Mutex
-	redAlertActive     bool
-	redAlertSince      time.Time
-	reminderCount      int
-	lastReminderAt     time.Time
-	nextReminderAt     time.Time
-	reminderStop       chan struct{}
-	lastFetchError     string
-	lastFetchErrorLog  time.Time
-	loggedFetchRecover bool
+	isRunning              bool
+	stopOnce               sync.Once
+	stopChan               chan struct{}
+	mu                     sync.Mutex
+	redAlertActive         bool
+	redAlertSince          time.Time
+	reminderCount          int
+	lastReminderAt         time.Time
+	nextReminderAt         time.Time
+	reminderStop           chan struct{}
+	lastFetchError         string
+	lastFetchErrorLog      time.Time
+	loggedFetchRecover     bool
+	feeds                  []LightningFeedConfig
+	failover               LightningFailoverPolicy
+	announceTiming         LightningAnnounceTiming
+	activeFeedID           string
+	pinnedFeedID           string
+	feedHealth             map[string]*FeedHealth
+	allFeedsFailed         bool
+	activeSince            time.Time
+	enteredRedAlertOnFeed  string
+	skipNextConditionAnnounce bool
+	lastAnnounceCondition  string
+	lastAnnounceAt         time.Time
+	lastAnyAnnounceAt      time.Time
+	activeDisplayname      string
+	activeUniqueID         string
+	lastProbeAt            time.Time
+	lastAllClearVoteSummary string
 }
 
 // LightningAnnouncement represents a lightning announcement from the JSON config
@@ -56,20 +74,41 @@ type LightningAnnouncement struct {
 }
 
 // LightningMonitorConfig is the Thor Guard XML poller settings (persisted in lightning.json).
-// The feed URL is not a separate secrets file — it lives here (and historically defaulted in code).
 type LightningMonitorConfig struct {
-	Enabled       bool   `json:"enabled"`
-	URL           string `json:"url"`
-	FetchInterval int    `json:"fetch_interval"` // seconds
-	Timeout       int    `json:"timeout"`        // seconds
+	Enabled                 bool                     `json:"enabled"`
+	URL                     string                   `json:"url,omitempty"` // compatibility mirror of primary URL
+	FetchInterval           int                      `json:"fetch_interval"`
+	Timeout                 int                      `json:"timeout"`
+	Failover                LightningFailoverPolicy  `json:"failover"`
+	Feeds                   []LightningFeedConfig    `json:"feeds"`
+	FeedSwitchAnnouncements []FeedSwitchAnnouncement `json:"feed_switch_announcements"`
 }
 
 // LightningConfig represents the lightning.json configuration
 type LightningConfig struct {
-	Monitor                LightningMonitorConfig  `json:"monitor"`
-	LightningAnnouncements []LightningAnnouncement `json:"lightning_announcements"`
-	RedAlertPolicy         RedAlertPolicy          `json:"red_alert_policy"`
-	Metadata               json.RawMessage         `json:"metadata,omitempty"`
+	Monitor                LightningMonitorConfig   `json:"monitor"`
+	LightningAnnouncements []LightningAnnouncement  `json:"lightning_announcements"`
+	RedAlertPolicy         RedAlertPolicy           `json:"red_alert_policy"`
+	ConditionAudio         ConditionAudioConfig     `json:"condition_audio"`
+	AnnounceTiming         LightningAnnounceTiming  `json:"announce_timing"`
+	DisplaynameOverrides   []DisplaynameOverride    `json:"displayname_overrides"`
+	Metadata               json.RawMessage          `json:"metadata,omitempty"`
+}
+
+// ConditionAudioClip is the Admin-owned horn + announce pair for one Thor condition.
+type ConditionAudioClip struct {
+	HornEnabled  bool   `json:"horn_enabled"`
+	HornFile     string `json:"horn_file"`
+	AnnounceFile string `json:"announce_file"`
+}
+
+// ConditionAudioConfig holds global defaults for assembled lightning PA sequences.
+type ConditionAudioConfig struct {
+	RedAlert ConditionAudioClip `json:"RedAlert"`
+	AllClear ConditionAudioClip `json:"AllClear"`
+	Warning  ConditionAudioClip `json:"Warning"`
+	Caution  ConditionAudioClip `json:"Caution"`
+	Unknown  ConditionAudioClip `json:"Unknown"`
 }
 
 // RedAlertPolicy controls THOR Guard Red Alert preemption, suppression, and reminders.
@@ -89,35 +128,46 @@ var lightningConfig *LightningConfig
 
 // Initialize lightning trigger system
 func initializeLightningTrigger() error {
-	// Load lightning configuration
+	_ = loadBrowardTGCatalog()
+
 	if err := loadLightningConfig(); err != nil {
 		log.Printf("Warning: Failed to load lightning configuration: %v", err)
 		return err
 	}
 
 	mon := getLightningMonitorConfig()
-	if strings.TrimSpace(mon.URL) == "" {
-		log.Printf("Lightning monitor.url is empty in lightning.json — monitoring will stay stopped until a URL is configured in Admin")
+	primaryURL := firstEnabledFeedURL(mon)
+	if primaryURL == "" {
+		log.Printf("Lightning monitor has no enabled feed URL — monitoring will stay stopped until configured in Admin")
 		mon.Enabled = false
 	}
 
-	// Create lightning trigger from persisted monitor settings (Admin → Lightning Alerts)
 	lightningTrigger = &LightningTrigger{
 		ID:            "lightning_monitor",
 		Name:          "Lightning Alert Monitor",
 		Enabled:       mon.Enabled,
-		URL:           mon.URL,
+		URL:           primaryURL,
 		FetchInterval: mon.FetchInterval,
 		Timeout:       mon.Timeout,
 		LastCondition: "Reset",
-		stopChan:      make(chan bool),
+		stopChan:      make(chan struct{}),
+		feeds:         append([]LightningFeedConfig(nil), mon.Feeds...),
+		failover:      mon.Failover,
+		announceTiming: lightningConfig.AnnounceTiming,
+		feedHealth:    map[string]*FeedHealth{},
+	}
+	for _, f := range mon.Feeds {
+		lightningTrigger.feedHealth[f.ID] = &FeedHealth{}
+	}
+	if len(enabledFeedsInOrder(mon)) > 0 {
+		lightningTrigger.activeFeedID = enabledFeedsInOrder(mon)[0].ID
+		lightningTrigger.activeSince = time.Now()
 	}
 
-	// Start the lightning trigger if enabled
 	if lightningTrigger.Enabled {
 		go lightningTrigger.Start()
 		log.Printf("✓ Lightning trigger system initialized and started")
-		log.Printf("  - Monitoring URL: %s", lightningTrigger.URL)
+		log.Printf("  - Active feed: %s URL: %s", lightningTrigger.activeFeedID, lightningTrigger.URL)
 		log.Printf("  - Fetch interval: %d seconds", lightningTrigger.FetchInterval)
 	} else {
 		log.Printf("✓ Lightning trigger system initialized (disabled)")
@@ -139,54 +189,189 @@ func defaultRedAlertPolicy() RedAlertPolicy {
 		SuppressNonEmergency:    true,
 		ReminderEnabled:         true,
 		ReminderIntervalMinutes: 5,
-		ReminderAudioFile:       "thor_repeat1.mp3",
+		ReminderAudioFile:       "Voice_RedAlert_Reminder.mp3",
 		ReminderIncludeHorn:     false,
-		HornAudioFile:           "thor_red_alert.mp3",
+		HornAudioFile:           "Horn_RedAlert.mp3",
+	}
+}
+
+func defaultConditionAudioConfig() ConditionAudioConfig {
+	return ConditionAudioConfig{
+		RedAlert: ConditionAudioClip{HornEnabled: true, HornFile: "Horn_RedAlert.mp3", AnnounceFile: "Voice_RedAlert.mp3"},
+		AllClear: ConditionAudioClip{HornEnabled: true, HornFile: "Horn_AllClear.mp3", AnnounceFile: "Voice_AllClear.mp3"},
+		Warning:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Warning.mp3"},
+		Caution:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Caution.mp3"},
+		Unknown:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "thor_unknown.mp3"},
+	}
+}
+
+func getConditionAudioConfig() ConditionAudioConfig {
+	if lightningConfig != nil {
+		lightningConfig.ensurePolicyDefaults()
+		return lightningConfig.ConditionAudio
+	}
+	return defaultConditionAudioConfig()
+}
+
+func getConditionAudioClip(condition string) (ConditionAudioClip, bool) {
+	cfg := getConditionAudioConfig()
+	switch strings.ToLower(strings.TrimSpace(condition)) {
+	case "redalert":
+		return cfg.RedAlert, true
+	case "allclear":
+		return cfg.AllClear, true
+	case "warning":
+		return cfg.Warning, true
+	case "caution":
+		return cfg.Caution, true
+	case "unknown":
+		return cfg.Unknown, true
+	default:
+		return ConditionAudioClip{}, false
 	}
 }
 
 func defaultLightningMonitorConfig() LightningMonitorConfig {
-	// URL must come from lightning.json only — never invent a Thor feed URL in code.
 	return LightningMonitorConfig{
-		Enabled:       false,
-		URL:           "",
-		FetchInterval: 60,
-		Timeout:       30,
+		Enabled:                 false,
+		URL:                     "",
+		FetchInterval:           60,
+		Timeout:                 30,
+		Failover:                defaultLightningFailoverPolicy(),
+		Feeds:                   defaultFeedSlots(),
+		FeedSwitchAnnouncements: defaultFeedSwitchAnnouncementSeeds(),
 	}
 }
 
 func (c *LightningConfig) ensurePolicyDefaults() {
-	// Missing monitor block (pre-1.1.1 lightning.json): interval/timeout defaults only; URL stays empty
-	// until present in lightning.json (seed file or Admin).
-	if c.Monitor.URL == "" && c.Monitor.FetchInterval == 0 && c.Monitor.Timeout == 0 {
-		hadURL := strings.TrimSpace(c.Monitor.URL) != ""
-		def := defaultLightningMonitorConfig()
-		c.Monitor.FetchInterval = def.FetchInterval
-		c.Monitor.Timeout = def.Timeout
-		// Preserve Enabled only if a URL already existed (it didn't in this branch)
-		if !hadURL {
+	if c.Monitor.FetchInterval < 30 {
+		if c.Monitor.FetchInterval == 0 && c.Monitor.Timeout == 0 && len(c.Monitor.Feeds) == 0 && c.Monitor.URL == "" {
+			def := defaultLightningMonitorConfig()
+			c.Monitor.FetchInterval = def.FetchInterval
+			c.Monitor.Timeout = def.Timeout
 			c.Monitor.Enabled = false
-			c.Monitor.URL = ""
-		}
-	} else {
-		if c.Monitor.FetchInterval < 30 {
+		} else if c.Monitor.FetchInterval < 30 {
 			c.Monitor.FetchInterval = 30
 		}
-		if c.Monitor.Timeout < 5 {
-			c.Monitor.Timeout = 30
+	}
+	if c.Monitor.Timeout < 5 {
+		c.Monitor.Timeout = 30
+	}
+	if c.Monitor.Failover.ConsecutiveFailures < 1 {
+		c.Monitor.Failover = defaultLightningFailoverPolicy()
+	} else {
+		if c.Monitor.Failover.FailbackMode == "" {
+			c.Monitor.Failover.FailbackMode = "prefer_primary"
 		}
-		// Do not invent Monitor.URL — empty means unconfigured
+		if c.Monitor.Failover.FailbackAfterSuccesses < 1 {
+			c.Monitor.Failover.FailbackAfterSuccesses = 2
+		}
+		if c.Monitor.Failover.OnAllFeedsFailed == "" {
+			c.Monitor.Failover.OnAllFeedsFailed = "hold_last_condition"
+		}
+		tr := c.Monitor.Failover.Triggers
+		if !tr.HTTPError && !tr.HTTPStatusNotOK && !tr.EmptyBody && !tr.EncodingError &&
+			!tr.MissingLightningAlert && !tr.UnknownCondition && !tr.DisplaynameMismatch && !tr.UniqueIDMismatch {
+			c.Monitor.Failover.Triggers = defaultFailoverTriggers()
+		}
+	}
+	c.Monitor.Failover.AllClearReleaseMode = normalizeAllClearReleaseMode(c.Monitor.Failover.AllClearReleaseMode)
+	// Legacy require_allclear_from_same_feed is ignored; never re-assert as release authority.
+	c.Monitor.Failover.RequireAllClearFromSameFeed = false
+	if len(c.Monitor.Feeds) == 0 {
+		slots := defaultFeedSlots()
+		if strings.TrimSpace(c.Monitor.URL) != "" {
+			slots[0].URL = strings.TrimSpace(c.Monitor.URL)
+			slots[0].Enabled = c.Monitor.Enabled
+			if s := findBrowardTGSensorByURL(slots[0].URL); s != nil {
+				slots[0].SensorID = s.ID
+				slots[0].ExpectedDisplayname = s.DisplayName
+				slots[0].Source = "catalog"
+			}
+		}
+		c.Monitor.Feeds = slots
+	} else {
+		// Ensure three slots exist by id without wiping
+		have := map[string]bool{}
+		for _, f := range c.Monitor.Feeds {
+			have[f.ID] = true
+		}
+		for _, stub := range defaultFeedSlots() {
+			if !have[stub.ID] {
+				c.Monitor.Feeds = append(c.Monitor.Feeds, stub)
+			}
+		}
+		for i := range c.Monitor.Feeds {
+			if c.Monitor.Feeds[i].AudioByCondition == nil {
+				c.Monitor.Feeds[i].AudioByCondition = map[string]string{}
+			}
+			if c.Monitor.Feeds[i].HornByCondition == nil {
+				c.Monitor.Feeds[i].HornByCondition = defaultFeedHornInherit()
+			} else {
+				for _, key := range []string{"RedAlert", "AllClear"} {
+					if _, ok := c.Monitor.Feeds[i].HornByCondition[key]; !ok {
+						c.Monitor.Feeds[i].HornByCondition[key] = FeedHornOverride{InheritGlobal: true, Enabled: true}
+					}
+				}
+			}
+			if c.Monitor.Feeds[i].Source == "" {
+				c.Monitor.Feeds[i].Source = "custom"
+			}
+		}
+	}
+	// Compatibility mirror
+	c.Monitor.URL = primaryFeedURL(c.Monitor)
+
+	if c.Monitor.FeedSwitchAnnouncements == nil {
+		c.Monitor.FeedSwitchAnnouncements = []FeedSwitchAnnouncement{}
+	}
+	if c.DisplaynameOverrides == nil {
+		c.DisplaynameOverrides = []DisplaynameOverride{}
+	}
+
+	defAudio := defaultConditionAudioConfig()
+	if c.ConditionAudio.RedAlert.AnnounceFile == "" && c.ConditionAudio.RedAlert.HornFile == "" {
+		c.ConditionAudio.RedAlert = defAudio.RedAlert
+	} else {
+		if c.ConditionAudio.RedAlert.AnnounceFile == "" {
+			c.ConditionAudio.RedAlert.AnnounceFile = defAudio.RedAlert.AnnounceFile
+		}
+		if c.ConditionAudio.RedAlert.HornEnabled && c.ConditionAudio.RedAlert.HornFile == "" {
+			c.ConditionAudio.RedAlert.HornFile = defAudio.RedAlert.HornFile
+		}
+	}
+	if c.ConditionAudio.AllClear.AnnounceFile == "" && c.ConditionAudio.AllClear.HornFile == "" {
+		c.ConditionAudio.AllClear = defAudio.AllClear
+	} else {
+		if c.ConditionAudio.AllClear.AnnounceFile == "" {
+			c.ConditionAudio.AllClear.AnnounceFile = defAudio.AllClear.AnnounceFile
+		}
+		if c.ConditionAudio.AllClear.HornEnabled && c.ConditionAudio.AllClear.HornFile == "" {
+			c.ConditionAudio.AllClear.HornFile = defAudio.AllClear.HornFile
+		}
+	}
+	if c.ConditionAudio.Warning.AnnounceFile == "" {
+		c.ConditionAudio.Warning = defAudio.Warning
+	}
+	if c.ConditionAudio.Caution.AnnounceFile == "" {
+		c.ConditionAudio.Caution = defAudio.Caution
+	}
+	if c.ConditionAudio.Unknown.AnnounceFile == "" {
+		c.ConditionAudio.Unknown = defAudio.Unknown
 	}
 
 	if c.RedAlertPolicy.ReminderIntervalMinutes <= 0 {
 		c.RedAlertPolicy = defaultRedAlertPolicy()
-		return
 	}
 	if c.RedAlertPolicy.ReminderAudioFile == "" {
-		c.RedAlertPolicy.ReminderAudioFile = "thor_repeat1.mp3"
+		c.RedAlertPolicy.ReminderAudioFile = "Voice_RedAlert_Reminder.mp3"
 	}
 	if c.RedAlertPolicy.HornAudioFile == "" {
-		c.RedAlertPolicy.HornAudioFile = "thor_red_alert.mp3"
+		if c.ConditionAudio.RedAlert.HornFile != "" {
+			c.RedAlertPolicy.HornAudioFile = c.ConditionAudio.RedAlert.HornFile
+		} else {
+			c.RedAlertPolicy.HornAudioFile = "Horn_RedAlert.mp3"
+		}
 	}
 }
 
@@ -288,7 +473,7 @@ func lightningAudioPath(name string) string {
 	name = strings.TrimPrefix(name, "lightning/")
 	name = filepath.Base(name)
 	if name == "" {
-		name = "redalert.mp3"
+		name = "Voice_RedAlert.mp3"
 	}
 	if !strings.HasSuffix(strings.ToLower(name), ".mp3") {
 		name += ".mp3"
@@ -342,17 +527,25 @@ func saveLightningConfig() error {
 
 // Start the lightning trigger monitoring
 func (t *LightningTrigger) Start() {
+	t.mu.Lock()
 	if t.isRunning {
+		t.mu.Unlock()
 		return
 	}
-
 	t.isRunning = true
-	ticker := time.NewTicker(time.Duration(t.FetchInterval) * time.Second)
+	t.stopOnce = sync.Once{}
+	t.stopChan = make(chan struct{})
+	interval := t.FetchInterval
+	if interval < 30 {
+		interval = 30
+	}
+	t.mu.Unlock()
+
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
-	log.Printf("Lightning trigger '%s' started with %d second interval", t.Name, t.FetchInterval)
+	log.Printf("Lightning trigger '%s' started with %d second interval", t.Name, interval)
 
-	// Do initial fetch
 	t.fetchAndCheck()
 
 	for {
@@ -360,7 +553,9 @@ func (t *LightningTrigger) Start() {
 		case <-ticker.C:
 			t.fetchAndCheck()
 		case <-t.stopChan:
+			t.mu.Lock()
 			t.isRunning = false
+			t.mu.Unlock()
 			log.Printf("Lightning trigger '%s' stopped", t.Name)
 			return
 		}
@@ -369,99 +564,518 @@ func (t *LightningTrigger) Start() {
 
 // Stop the lightning trigger
 func (t *LightningTrigger) Stop() {
-	if t.isRunning {
-		close(t.stopChan)
+	t.stopOnce.Do(func() {
+		if t.stopChan != nil {
+			close(t.stopChan)
+		}
+	})
+}
+
+func (t *LightningTrigger) healthFor(feedID string) *FeedHealth {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.feedHealth == nil {
+		t.feedHealth = map[string]*FeedHealth{}
+	}
+	h, ok := t.feedHealth[feedID]
+	if !ok {
+		h = &FeedHealth{}
+		t.feedHealth[feedID] = h
+	}
+	return h
+}
+
+func (t *LightningTrigger) monitorSnapshot() LightningMonitorConfig {
+	if lightningConfig != nil {
+		lightningConfig.ensurePolicyDefaults()
+		return lightningConfig.Monitor
+	}
+	return defaultLightningMonitorConfig()
+}
+
+func (t *LightningTrigger) resolveActiveFeedLocked(mon LightningMonitorConfig) *LightningFeedConfig {
+	if t.pinnedFeedID != "" {
+		if f := feedByID(mon, t.pinnedFeedID); f != nil && f.Enabled && strings.TrimSpace(f.URL) != "" {
+			return f
+		}
+	}
+	if t.activeFeedID != "" {
+		if f := feedByID(mon, t.activeFeedID); f != nil && f.Enabled && strings.TrimSpace(f.URL) != "" {
+			return f
+		}
+	}
+	enabled := enabledFeedsInOrder(mon)
+	if len(enabled) == 0 {
+		return nil
+	}
+	return &enabled[0]
+}
+
+func (t *LightningTrigger) switchActiveFeed(to *LightningFeedConfig, reason string) {
+	if to == nil {
+		return
+	}
+	t.mu.Lock()
+	fromID := t.activeFeedID
+	same := fromID == to.ID
+	if !same {
+		t.activeFeedID = to.ID
+		t.URL = strings.TrimSpace(to.URL)
+		t.activeSince = time.Now()
+		if t.failover.PreserveConditionAcrossFail {
+			t.skipNextConditionAnnounce = true
+		}
+		t.allFeedsFailed = false
+	}
+	destSensor := to.SensorID
+	destDisplay := to.ExpectedDisplayname
+	t.mu.Unlock()
+
+	if same {
+		return
+	}
+	log.Printf("Lightning: active feed changed %s → %s (reason=%s)", fromID, to.ID, reason)
+	t.maybePlayFeedSwitchAnnouncement(fromID, to.ID, reason, destSensor, destDisplay)
+}
+
+func (t *LightningTrigger) maybePlayFeedSwitchAnnouncement(fromID, toID, reason, destSensor, destDisplay string) {
+	rule := resolveFeedSwitchAnnouncement(fromID, toID, reason, destSensor, destDisplay)
+	if rule == nil {
+		return
+	}
+	path := lightningAudioPath(rule.AudioFile)
+	if _, err := os.Stat(path); err != nil {
+		log.Printf("Lightning: feed-switch audio missing %s — skipping", rule.AudioFile)
+		return
+	}
+	if announcementManager == nil {
+		return
+	}
+	params := map[string]interface{}{
+		"condition":      "feed_switch",
+		"audio_files":    []string{rule.AudioFile},
+		"trigger_source": "FEED_SWITCH",
+		"message":        rule.Label,
+	}
+	if _, err := announcementManager.QueueAnnouncement(TypeLightning, AnnouncementPriority(10), params, time.Now()); err != nil {
+		log.Printf("Lightning: failed to queue feed-switch announcement: %v", err)
+	} else {
+		log.Printf("Lightning: queued feed-switch PA %s (%s → %s)", rule.AudioFile, fromID, toID)
 	}
 }
 
-// Fetch XML and check for lightning conditions
-func (t *LightningTrigger) fetchAndCheck() {
-	defer func() {
-		t.LastFetch = time.Now()
-	}()
-
-	// Create HTTP client with timeout
-	client := &http.Client{
-		Timeout: time.Duration(t.Timeout) * time.Second,
+func extractXMLTag(xmlStr, tag string) string {
+	startTag := "<" + tag + ">"
+	endTag := "</" + tag + ">"
+	startIndex := strings.Index(xmlStr, startTag)
+	if startIndex == -1 {
+		// case-insensitive search for common tags
+		lower := strings.ToLower(xmlStr)
+		ls := strings.ToLower(startTag)
+		le := strings.ToLower(endTag)
+		startIndex = strings.Index(lower, ls)
+		if startIndex == -1 {
+			return ""
+		}
+		startIndex += len(startTag)
+		endIndex := strings.Index(lower[startIndex:], le)
+		if endIndex == -1 {
+			return ""
+		}
+		return strings.TrimSpace(xmlStr[startIndex : startIndex+endIndex])
 	}
+	startIndex += len(startTag)
+	endIndex := strings.Index(xmlStr[startIndex:], endTag)
+	if endIndex == -1 {
+		return ""
+	}
+	return strings.TrimSpace(xmlStr[startIndex : startIndex+endIndex])
+}
 
-	// Fetch XML
-	resp, err := client.Get(t.URL)
+type feedFetchResult struct {
+	ok            bool
+	failureClass  string // empty if ok
+	errMsg        string
+	alert         string
+	displayname   string
+	uniqueid      string
+	xmlString     string
+}
+
+func (t *LightningTrigger) fetchOneFeed(feed LightningFeedConfig, globalTimeout int) feedFetchResult {
+	timeout := feed.TimeoutSeconds
+	if timeout < 5 {
+		timeout = globalTimeout
+	}
+	if timeout < 5 {
+		timeout = 30
+	}
+	client := &http.Client{Timeout: time.Duration(timeout) * time.Second}
+	resp, err := client.Get(strings.TrimSpace(feed.URL))
 	if err != nil {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger fetch error: %v", err))
-		return
+		return feedFetchResult{failureClass: "http_error", errMsg: err.Error()}
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger received status %d", resp.StatusCode))
-		return
+		return feedFetchResult{failureClass: "http_status_not_ok", errMsg: fmt.Sprintf("status %d", resp.StatusCode)}
 	}
-
-	// Read response body
 	xmlData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger read error: %v", err))
-		return
+		return feedFetchResult{failureClass: "http_error", errMsg: err.Error()}
 	}
-
-	// Save XML file locally
-	if err := t.saveXMLFile(xmlData); err != nil {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger failed to save XML file: %v", err))
-		// Continue processing even if file save fails
+	if len(xmlData) == 0 {
+		return feedFetchResult{failureClass: "empty_body", errMsg: "empty body"}
 	}
-
-	// Convert XML from UTF-16 to UTF-8 if needed
+	_ = t.saveXMLFileForFeed(feed.ID, feed.URL, xmlData)
 	xmlString, err := t.convertXMLEncoding(xmlData)
 	if err != nil {
-		t.logFetchProblem(fmt.Sprintf("Lightning trigger encoding conversion error: %v", err))
-		return
+		return feedFetchResult{failureClass: "encoding_error", errMsg: err.Error()}
 	}
-
-	// Extract lightning alert value
-	lightningAlert := t.extractLightningAlertFromString(xmlString)
-	if lightningAlert == "" {
-		return
+	alert := extractXMLTag(xmlString, "lightningalert")
+	if alert == "" {
+		// try case from legacy helper path
+		alert = t.extractLightningAlertFromString(xmlString)
 	}
+	dn := extractXMLTag(xmlString, "displayname")
+	uid := extractXMLTag(xmlString, "uniqueid")
+	if alert == "" {
+		return feedFetchResult{failureClass: "missing_lightningalert", errMsg: "missing lightningalert", displayname: dn, uniqueid: uid, xmlString: xmlString}
+	}
+	return feedFetchResult{ok: true, alert: alert, displayname: dn, uniqueid: uid, xmlString: xmlString}
+}
 
-	t.noteFetchSuccess()
+func (t *LightningTrigger) triggerEnabled(class string) bool {
+	tr := t.failover.Triggers
+	switch class {
+	case "http_error":
+		return tr.HTTPError
+	case "http_status_not_ok":
+		return tr.HTTPStatusNotOK
+	case "empty_body":
+		return tr.EmptyBody
+	case "encoding_error":
+		return tr.EncodingError
+	case "missing_lightningalert":
+		return tr.MissingLightningAlert
+	case "unknown_condition":
+		return tr.UnknownCondition
+	case "displayname_mismatch":
+		return tr.DisplaynameMismatch
+	case "uniqueid_mismatch":
+		return tr.UniqueIDMismatch
+	default:
+		return true
+	}
+}
 
-	// Check if condition has changed
-	if lightningAlert != t.LastCondition {
-		log.Printf("Lightning condition changed from '%s' to '%s'", t.LastCondition, lightningAlert)
-
-		// Handle different lightning conditions
-		if strings.ToLower(lightningAlert) == "unknown" {
-			log.Printf("Lightning status 'Unknown' - treating as XML error, ignoring condition change")
-			// Don't update LastCondition for Unknown - treat as XML parsing error
-			return
-		}
-
-		// AllClear audio/lock release only after RedAlert; otherwise track silently (no announce)
-		if strings.ToLower(lightningAlert) == "allclear" {
-			if !t.shouldAcceptAllClear() {
-				log.Printf("AllClear condition ignored for announce/lock — previous condition was '%s' (not RedAlert)", t.LastCondition)
-				t.LastCondition = lightningAlert
-				t.LastConditionTime = time.Now()
-				return
+func (t *LightningTrigger) recordFeedFailure(feedID, class, msg string) {
+	h := t.healthFor(feedID)
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	now := time.Now()
+	h.LastError = fmt.Sprintf("%s: %s", class, msg)
+	h.LastErrorAt = now
+	h.ConsecutiveSuccesses = 0
+	window := t.failover.FailureWindowSeconds
+	if window > 0 {
+		cutoff := now.Add(-time.Duration(window) * time.Second)
+		filtered := h.FailureTimes[:0]
+		for _, ft := range h.FailureTimes {
+			if ft.After(cutoff) {
+				filtered = append(filtered, ft)
 			}
-			log.Printf("AllClear condition accepted — previous condition was '%s'", t.LastCondition)
 		}
+		h.FailureTimes = append(filtered, now)
+		h.ConsecutiveFailures = len(h.FailureTimes)
+	} else {
+		h.ConsecutiveFailures++
+	}
+	t.lastFetchError = h.LastError
+	t.logFetchProblem(fmt.Sprintf("Lightning feed %s failure (%s): %s", feedID, class, msg))
+}
 
-		// Update condition state for valid (non-Unknown) conditions
-		t.LastCondition = lightningAlert
-		t.LastConditionTime = time.Now()
+func (t *LightningTrigger) recordFeedSuccess(feedID, alert, dn, uid string) {
+	h := t.healthFor(feedID)
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	h.ConsecutiveFailures = 0
+	h.FailureTimes = nil
+	h.ConsecutiveSuccesses++
+	h.LastOK = time.Now()
+	h.LastError = ""
+	h.LastAlert = alert
+	h.LastDisplayname = dn
+	h.LastUniqueID = uid
+	t.noteFetchSuccess()
+}
 
-		// Lock enter/exit always runs for RedAlert / accepted AllClear
-		t.applyConditionEffects(lightningAlert)
+// Fetch XML and check for lightning conditions (multi-feed)
+func (t *LightningTrigger) fetchAndCheck() {
+	defer func() {
+		t.mu.Lock()
+		t.LastFetch = time.Now()
+		t.mu.Unlock()
+	}()
 
-		// Automatic announcements are optional per condition (Admin enable/disable)
-		if !isConditionAnnounceEnabled(lightningAlert) {
-			log.Printf("Lightning announce skipped for '%s' — disabled in Admin / lightning.json", lightningAlert)
+	mon := t.monitorSnapshot()
+	t.mu.Lock()
+	t.failover = mon.Failover
+	t.feeds = append([]LightningFeedConfig(nil), mon.Feeds...)
+	t.FetchInterval = mon.FetchInterval
+	t.Timeout = mon.Timeout
+	t.mu.Unlock()
+
+	t.mu.Lock()
+	active := t.resolveActiveFeedLocked(mon)
+	pinned := t.pinnedFeedID
+	t.mu.Unlock()
+
+	if active == nil {
+		t.mu.Lock()
+		t.allFeedsFailed = true
+		t.mu.Unlock()
+		return
+	}
+
+	// Failback probe
+	if pinned == "" {
+		if pref := preferredFailbackFeed(mon, active.ID); pref != nil && pref.ID != active.ID {
+			shouldProbe := true
+			t.mu.Lock()
+			probeEvery := t.failover.FailbackProbeIntervalSeconds
+			if probeEvery > 0 && time.Since(t.lastProbeAt) < time.Duration(probeEvery)*time.Second {
+				shouldProbe = false
+			}
+			if shouldProbe {
+				t.lastProbeAt = time.Now()
+			}
+			t.mu.Unlock()
+			if shouldProbe {
+				pres := t.fetchOneFeed(*pref, mon.Timeout)
+				if pres.ok {
+					t.recordFeedSuccess(pref.ID, pres.alert, pres.displayname, pres.uniqueid)
+					h := t.healthFor(pref.ID)
+					t.mu.Lock()
+					need := t.failover.FailbackAfterSuccesses
+					okCount := h.ConsecutiveSuccesses
+					t.mu.Unlock()
+					if need < 1 {
+						need = 1
+					}
+					if okCount >= need {
+						t.switchActiveFeed(pref, "failback")
+						active = pref
+					}
+				} else if t.triggerEnabled(pres.failureClass) {
+					t.recordFeedFailure(pref.ID, pres.failureClass, pres.errMsg)
+				}
+			}
+		}
+	}
+
+	res := t.fetchOneFeed(*active, mon.Timeout)
+	if !res.ok {
+		if t.triggerEnabled(res.failureClass) {
+			t.recordFeedFailure(active.ID, res.failureClass, res.errMsg)
+			t.maybeFailover(mon, active)
+		}
+		return
+	}
+
+	// Mismatch checks
+	if strings.TrimSpace(active.ExpectedDisplayname) != "" && res.displayname != "" &&
+		!strings.EqualFold(active.ExpectedDisplayname, res.displayname) && t.triggerEnabled("displayname_mismatch") {
+		t.recordFeedFailure(active.ID, "displayname_mismatch", fmt.Sprintf("expected %q got %q", active.ExpectedDisplayname, res.displayname))
+		t.maybeFailover(mon, active)
+		return
+	}
+	if strings.TrimSpace(active.ExpectedUniqueID) != "" && res.uniqueid != "" &&
+		!strings.EqualFold(active.ExpectedUniqueID, res.uniqueid) && t.triggerEnabled("uniqueid_mismatch") {
+		t.recordFeedFailure(active.ID, "uniqueid_mismatch", fmt.Sprintf("expected %q got %q", active.ExpectedUniqueID, res.uniqueid))
+		t.maybeFailover(mon, active)
+		return
+	}
+
+	if strings.EqualFold(res.alert, "unknown") && t.triggerEnabled("unknown_condition") {
+		t.recordFeedFailure(active.ID, "unknown_condition", "Unknown")
+		t.maybeFailover(mon, active)
+		return
+	}
+
+	t.recordFeedSuccess(active.ID, res.alert, res.displayname, res.uniqueid)
+	t.mu.Lock()
+	t.activeDisplayname = res.displayname
+	t.activeUniqueID = res.uniqueid
+	t.URL = strings.TrimSpace(active.URL)
+	t.allFeedsFailed = false
+	t.mu.Unlock()
+
+	t.processConditionChange(active, res.alert)
+}
+
+func (t *LightningTrigger) maybeFailover(mon LightningMonitorConfig, active *LightningFeedConfig) {
+	if active == nil {
+		return
+	}
+	t.mu.Lock()
+	allow := t.failover.AllowFailoverDuringRedAlert || !t.redAlertActive
+	need := t.failover.ConsecutiveFailures
+	if need < 1 {
+		need = 1
+	}
+	dwell := t.failover.MinDwellOnFeedSeconds
+	since := t.activeSince
+	h := t.feedHealth[active.ID]
+	failures := 0
+	if h != nil {
+		failures = h.ConsecutiveFailures
+	}
+	pinned := t.pinnedFeedID
+	t.mu.Unlock()
+
+	if pinned != "" || !allow {
+		return
+	}
+	if dwell > 0 && time.Since(since) < time.Duration(dwell)*time.Second {
+		return
+	}
+	if failures < need {
+		return
+	}
+	next := nextEnabledFeedAfter(mon, active.ID)
+	if next == nil {
+		t.mu.Lock()
+		t.allFeedsFailed = true
+		mode := t.failover.OnAllFeedsFailed
+		t.mu.Unlock()
+		log.Printf("Lightning: all feeds failed (holding last condition; mode=%s)", mode)
+		if mode == "force_unknown_status" {
+			t.mu.Lock()
+			t.LastCondition = "Unknown"
+			t.mu.Unlock()
+		}
+		return
+	}
+	t.switchActiveFeed(next, "failover")
+}
+
+func (t *LightningTrigger) processConditionChange(feed *LightningFeedConfig, lightningAlert string) {
+	t.mu.Lock()
+	prev := t.LastCondition
+	skipAnnounce := t.skipNextConditionAnnounce
+	if skipAnnounce {
+		t.skipNextConditionAnnounce = false
+	}
+	t.mu.Unlock()
+
+	if strings.EqualFold(lightningAlert, prev) {
+		// Same condition after feed switch — do not re-announce
+		return
+	}
+	log.Printf("Lightning condition changed from '%s' to '%s' (feed=%s)", prev, lightningAlert, feed.ID)
+
+	if strings.ToLower(lightningAlert) == "unknown" {
+		log.Printf("Lightning status 'Unknown' - ignoring condition change")
+		return
+	}
+
+	if strings.ToLower(lightningAlert) == "allclear" {
+		// 1.1.1 baseline gate first — never bypassed by release-mode logic.
+		if !t.shouldAcceptAllClear() {
+			log.Printf("AllClear condition ignored for announce/lock — previous condition was '%s' (not RedAlert)", prev)
+			t.mu.Lock()
+			t.LastCondition = lightningAlert
+			t.LastConditionTime = time.Now()
+			t.mu.Unlock()
 			return
 		}
-		t.playLightningAnnouncement(lightningAlert)
+		if !t.authorizeAllClearRelease(feed) {
+			t.mu.Lock()
+			t.LastCondition = lightningAlert
+			t.LastConditionTime = time.Now()
+			t.mu.Unlock()
+			return
+		}
+		log.Printf("AllClear condition accepted — previous condition was '%s' (feed=%s mode=%s)", prev, feed.ID, normalizeAllClearReleaseMode(t.failover.AllClearReleaseMode))
 	}
+
+	t.mu.Lock()
+	t.LastCondition = lightningAlert
+	t.LastConditionTime = time.Now()
+	t.mu.Unlock()
+
+	t.applyConditionEffects(lightningAlert)
+	if strings.EqualFold(lightningAlert, "redalert") {
+		t.mu.Lock()
+		t.enteredRedAlertOnFeed = feed.ID
+		t.mu.Unlock()
+	}
+	if strings.EqualFold(lightningAlert, "allclear") {
+		t.mu.Lock()
+		t.enteredRedAlertOnFeed = ""
+		t.mu.Unlock()
+	}
+
+	_ = skipAnnounce // preserved for future; equal-case already handled above
+
+	if !feedAnnounceEnabled(feed, lightningAlert) {
+		log.Printf("Lightning announce skipped for '%s' — disabled for feed %s / global", lightningAlert, feed.ID)
+		return
+	}
+	if !t.announceTimingAllows(lightningAlert) {
+		log.Printf("Lightning announce skipped for '%s' — announce_timing cooldown", lightningAlert)
+		return
+	}
+	t.playLightningAnnouncementForFeed(feed, lightningAlert)
+}
+
+func (t *LightningTrigger) announceTimingAllows(condition string) bool {
+	if lightningConfig == nil {
+		return true
+	}
+	at := lightningConfig.AnnounceTiming
+	now := time.Now()
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if at.MinSecondsBetweenAnyLightningAnnounce > 0 && !t.lastAnyAnnounceAt.IsZero() &&
+		now.Sub(t.lastAnyAnnounceAt) < time.Duration(at.MinSecondsBetweenAnyLightningAnnounce)*time.Second {
+		return false
+	}
+	if at.MinSecondsBetweenSameCondition > 0 && strings.EqualFold(t.lastAnnounceCondition, condition) &&
+		!t.lastAnnounceAt.IsZero() && now.Sub(t.lastAnnounceAt) < time.Duration(at.MinSecondsBetweenSameCondition)*time.Second {
+		return false
+	}
+	return true
+}
+
+func (t *LightningTrigger) markAnnouncePlayed(condition string) {
+	t.mu.Lock()
+	t.lastAnnounceCondition = condition
+	t.lastAnnounceAt = time.Now()
+	t.lastAnyAnnounceAt = t.lastAnnounceAt
+	t.mu.Unlock()
+}
+
+func (t *LightningTrigger) saveXMLFileForFeed(feedID, feedURL string, xmlData []byte) error {
+	xmlDir := "xml"
+	if app != nil && app.Config != nil && app.Config.BaseDir != "" {
+		xmlDir = filepath.Join(app.Config.BaseDir, "xml")
+	}
+	if err := os.MkdirAll(xmlDir, 0755); err != nil {
+		return err
+	}
+	base := "feed.xml"
+	if parsed, err := url.Parse(feedURL); err == nil {
+		base = filepath.Base(parsed.Path)
+		if base == "." || base == "/" || base == "" {
+			base = "feed.xml"
+		}
+	}
+	if !strings.HasSuffix(strings.ToLower(base), ".xml") {
+		base += ".xml"
+	}
+	name := feedID + "_" + base
+	return ioutil.WriteFile(filepath.Join(xmlDir, name), xmlData, 0644)
 }
 
 // Save XML file locally
@@ -634,111 +1248,82 @@ func (t *LightningTrigger) extractLightningAlert(xmlData []byte) string {
 
 // Play lightning announcement based on condition
 func (t *LightningTrigger) playLightningAnnouncement(condition string) {
+	var feed *LightningFeedConfig
+	mon := t.monitorSnapshot()
+	t.mu.Lock()
+	id := t.activeFeedID
+	t.mu.Unlock()
+	if id != "" {
+		feed = feedByID(mon, id)
+	}
+	t.playLightningAnnouncementForFeed(feed, condition)
+}
+
+func (t *LightningTrigger) playLightningAnnouncementForFeed(feed *LightningFeedConfig, condition string) {
 	if lightningConfig == nil {
 		log.Printf("Lightning configuration not loaded, cannot play announcement")
 		return
 	}
 
 	var selectedAnnouncement *LightningAnnouncement
-
-	// Find appropriate announcement based on condition
-	// First try to match exact condition names
 	for i := range lightningConfig.LightningAnnouncements {
 		announcement := &lightningConfig.LightningAnnouncements[i]
-		if !announcement.Enabled {
-			continue
-		}
-
-		// Check for direct matches or pattern matches
+		id := strings.ToLower(announcement.ID)
+		match := false
 		switch strings.ToLower(condition) {
 		case "redalert":
-			if strings.Contains(strings.ToLower(announcement.ID), "redalert") ||
-				strings.Contains(strings.ToLower(announcement.ID), "red_alert") {
-				selectedAnnouncement = announcement
-			}
+			match = strings.Contains(id, "redalert") || strings.Contains(id, "red_alert")
 		case "warning":
-			if strings.Contains(strings.ToLower(announcement.ID), "warning") &&
-				!strings.Contains(strings.ToLower(announcement.ID), "red") {
-				selectedAnnouncement = announcement
-			}
+			match = strings.Contains(id, "warning") && !strings.Contains(id, "red")
 		case "caution":
-			if strings.Contains(strings.ToLower(announcement.ID), "caution") {
-				selectedAnnouncement = announcement
-			}
+			match = strings.Contains(id, "caution")
 		case "allclear":
-			if strings.Contains(strings.ToLower(announcement.ID), "allclear") ||
-				strings.Contains(strings.ToLower(announcement.ID), "all_clear") {
-				selectedAnnouncement = announcement
-			}
+			match = strings.Contains(id, "allclear") || strings.Contains(id, "all_clear")
+		case "unknown":
+			match = strings.Contains(id, "unknown")
 		}
-
-		if selectedAnnouncement != nil {
+		if match {
+			selectedAnnouncement = announcement
 			break
 		}
 	}
 
-	// If no specific match found, try generic matches
-	if selectedAnnouncement == nil {
-		for i := range lightningConfig.LightningAnnouncements {
-			announcement := &lightningConfig.LightningAnnouncements[i]
-			if !announcement.Enabled {
-				continue
-			}
+	liveDN := ""
+	t.mu.Lock()
+	liveDN = t.activeDisplayname
+	t.mu.Unlock()
 
-			switch strings.ToLower(condition) {
-			case "redalert":
-				if strings.Contains(strings.ToLower(announcement.ID), "generic_redalert") {
-					selectedAnnouncement = announcement
-				}
-			case "warning":
-				if strings.Contains(strings.ToLower(announcement.ID), "generic_warning") {
-					selectedAnnouncement = announcement
-				}
-			case "caution":
-				if strings.Contains(strings.ToLower(announcement.ID), "generic_caution") {
-					selectedAnnouncement = announcement
-				}
-			case "allclear":
-				if strings.Contains(strings.ToLower(announcement.ID), "generic_allclear") {
-					selectedAnnouncement = announcement
-				}
-			}
+	audioOverrides := resolveLightningAudioFiles(feed, condition, liveDN)
 
-			if selectedAnnouncement != nil {
-				break
-			}
-		}
-	}
-
-	if selectedAnnouncement == nil {
+	if selectedAnnouncement == nil && len(audioOverrides) == 0 && !strings.EqualFold(condition, "feed_switch") {
 		log.Printf("No matching lightning announcement found for condition: %s", condition)
 		return
 	}
 
-	log.Printf("Playing lightning announcement: %s", selectedAnnouncement.Name)
+	name := condition
+	tts := ""
+	if selectedAnnouncement != nil {
+		name = selectedAnnouncement.Name
+		tts = selectedAnnouncement.TTSText
+	}
+	log.Printf("Playing lightning announcement: %s", name)
 
-	// Queue announcement using the existing announcement system
 	if announcementManager != nil {
-		// Lightning alerts use their own type but with emergency priority
-		announcementType := TypeLightning
-
 		parameters := map[string]interface{}{
 			"condition":      condition,
-			"message":        selectedAnnouncement.TTSText,
+			"message":        tts,
 			"trigger_source": "LIGHTNING_TRIGGER",
 		}
-
-		log.Printf("DEBUG: Lightning parameters being sent: %+v", parameters)
-
-		// Lightning alerts always get the highest priority (10)
+		if len(audioOverrides) > 0 {
+			parameters["audio_files"] = audioOverrides
+		}
 		priority := AnnouncementPriority(10)
-
-		announcement, err := announcementManager.QueueAnnouncement(announcementType, priority, parameters, time.Now())
+		announcement, err := announcementManager.QueueAnnouncement(TypeLightning, priority, parameters, time.Now())
 		if err != nil {
 			log.Printf("Failed to queue lightning announcement: %v", err)
 		} else {
-			log.Printf("Queued HIGHEST PRIORITY lightning announcement: %s (ID: %s)", selectedAnnouncement.Name, announcement.ID)
-			log.Printf("DEBUG: Audio files queued: %v", announcement.AudioFiles)
+			t.markAnnouncePlayed(condition)
+			log.Printf("Queued HIGHEST PRIORITY lightning announcement: %s (ID: %s)", name, announcement.ID)
 		}
 	} else {
 		log.Printf("Announcement manager not available, cannot queue lightning announcement")
@@ -750,6 +1335,101 @@ func (t *LightningTrigger) shouldAcceptAllClear() bool {
 		return true
 	}
 	return strings.EqualFold(t.LastCondition, "redalert")
+}
+
+// authorizeAllClearRelease is an unlock-only gate after shouldAcceptAllClear succeeds.
+// It never affects Red Alert enter. primary_only matches 1.1.1 for the primary feed.
+func (t *LightningTrigger) authorizeAllClearRelease(feed *LightningFeedConfig) bool {
+	if feed == nil {
+		log.Printf("AllClear release denied — no feed context")
+		return false
+	}
+	mode := normalizeAllClearReleaseMode(t.failover.AllClearReleaseMode)
+	if strings.EqualFold(feed.ID, "primary") {
+		return true
+	}
+	switch mode {
+	case "failover_vote":
+		ok, summary := t.evaluateFailoverAllClearVote()
+		t.mu.Lock()
+		t.lastAllClearVoteSummary = summary
+		t.mu.Unlock()
+		if !ok {
+			log.Printf("AllClear release denied — failover_vote failed: %s", summary)
+			return false
+		}
+		log.Printf("AllClear release authorized — failover_vote: %s", summary)
+		return true
+	default: // primary_only
+		log.Printf("AllClear release denied — primary_only (feed=%s)", feed.ID)
+		return false
+	}
+}
+
+// evaluateFailoverAllClearVote fetches failover_1 and failover_2 in parallel.
+// Accept only when both normalize strictly to AllClear (count == 2).
+func (t *LightningTrigger) evaluateFailoverAllClearVote() (bool, string) {
+	mon := t.monitorSnapshot()
+	f1 := feedByID(mon, "failover_1")
+	f2 := feedByID(mon, "failover_2")
+	if f1 == nil || f2 == nil || !f1.Enabled || !f2.Enabled ||
+		strings.TrimSpace(f1.URL) == "" || strings.TrimSpace(f2.URL) == "" {
+		return false, "vote requires failover_1 and failover_2 enabled with URLs"
+	}
+
+	timeout := mon.Timeout
+	if timeout < 5 {
+		timeout = 30
+	}
+	type voteResult struct {
+		id    string
+		alert string
+		ok    bool
+		err   string
+	}
+	results := make([]voteResult, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		r := t.fetchOneFeed(*f1, timeout)
+		vr := voteResult{id: f1.ID}
+		if !r.ok {
+			vr.err = r.failureClass + ": " + r.errMsg
+		} else {
+			vr.alert = r.alert
+			vr.ok = strings.EqualFold(strings.TrimSpace(r.alert), "allclear")
+		}
+		results[0] = vr
+	}()
+	go func() {
+		defer wg.Done()
+		r := t.fetchOneFeed(*f2, timeout)
+		vr := voteResult{id: f2.ID}
+		if !r.ok {
+			vr.err = r.failureClass + ": " + r.errMsg
+		} else {
+			vr.alert = r.alert
+			vr.ok = strings.EqualFold(strings.TrimSpace(r.alert), "allclear")
+		}
+		results[1] = vr
+	}()
+	wg.Wait()
+
+	count := 0
+	parts := make([]string, 0, 2)
+	for _, vr := range results {
+		if vr.err != "" {
+			parts = append(parts, fmt.Sprintf("%s=error(%s)", vr.id, vr.err))
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s=%s", vr.id, vr.alert))
+		if vr.ok {
+			count++
+		}
+	}
+	summary := fmt.Sprintf("allclear_count=%d [%s]", count, strings.Join(parts, ", "))
+	return count == 2, summary
 }
 
 // TestCondition manually triggers a lightning announcement for testing
@@ -942,10 +1622,14 @@ func applyRedAlertPolicy(policy RedAlertPolicy) error {
 		return fmt.Errorf("reminder interval must be at least 1 minute")
 	}
 	if policy.ReminderAudioFile == "" {
-		policy.ReminderAudioFile = "thor_repeat1.mp3"
+		policy.ReminderAudioFile = "Voice_RedAlert_Reminder.mp3"
 	}
 	if policy.HornAudioFile == "" {
-		policy.HornAudioFile = "thor_red_alert.mp3"
+		if clip, ok := getConditionAudioClip("RedAlert"); ok && clip.HornFile != "" {
+			policy.HornAudioFile = clip.HornFile
+		} else {
+			policy.HornAudioFile = "Horn_RedAlert.mp3"
+		}
 	}
 
 	if lightningConfig == nil {
@@ -964,14 +1648,14 @@ func applyRedAlertPolicy(policy RedAlertPolicy) error {
 
 func listLightningAudioFiles() []string {
 	known := []string{
-		"thor_repeat1.mp3",
-		"redalert.mp3",
-		"thor_red_alert.mp3",
-		"thor_warning.mp3",
-		"thor_caution.mp3",
-		"thor_all_clear.mp3",
-		"warning.mp3",
-		"all_clear.mp3",
+		"Horn_RedAlert.mp3",
+		"Horn_AllClear.mp3",
+		"Voice_RedAlert.mp3",
+		"Voice_RedAlert_Reminder.mp3",
+		"Voice_AllClear.mp3",
+		"Voice_Warning.mp3",
+		"Voice_Caution.mp3",
+		"thor_unknown.mp3",
 	}
 	seen := map[string]bool{}
 	var files []string
@@ -1010,42 +1694,137 @@ func listLightningAudioFiles() []string {
 	return files
 }
 
-// UpdateConfig updates live poller settings and persists them to lightning.json monitor block.
+// UpdateConfig is a legacy single-URL updater (maps onto primary feed).
 func (t *LightningTrigger) UpdateConfig(url string, fetchInterval int, timeout int, enabled bool) error {
-	wasRunning := t.isRunning
+	mon := t.monitorSnapshot()
+	mon.FetchInterval = fetchInterval
+	mon.Timeout = timeout
+	mon.Enabled = enabled
+	if len(mon.Feeds) == 0 {
+		mon.Feeds = defaultFeedSlots()
+	}
+	mon.Feeds[0].URL = strings.TrimSpace(url)
+	mon.Feeds[0].Enabled = enabled && strings.TrimSpace(url) != ""
+	if s := findBrowardTGSensorByURL(url); s != nil {
+		mon.Feeds[0].SensorID = s.ID
+		mon.Feeds[0].ExpectedDisplayname = s.DisplayName
+		mon.Feeds[0].Source = "catalog"
+	} else {
+		mon.Feeds[0].Source = "custom"
+	}
+	mon.URL = strings.TrimSpace(url)
+	return t.ApplyMonitorConfig(mon, nil, nil)
+}
 
+// ApplyMonitorConfig hot-applies feeds/failover/timing and persists.
+func (t *LightningTrigger) ApplyMonitorConfig(mon LightningMonitorConfig, timing *LightningAnnounceTiming, overrides []DisplaynameOverride) error {
+	if mon.FetchInterval < 30 {
+		return fmt.Errorf("fetch interval must be at least 30 seconds")
+	}
+	if mon.Timeout < 5 {
+		return fmt.Errorf("timeout must be at least 5 seconds")
+	}
+	if mon.Failover.ConsecutiveFailures < 1 {
+		mon.Failover.ConsecutiveFailures = 3
+	}
+	mon.Failover.AllClearReleaseMode = normalizeAllClearReleaseMode(mon.Failover.AllClearReleaseMode)
+	mon.Failover.RequireAllClearFromSameFeed = false
+	if len(mon.Feeds) > 3 {
+		mon.Feeds = mon.Feeds[:3]
+	}
+	for i := range mon.Feeds {
+		if mon.Feeds[i].Enabled && strings.TrimSpace(mon.Feeds[i].URL) == "" {
+			mon.Feeds[i].Enabled = false
+		}
+	}
+	mon.URL = primaryFeedURL(mon)
+	hasURL := firstEnabledFeedURL(mon) != ""
+	mon.Enabled = mon.Enabled && hasURL
+
+	wasRunning := false
+	t.mu.Lock()
+	wasRunning = t.isRunning
+	t.mu.Unlock()
 	if wasRunning {
 		t.Stop()
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	t.URL = url
-	t.FetchInterval = fetchInterval
-	t.Timeout = timeout
-	t.Enabled = enabled && strings.TrimSpace(url) != ""
-	if enabled && strings.TrimSpace(url) == "" {
-		log.Printf("Lightning monitor enable ignored — monitor.url is empty in request/lightning.json")
-		t.Enabled = false
-	}
-
 	if lightningConfig != nil {
-		lightningConfig.Monitor = LightningMonitorConfig{
-			Enabled:       t.Enabled,
-			URL:           url,
-			FetchInterval: fetchInterval,
-			Timeout:       timeout,
+		lightningConfig.Monitor = mon
+		if timing != nil {
+			lightningConfig.AnnounceTiming = *timing
+		}
+		if overrides != nil {
+			lightningConfig.DisplaynameOverrides = overrides
 		}
 		if err := saveLightningConfig(); err != nil {
-			log.Printf("Warning: failed to persist lightning monitor config: %v", err)
+			return err
 		}
 	}
 
+	t.mu.Lock()
+	t.FetchInterval = mon.FetchInterval
+	t.Timeout = mon.Timeout
+	t.Enabled = mon.Enabled
+	t.feeds = append([]LightningFeedConfig(nil), mon.Feeds...)
+	t.failover = mon.Failover
+	t.URL = firstEnabledFeedURL(mon)
+	if t.feedHealth == nil {
+		t.feedHealth = map[string]*FeedHealth{}
+	}
+	for _, f := range mon.Feeds {
+		if _, ok := t.feedHealth[f.ID]; !ok {
+			t.feedHealth[f.ID] = &FeedHealth{}
+		}
+	}
+	if t.activeFeedID == "" || feedByID(mon, t.activeFeedID) == nil || !feedByID(mon, t.activeFeedID).Enabled {
+		enabled := enabledFeedsInOrder(mon)
+		if len(enabled) > 0 {
+			t.activeFeedID = enabled[0].ID
+			t.activeSince = time.Now()
+			t.URL = enabled[0].URL
+		} else {
+			t.activeFeedID = ""
+		}
+	}
+	t.mu.Unlock()
+
 	if t.Enabled {
-		t.stopChan = make(chan bool)
+		t.stopOnce = sync.Once{}
+		t.stopChan = make(chan struct{})
 		go t.Start()
 	}
 
-	log.Printf("Lightning trigger configuration updated - URL: %s, Interval: %ds, Enabled: %v", url, fetchInterval, enabled)
+	log.Printf("Lightning monitor config applied — enabled=%v active=%s feeds=%d", mon.Enabled, t.activeFeedID, len(mon.Feeds))
+	return nil
+}
+
+// PinActiveFeed pins a feed for drills; empty feedID unpins.
+func (t *LightningTrigger) PinActiveFeed(feedID string) error {
+	feedID = strings.TrimSpace(feedID)
+	mon := t.monitorSnapshot()
+	if feedID == "" {
+		t.mu.Lock()
+		prev := t.pinnedFeedID
+		t.pinnedFeedID = ""
+		t.mu.Unlock()
+		log.Printf("Lightning: unpinned active feed (was %s)", prev)
+		return nil
+	}
+	f := feedByID(mon, feedID)
+	if f == nil {
+		return fmt.Errorf("unknown feed_id %q", feedID)
+	}
+	if !f.Enabled || strings.TrimSpace(f.URL) == "" {
+		return fmt.Errorf("feed %q is not enabled or has empty URL", feedID)
+	}
+	t.mu.Lock()
+	from := t.activeFeedID
+	t.pinnedFeedID = feedID
+	t.mu.Unlock()
+	t.switchActiveFeed(f, "pin")
+	log.Printf("Lightning: pinned active feed %s (from %s)", feedID, from)
 	return nil
 }
 
@@ -1060,6 +1839,7 @@ func getLightningTriggerStatus() map[string]interface{} {
 			"reminder_count":           0,
 			"red_alert_policy":         getRedAlertPolicy(),
 			"available_reminder_files": listLightningAudioFiles(),
+			"known_sensors":            getBrowardTGSensors(),
 		}
 	}
 
@@ -1078,7 +1858,37 @@ func getLightningTriggerStatus() map[string]interface{} {
 		nextReminder = lightningTrigger.nextReminderAt.Format("2006-01-02 15:04:05")
 	}
 	reminderCount := lightningTrigger.reminderCount
+	activeID := lightningTrigger.activeFeedID
+	pinnedID := lightningTrigger.pinnedFeedID
+	activeDN := lightningTrigger.activeDisplayname
+	activeUID := lightningTrigger.activeUniqueID
+	allFailed := lightningTrigger.allFeedsFailed
+	lastErr := lightningTrigger.lastFetchError
+	enteredOn := lightningTrigger.enteredRedAlertOnFeed
+	voteSummary := lightningTrigger.lastAllClearVoteSummary
+	healthCopy := map[string]interface{}{}
+	for id, h := range lightningTrigger.feedHealth {
+		if h == nil {
+			continue
+		}
+		lastOK := ""
+		if !h.LastOK.IsZero() {
+			lastOK = h.LastOK.Format("2006-01-02 15:04:05")
+		}
+		healthCopy[id] = map[string]interface{}{
+			"consecutive_failures":  h.ConsecutiveFailures,
+			"consecutive_successes": h.ConsecutiveSuccesses,
+			"last_ok":               lastOK,
+			"last_error":            h.LastError,
+			"last_displayname":      h.LastDisplayname,
+			"last_uniqueid":         h.LastUniqueID,
+			"last_alert":            h.LastAlert,
+		}
+	}
 	lightningTrigger.mu.Unlock()
+
+	mon := getLightningMonitorConfig()
+	onFailover := activeID != "" && activeID != "primary"
 
 	out := map[string]interface{}{
 		"id":                       lightningTrigger.ID,
@@ -1097,11 +1907,31 @@ func getLightningTriggerStatus() map[string]interface{} {
 		"last_reminder":            lastReminder,
 		"next_reminder":            nextReminder,
 		"red_alert_policy":         getRedAlertPolicy(),
+		"condition_audio":          getConditionAudioConfig(),
 		"available_reminder_files": listLightningAudioFiles(),
 		"condition_announce":       announcementEnableSnapshot(),
+		"feeds":                    mon.Feeds,
+		"failover":                 mon.Failover,
+		"feed_switch_announcements": mon.FeedSwitchAnnouncements,
+		"feed_health":              healthCopy,
+		"active_feed_id":           activeID,
+		"active_url":               lightningTrigger.URL,
+		"active_displayname":       activeDN,
+		"active_uniqueid":          activeUID,
+		"on_failover":              onFailover,
+		"all_feeds_failed":         allFailed,
+		"pinned_feed_id":           pinnedID,
+		"last_fetch_error":         lastErr,
+		"entered_red_alert_on_feed": enteredOn,
+		"allclear_release_mode":    normalizeAllClearReleaseMode(mon.Failover.AllClearReleaseMode),
+		"last_allclear_vote":       voteSummary,
+		"known_sensors":            getBrowardTGSensors(),
+		"announce_timing":          LightningAnnounceTiming{},
 	}
 	if lightningConfig != nil {
 		out["announcements"] = lightningConfig.LightningAnnouncements
+		out["announce_timing"] = lightningConfig.AnnounceTiming
+		out["displayname_overrides"] = lightningConfig.DisplaynameOverrides
 	}
 	return out
 }

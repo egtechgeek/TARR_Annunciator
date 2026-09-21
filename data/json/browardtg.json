@@ -3,7 +3,7 @@
   "region": "broward",
   "host": "broward.thormobile4.net",
   "source": "broward_thor_guard_sensors.csv",
-  "generated_for": "TARR Annunciator v1.1.5+",
+  "generated_for": "TARR Annunciator v1.1.2+",
   "sensors": [
     {
       "id": "FL0101",

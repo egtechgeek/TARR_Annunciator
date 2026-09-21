@@ -99,7 +99,7 @@ CREATED="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 MIGRATIONS_JSON="$(python3 - "$VERSION" <<'PY'
 import json, sys
 ver = sys.argv[1].lstrip("v")
-known = ["1.1.0", "1.1.1"]
+known = ["1.1.0", "1.1.1", "1.1.2"]
 out = [m for m in known if tuple(int(x) for x in m.split(".")) <= tuple(int(x) for x in ver.split(".")[:3])]
 if ver not in out:
     out.append(ver)
