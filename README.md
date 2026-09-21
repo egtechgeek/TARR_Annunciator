@@ -38,6 +38,8 @@ After install:
 
 **Web UI:** [http://localhost:8080](http://localhost:8080) · **Admin:** [http://localhost:8080/admin](http://localhost:8080/admin)
 
+**Operator manual:** see [`MANUAL.md`](MANUAL.md) for a full plain-language guide to every screen and setting.
+
 > Review the installer script before piping to `bash` if your environment requires it. Private repos: set `GITHUB_TOKEN` before running.
 
 ---
@@ -109,9 +111,9 @@ See [`docs/PI_RELEASE_PACKAGING.md`](docs/PI_RELEASE_PACKAGING.md).
 
 ## API
 
-With the app running:
+With the app running and an Admin session (or API key):
 
-- Docs: [http://localhost:8080/api/docs](http://localhost:8080/api/docs)
+- Docs: [http://localhost:8080/admin/api-docs](http://localhost:8080/admin/api-docs) (login required)
 - Platform: `GET /api/platform`
 
 Authenticated Admin/API calls use the API key or session configured in Admin.
@@ -120,4 +122,4 @@ Authenticated Admin/API calls use the API key or session configured in Admin.
 
 ## License
 
-Part of the TARR (Train Announcement Railroad Radio) system.
+Part of the TARR (Tradewinds and Atlantic Railroad) system.

@@ -15,3 +15,8 @@
 
 # Misc local data
 broward_thor_guard_sensors.csv
+
+# Internal site-specific manual (contains live credentials / IP — do not publish)
+/MANUAL - TARR.md
+/MANUAL - TARR.docx
+/MANUAL - TARR.pdf
