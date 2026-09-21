@@ -1,8 +1,17 @@
 # Local release artifacts (do not commit large binaries/tarballs)
 /releases/
 *.tar.gz
-broward_thor_guard_sensors.csv
-/data/xml/
-/data/logs/
 *.deb
+
+# Runtime working dirs (poll cache + app logs)
+/data/logs/
+/data/xml/
+
+# Local reference dump of a live Pi tree (not source of truth)
 /FromLiveRaspberryPi/
+
+# Ad-hoc / agent helper scripts (not shipped)
+/fixit_scripts/
+
+# Misc local data
+broward_thor_guard_sensors.csv

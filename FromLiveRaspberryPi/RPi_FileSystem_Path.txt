@@ -1,3 +1,0 @@
-This folder represents the raspberry pi path of:
-
-/home/pi/

@@ -43,3 +43,13 @@
 2026/09/20 20:27:00 Skipping scheduled safety announcement (outside operating hours)
 2026/09/20 20:28:01 Lightning feed primary failure (unknown_condition): Unknown
 2026/09/20 20:29:02 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/20 20:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/20 20:30:01 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/20 20:31:01 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/20 20:31:16 Received shutdown signal, cleaning up...
+2026/09/20 20:31:16 Scheduler stopped
+2026/09/20 20:31:16 Lightning trigger stopped
+2026/09/20 20:31:16 === TARR Annunciator Shutting Down ===
+2026/09/20 20:31:16 Lightning trigger 'Lightning Alert Monitor' stopped
+2026/09/20 20:31:16 Timestamp: 2026-09-20 20:31:16
+2026/09/20 20:31:16 =======================================
