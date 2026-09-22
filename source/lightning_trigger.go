@@ -976,6 +976,25 @@ func (t *LightningTrigger) recordTelemetryCollapseStatusOnly(feedID string, res 
 	t.logFetchProblem(fmt.Sprintf("Lightning feed %s telemetry_collapse (Layer A only, failover trigger off): %s", feedID, res.errMsg))
 }
 
+// recordUnknownSoft surfaces Thor Unknown in Live Status without counting a failure.
+// Unknown is a normal Thor update-cycle flicker, not http/sensor death.
+func (t *LightningTrigger) recordUnknownSoft(feedID string, res feedFetchResult) {
+	h := t.healthFor(feedID)
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	h.LastAlert = "Unknown"
+	h.LastError = "unknown_condition: Thor Unknown (flicker; not counted as failure)"
+	h.LastErrorAt = time.Now()
+	if res.displayname != "" {
+		h.LastDisplayname = res.displayname
+	}
+	if res.uniqueid != "" {
+		h.LastUniqueID = res.uniqueid
+	}
+	// Do not touch ConsecutiveFailures / ConsecutiveSuccesses.
+	t.logFetchProblem(fmt.Sprintf("Lightning feed %s: Unknown (Thor flicker — ignored for failover)", feedID))
+}
+
 func (t *LightningTrigger) fetchEnabledFeedsParallel(feeds []LightningFeedConfig, timeout int) map[string]feedFetchResult {
 	out := make(map[string]feedFetchResult, len(feeds))
 	if len(feeds) == 0 {
@@ -987,7 +1006,7 @@ func (t *LightningTrigger) fetchEnabledFeedsParallel(feeds []LightningFeedConfig
 		wg.Add(1)
 		go func(feed LightningFeedConfig) {
 			defer wg.Done()
-			r := t.fetchOneFeed(feed, timeout)
+			r := t.fetchOneFeedResolvingUnknown(feed, timeout)
 			r = t.applyTelemetryToResult(feed.ID, r)
 			mu.Lock()
 			out[feed.ID] = r
@@ -996,6 +1015,33 @@ func (t *LightningTrigger) fetchEnabledFeedsParallel(feeds []LightningFeedConfig
 	}
 	wg.Wait()
 	return out
+}
+
+// unknownFlickerRetries is how many immediate re-fetches to attempt when Thor
+// returns <lightningalert>Unknown</lightningalert> (server update-cycle flicker).
+const unknownFlickerRetries = 2
+const unknownFlickerRetryDelay = 200 * time.Millisecond
+
+// fetchOneFeedResolvingUnknown fetches once, then re-fetches briefly if alert is Unknown.
+// Thor often flickers Unknown between update cycles; a short retry usually recovers AllClear/etc.
+func (t *LightningTrigger) fetchOneFeedResolvingUnknown(feed LightningFeedConfig, globalTimeout int) feedFetchResult {
+	res := t.fetchOneFeed(feed, globalTimeout)
+	if !res.ok || !strings.EqualFold(strings.TrimSpace(res.alert), "unknown") {
+		return res
+	}
+	for attempt := 1; attempt <= unknownFlickerRetries; attempt++ {
+		time.Sleep(unknownFlickerRetryDelay)
+		retry := t.fetchOneFeed(feed, globalTimeout)
+		if !retry.ok {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(retry.alert), "unknown") {
+			log.Printf("Lightning feed %s: Unknown flicker resolved on retry %d → %s", feed.ID, attempt, retry.alert)
+			return retry
+		}
+		res = retry
+	}
+	return res
 }
 
 // Fetch XML and check for lightning conditions (multi-feed).
@@ -1050,6 +1096,12 @@ func (t *LightningTrigger) fetchAndCheck() {
 			continue // active handled below
 		}
 		// Standby enabled feeds: status only
+		if res.ok && strings.EqualFold(strings.TrimSpace(res.alert), "unknown") {
+			// Unknown flicker — show in status, do not treat as healthy success for failback.
+			t.recordUnknownSoft(f.ID, res)
+			anyOK = true // feed is reachable
+			continue
+		}
 		if res.ok {
 			anyOK = true
 		}
@@ -1109,9 +1161,11 @@ func (t *LightningTrigger) fetchAndCheck() {
 		return
 	}
 
-	if strings.EqualFold(res.alert, "unknown") && t.triggerEnabled("unknown_condition") {
-		t.recordFeedFailure(active.ID, "unknown_condition", "Unknown")
-		t.maybeFailover(mon, active)
+	if strings.EqualFold(res.alert, "unknown") {
+		// Thor briefly (sometimes for many seconds) publishes Unknown between XML
+		// update cycles. That is not a dead feed — never count toward failover.
+		// Condition changes are already ignored for Unknown below.
+		t.recordUnknownSoft(active.ID, res)
 		t.mu.Lock()
 		t.allFeedsFailed = !anyOK
 		t.mu.Unlock()
@@ -1675,7 +1729,7 @@ func (t *LightningTrigger) evaluateFailoverAllClearVote() (bool, string) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		r := t.fetchOneFeed(*f1, timeout)
+		r := t.fetchOneFeedResolvingUnknown(*f1, timeout)
 		r = t.applyTelemetryToResult(f1.ID, r)
 		ok, detail := allClearVoteBallotAccepted(r)
 		if t.feedHasTelemetryCollapse(f1.ID) {
@@ -1688,7 +1742,7 @@ func (t *LightningTrigger) evaluateFailoverAllClearVote() (bool, string) {
 	}()
 	go func() {
 		defer wg.Done()
-		r := t.fetchOneFeed(*f2, timeout)
+		r := t.fetchOneFeedResolvingUnknown(*f2, timeout)
 		r = t.applyTelemetryToResult(f2.ID, r)
 		ok, detail := allClearVoteBallotAccepted(r)
 		if t.feedHasTelemetryCollapse(f2.ID) {
@@ -1816,7 +1870,8 @@ func (t *LightningTrigger) ApplyManualOverride(action, note string) (string, err
 	}
 }
 
-// evaluateCompositeRedAlertEnter checks Admin composite enter rules (e.g. both failovers Warning → Red Alert).
+// evaluateCompositeRedAlertEnter checks Admin composite enter rules
+// (e.g. failover_1=Warning AND failover_2=RedAlert → enter Red Alert).
 // Unlock / All Clear release authority is never modified here. Skipped while manual override lock is active.
 func (t *LightningTrigger) evaluateCompositeRedAlertEnter() {
 	if t.isManualOverrideActive() {
@@ -1839,38 +1894,44 @@ func (t *LightningTrigger) evaluateCompositeRedAlertEnter() {
 		if !rule.Enabled {
 			continue
 		}
-		needCond := strings.TrimSpace(rule.RequireCondition)
-		feeds := rule.RequireFeedIDs
-		if needCond == "" || len(feeds) < 2 {
+		reqs := rule.normalizedRequirements()
+		if len(reqs) < 2 {
 			continue
 		}
 		type probe struct {
-			id    string
-			alert string
-			ok    bool
-			err   string
+			id       string
+			needCond string
+			alert    string
+			ok       bool
+			err      string
 		}
-		results := make([]probe, len(feeds))
+		results := make([]probe, len(reqs))
 		var wg sync.WaitGroup
-		for i, fid := range feeds {
-			fid = strings.TrimSpace(fid)
+		for i, req := range reqs {
+			fid := strings.TrimSpace(req.FeedID)
+			needCond := strings.TrimSpace(req.Condition)
 			f := feedByID(mon, fid)
 			results[i].id = fid
+			results[i].needCond = needCond
 			if f == nil || !f.Enabled || strings.TrimSpace(f.URL) == "" {
 				results[i].err = "feed missing or disabled"
 				continue
 			}
+			if needCond == "" {
+				results[i].err = "missing required condition"
+				continue
+			}
 			wg.Add(1)
-			go func(idx int, feed LightningFeedConfig) {
+			go func(idx int, feed LightningFeedConfig, want string) {
 				defer wg.Done()
-				r := t.fetchOneFeed(feed, timeout)
+				r := t.fetchOneFeedResolvingUnknown(feed, timeout)
 				if !r.ok {
 					results[idx].err = r.failureClass + ": " + r.errMsg
 					return
 				}
 				results[idx].alert = r.alert
-				results[idx].ok = strings.EqualFold(strings.TrimSpace(r.alert), needCond)
-			}(i, *f)
+				results[idx].ok = strings.EqualFold(strings.TrimSpace(r.alert), want)
+			}(i, *f, needCond)
 		}
 		wg.Wait()
 
@@ -1882,12 +1943,12 @@ func (t *LightningTrigger) evaluateCompositeRedAlertEnter() {
 				allMatch = false
 				continue
 			}
-			parts = append(parts, fmt.Sprintf("%s=%s", p.id, p.alert))
+			parts = append(parts, fmt.Sprintf("%s=%s(need %s)", p.id, p.alert, p.needCond))
 			if !p.ok {
 				allMatch = false
 			}
 		}
-		summary := fmt.Sprintf("rule=%s require=%s [%s]", rule.ID, needCond, strings.Join(parts, ", "))
+		summary := fmt.Sprintf("rule=%s [%s]", rule.ID, strings.Join(parts, ", "))
 		if !allMatch {
 			continue
 		}
@@ -1908,7 +1969,7 @@ func (t *LightningTrigger) evaluateCompositeRedAlertEnter() {
 		// Announce as Red Alert using primary feed context if available, else first required feed.
 		announceFeed := feedByID(mon, "primary")
 		if announceFeed == nil || !announceFeed.Enabled {
-			announceFeed = feedByID(mon, feeds[0])
+			announceFeed = feedByID(mon, reqs[0].FeedID)
 		}
 		if announceFeed != nil && feedAnnounceEnabled(announceFeed, "RedAlert") && t.announceTimingAllows("RedAlert") {
 			t.playLightningAnnouncementForFeed(announceFeed, "RedAlert")

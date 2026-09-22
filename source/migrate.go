@@ -230,6 +230,14 @@ func migrateLightning114Additive() error {
 				changed = true
 				log.Printf("Migration: lightning.json failover.triggers.telemetry_collapse defaulted to true")
 			}
+			// Unknown is Thor update-cycle flicker — never a failover trigger (force off).
+			if v, ok := tr["unknown_condition"]; !ok || v == true {
+				if v == true {
+					log.Printf("Migration: lightning.json failover.triggers.unknown_condition forced off (Thor flicker)")
+				}
+				tr["unknown_condition"] = false
+				changed = true
+			}
 			if _, ok := fo["telemetry_collapse"]; !ok {
 				def := defaultTelemetryCollapseThresholds()
 				fo["telemetry_collapse"] = map[string]interface{}{

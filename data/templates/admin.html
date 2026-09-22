@@ -1157,7 +1157,7 @@
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-empty_body" checked><label class="form-check-label" for="trig-empty_body">empty_body</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-encoding_error" checked><label class="form-check-label" for="trig-encoding_error">encoding_error</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-missing_lightningalert" checked><label class="form-check-label" for="trig-missing_lightningalert">missing_lightningalert</label></div></div>
-                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-unknown_condition"><label class="form-check-label" for="trig-unknown_condition">unknown_condition</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-unknown_condition" disabled><label class="form-check-label" for="trig-unknown_condition">unknown_condition (ignored — Thor flickers Unknown between updates; never fails over)</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-displayname_mismatch"><label class="form-check-label" for="trig-displayname_mismatch">displayname_mismatch</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-uniqueid_mismatch"><label class="form-check-label" for="trig-uniqueid_mismatch">uniqueid_mismatch</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-stale_localtime" checked><label class="form-check-label" for="trig-stale_localtime">stale_localtime (XML date &gt;24h behind)</label></div></div>
@@ -1183,8 +1183,8 @@
                     <div class="card mb-3 border-danger" id="lt-composite">
                         <div class="card-header"><h5 class="card-title mb-0">4. Composite Red Alert enter rules</h5></div>
                         <div class="card-body">
-                            <p class="mb-1"><strong>Enter Red Alert lock when several feeds agree</strong> — useful when failovers are miles away and no single feed reports Red Alert.</p>
-                            <p class="small text-muted mb-3">This only affects <em>entering</em> Red Alert. Unlock / All Clear still follows the release authority above. Need at least two feeds checked.</p>
+                            <p class="mb-1"><strong>Enter Red Alert lock when feeds match their own conditions</strong> — e.g. Failover 1 = Warning and Failover 2 = Red Alert.</p>
+                            <p class="small text-muted mb-3">This only affects <em>entering</em> Red Alert. Unlock / All Clear still follows the release authority above. Need at least two feeds with a condition selected.</p>
                             <div id="composite-ra-list"></div>
                             <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add-composite-ra-rule">+ Add enter rule</button>
                             <div class="lightning-section-save">
@@ -3654,8 +3654,17 @@
 
         let compositeRaRulesState = [];
 
-        function craFeedChecked(feeds, id) {
-            return (feeds || []).indexOf(id) >= 0;
+        function craReqForFeed(reqs, feedId, legacyFeeds, legacyCond) {
+            const list = Array.isArray(reqs) ? reqs : [];
+            for (let i = 0; i < list.length; i++) {
+                if (list[i] && list[i].feed_id === feedId) {
+                    return { on: true, cond: list[i].condition || 'Warning' };
+                }
+            }
+            if ((legacyFeeds || []).indexOf(feedId) >= 0) {
+                return { on: true, cond: legacyCond || 'Warning' };
+            }
+            return { on: false, cond: 'Warning' };
         }
 
         function renderCompositeRaRows(rules) {
@@ -3663,36 +3672,42 @@
             if (!list) return;
             compositeRaRulesState = Array.isArray(rules) ? rules.slice() : [];
             if (!compositeRaRulesState.length) {
-                list.innerHTML = '<div class="text-muted small border rounded p-3">No composite enter rules yet. Example: when Failover 1 and Failover 2 both report Warning → enter Red Alert.</div>';
+                list.innerHTML = '<div class="text-muted small border rounded p-3">No composite enter rules yet. Example: Failover 1 = Warning and Failover 2 = Red Alert → enter Red Alert.</div>';
                 return;
             }
             const condOpts = ['Warning', 'Caution', 'RedAlert'];
+            const feedSlots = [
+                { id: 'primary', label: 'Primary' },
+                { id: 'failover_1', label: 'Failover 1' },
+                { id: 'failover_2', label: 'Failover 2' }
+            ];
             list.innerHTML = compositeRaRulesState.map(function(r, idx) {
-                const feeds = r.require_feed_ids || [];
-                const cond = r.require_condition || 'Warning';
                 const enabled = !!r.enabled;
                 const label = (r.label || '').replace(/"/g, '&quot;');
+                const legacyFeeds = r.require_feed_ids || [];
+                const legacyCond = r.require_condition || 'Warning';
+                const reqRows = feedSlots.map(function(slot) {
+                    const req = craReqForFeed(r.requirements, slot.id, legacyFeeds, legacyCond);
+                    return '<div class="d-flex align-items-center gap-2 flex-wrap mb-1">' +
+                        '<span class="cra-pill mb-0"><input type="checkbox" class="form-check-input cra-feed" value="' + slot.id + '" id="cra-f-' + slot.id + '-' + idx + '"' + (req.on ? ' checked' : '') + '>' +
+                        ' <label class="form-check-label mb-0" for="cra-f-' + slot.id + '-' + idx + '">' + slot.label + '</label></span>' +
+                        '<span class="small text-muted">reports</span>' +
+                        '<select class="form-select form-select-sm cra-feed-cond" data-feed="' + slot.id + '" style="width:auto;min-width:8rem"' + (req.on ? '' : ' disabled') + '>' +
+                        condOpts.map(function(c) {
+                            return '<option value="' + c + '"' + (req.cond === c ? ' selected' : '') + '>' + c + '</option>';
+                        }).join('') +
+                        '</select></div>';
+                }).join('');
                 return '<div class="cra-rule-card' + (enabled ? '' : ' cra-disabled') + '" data-idx="' + idx + '">' +
                     '<div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">' +
                     '<div class="form-check form-switch mb-0">' +
                     '<input class="form-check-input cra-enabled" type="checkbox" id="cra-en-' + idx + '"' + (enabled ? ' checked' : '') + '>' +
                     '<label class="form-check-label" for="cra-en-' + idx + '">Rule ' + (idx + 1) + ' active</label></div>' +
                     '<button type="button" class="btn btn-sm btn-outline-danger cra-del">Remove</button></div>' +
-                    '<div class="cra-rule-sentence">' +
-                    '<span>When these feeds each report</span>' +
-                    '<select class="form-select form-select-sm cra-cond">' +
-                    condOpts.map(function(c) {
-                        return '<option value="' + c + '"' + (cond === c ? ' selected' : '') + '>' + c + '</option>';
-                    }).join('') +
-                    '</select>' +
-                    '<span>→ <strong>enter Red Alert</strong></span></div>' +
-                    '<div class="cra-feed-picks">' +
-                    '<span class="cra-pill"><input type="checkbox" class="form-check-input cra-feed" value="primary" id="cra-f-p-' + idx + '"' + (craFeedChecked(feeds, 'primary') ? ' checked' : '') + '> <label class="form-check-label mb-0" for="cra-f-p-' + idx + '">Primary</label></span>' +
-                    '<span class="cra-pill"><input type="checkbox" class="form-check-input cra-feed" value="failover_1" id="cra-f-1-' + idx + '"' + (craFeedChecked(feeds, 'failover_1') ? ' checked' : '') + '> <label class="form-check-label mb-0" for="cra-f-1-' + idx + '">Failover 1</label></span>' +
-                    '<span class="cra-pill"><input type="checkbox" class="form-check-input cra-feed" value="failover_2" id="cra-f-2-' + idx + '"' + (craFeedChecked(feeds, 'failover_2') ? ' checked' : '') + '> <label class="form-check-label mb-0" for="cra-f-2-' + idx + '">Failover 2</label></span>' +
-                    '</div>' +
+                    '<div class="small text-muted mb-2 mt-2">When <strong>all selected</strong> feed conditions match → <strong>enter Red Alert</strong></div>' +
+                    '<div class="cra-feed-reqs">' + reqRows + '</div>' +
                     '<div class="mt-2"><label class="form-label small mb-1" for="cra-label-' + idx + '">Optional name (for logs)</label>' +
-                    '<input class="form-control form-control-sm cra-label" id="cra-label-' + idx + '" placeholder="e.g. Both failovers Warning" value="' + label + '"></div>' +
+                    '<input class="form-control form-control-sm cra-label" id="cra-label-' + idx + '" placeholder="e.g. F1 Warning + F2 RedAlert" value="' + label + '"></div>' +
                     '</div>';
             }).join('');
             list.querySelectorAll('.cra-del').forEach(function(btn) {
@@ -3710,19 +3725,33 @@
                     if (card) card.classList.toggle('cra-disabled', !cb.checked);
                 });
             });
+            list.querySelectorAll('.cra-feed').forEach(function(cb) {
+                cb.addEventListener('change', function() {
+                    const row = cb.closest('.d-flex');
+                    const sel = row ? row.querySelector('.cra-feed-cond') : null;
+                    if (sel) sel.disabled = !cb.checked;
+                });
+            });
         }
 
         function collectCompositeRaRules() {
             const list = document.getElementById('composite-ra-list');
             const cards = list ? Array.from(list.querySelectorAll('.cra-rule-card[data-idx]')) : [];
             return cards.map(function(card, idx) {
-                const feeds = Array.from(card.querySelectorAll('.cra-feed:checked')).map(function(el) { return el.value; });
+                const requirements = [];
+                card.querySelectorAll('.cra-feed:checked').forEach(function(el) {
+                    const row = el.closest('.d-flex');
+                    const sel = row ? row.querySelector('.cra-feed-cond') : null;
+                    requirements.push({
+                        feed_id: el.value,
+                        condition: (sel && sel.value) ? sel.value : 'Warning'
+                    });
+                });
                 return {
                     id: (compositeRaRulesState[idx] && compositeRaRulesState[idx].id) || ('cra_' + idx),
                     enabled: card.querySelector('.cra-enabled').checked,
                     label: (card.querySelector('.cra-label').value || '').trim(),
-                    require_feed_ids: feeds,
-                    require_condition: card.querySelector('.cra-cond').value || 'Warning'
+                    requirements: requirements
                 };
             });
         }
@@ -3760,8 +3789,9 @@
             if (payload.failover && payload.failover.consecutive_failures < 2) warns.push('consecutive_failures is less than 2 (may flap).');
             (payload.composite_red_alert_rules || []).forEach(function(r, i) {
                 if (!r.enabled) return;
-                if (!r.require_feed_ids || r.require_feed_ids.length < 2) {
-                    warns.push('Composite rule ' + (i + 1) + ' needs at least two feeds checked.');
+                const n = (r.requirements && r.requirements.length) || (r.require_feed_ids && r.require_feed_ids.length) || 0;
+                if (n < 2) {
+                    warns.push('Composite rule ' + (i + 1) + ' needs at least two feeds with conditions.');
                 }
             });
             if (!warns.length) return true;
@@ -4024,9 +4054,11 @@
             compositeRaRulesState.push({
                 id: 'cra_' + Date.now(),
                 enabled: true,
-                label: 'Both failovers Warning → Red Alert',
-                require_feed_ids: ['failover_1', 'failover_2'],
-                require_condition: 'Warning'
+                label: 'F1 Warning + F2 RedAlert → Red Alert',
+                requirements: [
+                    { feed_id: 'failover_1', condition: 'Warning' },
+                    { feed_id: 'failover_2', condition: 'RedAlert' }
+                ]
             });
             renderCompositeRaRows(compositeRaRulesState);
             setLightningFormDirty(true);

@@ -21,7 +21,7 @@
                 "empty_body": true,
                 "encoding_error": true,
                 "missing_lightningalert": true,
-                "unknown_condition": true,
+                "unknown_condition": false,
                 "displayname_mismatch": false,
                 "uniqueid_mismatch": false,
                 "stale_localtime": true,

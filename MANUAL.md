@@ -631,7 +631,7 @@ A checked trigger means “count this problem as a failure toward failover.”
 | **empty_body** | Download succeeded but empty |
 | **encoding_error** | Response could not be decoded |
 | **missing_lightningalert** | XML missing the lightning alert field |
-| **unknown_condition** | Thor reported Unknown (only if you want that to force failover) |
+| **unknown_condition** | **Ignored.** Thor often flickers `Unknown` between XML update cycles; TARR retries briefly then soft-holds (Live Status only — never failover) |
 | **displayname_mismatch** | Name in XML ≠ expected |
 | **uniqueid_mismatch** | ID in XML ≠ expected |
 
@@ -817,7 +817,9 @@ These rules are intentional and safety-critical (preserved from v1.1.1 / v1.1.2,
 
 ### Composite enter (Advanced)
 
-Example rule operators may enable: require **failover_1** and **failover_2** each report **Warning** → treat as **Red Alert** enter (lock + Red Alert PA). Distant failovers may be 1–5 miles away; this is Admin-configurable, not hardcoded miles.
+Operators may enable rules that enter Red Alert when **two or more feeds** each match a **per-feed condition** (e.g. Failover 1 = Warning **and** Failover 2 = Red Alert). Older rules that used one shared condition for every checked feed still load.
+
+Example: require **failover_1** = Warning and **failover_2** = RedAlert → treat as **Red Alert** enter (lock + Red Alert PA). Distant failovers may be 1–5 miles away; this is Admin-configurable, not hardcoded miles.
 
 ### Practical examples
 
@@ -830,7 +832,7 @@ Example rule operators may enable: require **failover_1** and **failover_2** eac
 | `failover_vote`, both failovers trusted All Clear (DI/AD activity) | Unlock allowed (after rule 2) |
 | `failover_vote`, both failovers floor All Clear (DI=AD=0) | Stay locked |
 | `failover_vote`, one All Clear + one Unknown | Stay locked |
-| Composite: both failovers Warning → Red Alert | Lock enters; unlock still needs authorized All Clear |
+| Composite: F1 Warning + F2 RedAlert (or both Warning, etc.) | Lock enters; unlock still needs authorized All Clear |
 | All feeds down → Manual Override Force Red Alert | Lock active; Live Status shows override; Thor cannot unlock until Release override lock |
 
 ---

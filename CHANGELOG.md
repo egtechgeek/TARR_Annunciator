@@ -5,7 +5,24 @@ All notable changes to TARR Annunciator are documented here.
 Product versions match `AppVersion` in `source/version.go` and GitHub Release tags (`vX.Y.Z`).
 Target platform going forward: **Raspberry Pi OS 64-bit (`linux/arm64`)**.
 
-Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** → **`1.1.3`** → **`1.1.4`** (current).
+Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** → **`1.1.3`** → **`1.1.4`** → **`1.1.5`** (current).
+
+---
+
+## [1.1.5] - 2026-09-22
+
+Field follow-up after live v1.1.4: Thor `Unknown` flicker false failover, and more granular composite Red Alert enter rules. Remaining production items deferred to v1.1.6.
+
+### Changed
+
+- `AppVersion` **1.1.5**
+- **Unknown flicker harden:** Thor `<lightningalert>Unknown</lightningalert>` between server update cycles no longer counts as a failover failure. Same-poll retries (2× ~200ms) recover brief flicker; residual Unknown is soft-held for Live Status only. Admin `unknown_condition` trigger ignored / forced off
+- **Composite Red Alert per-feed conditions:** each selected feed can require its own condition (e.g. failover_1=Warning and failover_2=RedAlert). Legacy shared-condition rules still load
+
+### Safety
+
+- Unknown is treated as Thor update-cycle noise, not sensor death (HTTP / stale / telemetry collapse still fail over)
+- Composite enter remains enter-only; All Clear unlock authority unchanged
 
 ---
 

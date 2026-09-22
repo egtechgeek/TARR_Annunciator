@@ -89,14 +89,55 @@ type LightningFailoverPolicy struct {
 	TelemetryCollapse             TelemetryCollapseThresholds  `json:"telemetry_collapse,omitempty"`
 }
 
-// CompositeRedAlertRule enters Red Alert lock when multiple feeds each report a required condition.
+// CompositeFeedRequirement is one feed+condition clause in a composite enter rule.
+type CompositeFeedRequirement struct {
+	FeedID    string `json:"feed_id"`    // primary|failover_1|failover_2
+	Condition string `json:"condition"` // Warning|Caution|RedAlert
+}
+
+// CompositeRedAlertRule enters Red Alert lock when multiple feeds each report their required condition.
 // Unlock / All Clear release authority is unchanged (enter-only).
+// Prefer Requirements (per-feed conditions). Legacy RequireFeedIDs + RequireCondition
+// (same condition on every checked feed) still loads via normalizedRequirements().
 type CompositeRedAlertRule struct {
-	ID               string   `json:"id"`
-	Enabled          bool     `json:"enabled"`
-	Label            string   `json:"label"`
-	RequireFeedIDs   []string `json:"require_feed_ids"`
-	RequireCondition string   `json:"require_condition"` // e.g. Warning
+	ID               string                     `json:"id"`
+	Enabled          bool                       `json:"enabled"`
+	Label            string                     `json:"label"`
+	Requirements     []CompositeFeedRequirement `json:"requirements,omitempty"`
+	RequireFeedIDs   []string                   `json:"require_feed_ids,omitempty"`   // legacy
+	RequireCondition string                     `json:"require_condition,omitempty"` // legacy shared condition
+}
+
+// normalizedRequirements returns per-feed clauses. Prefer Requirements; else expand legacy fields.
+func (r CompositeRedAlertRule) normalizedRequirements() []CompositeFeedRequirement {
+	out := make([]CompositeFeedRequirement, 0, 3)
+	for _, req := range r.Requirements {
+		fid := strings.TrimSpace(req.FeedID)
+		cond := strings.TrimSpace(req.Condition)
+		if fid == "" || cond == "" {
+			continue
+		}
+		out = append(out, CompositeFeedRequirement{FeedID: fid, Condition: cond})
+	}
+	if len(out) >= 2 {
+		return out
+	}
+	needCond := strings.TrimSpace(r.RequireCondition)
+	if needCond == "" {
+		return out
+	}
+	legacy := make([]CompositeFeedRequirement, 0, len(r.RequireFeedIDs))
+	for _, fid := range r.RequireFeedIDs {
+		fid = strings.TrimSpace(fid)
+		if fid == "" {
+			continue
+		}
+		legacy = append(legacy, CompositeFeedRequirement{FeedID: fid, Condition: needCond})
+	}
+	if len(legacy) >= 2 {
+		return legacy
+	}
+	return out
 }
 
 // FeedSwitchAnnouncement is one optional PA rule for an active-feed transition.
