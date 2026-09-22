@@ -14,7 +14,7 @@
 /fixit_scripts/
 
 # Misc local data
-broward_thor_guard_sensors.csv
+/broward_thor_guard_sensors.csv
 
 # Internal site-specific manual (contains live credentials / IP — do not publish)
 /MANUAL - TARR.md
