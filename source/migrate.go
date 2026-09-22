@@ -58,10 +58,23 @@ func runSchemaMigrations(fromVersion string) error {
 		}
 	}
 
-	// Idempotent repairs for units already on 1.1.3 before stale_localtime / Voice_Unknown landed
+	// 1.1.4: telemetry_collapse failover trigger default
+	if compareSemver(fromVersion, "1.1.4") < 0 && compareSemver(toVersion, "1.1.4") >= 0 {
+		if err := migrateLightning114Additive(); err != nil {
+			return fmt.Errorf("lightning 1.1.4 migration: %w", err)
+		}
+	}
+
+	// Idempotent repairs — run even when from == to was skipped above via early return;
+	// callers that hit early return must still invoke ensureEmbeddedJSONSeeds / pending handoff separately.
 	if compareSemver(toVersion, "1.1.3") >= 0 {
 		if err := migrateLightning113Additive(); err != nil {
 			return fmt.Errorf("lightning 1.1.3 additive repair: %w", err)
+		}
+	}
+	if compareSemver(toVersion, "1.1.4") >= 0 {
+		if err := migrateLightning114Additive(); err != nil {
+			return fmt.Errorf("lightning 1.1.4 additive repair: %w", err)
 		}
 	}
 
@@ -174,6 +187,63 @@ func migrateLightning113Additive() error {
 				log.Printf("Migration: THOR_Unknown audio_file → Voice_Unknown.mp3")
 			}
 		}
+	}
+
+	if !changed {
+		return nil
+	}
+	out, err := json.MarshalIndent(live, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(out, '\n'), 0644)
+}
+
+// migrateLightning114Additive is idempotent: telemetry_collapse trigger default + thresholds block.
+func migrateLightning114Additive() error {
+	path := lightningConfigPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("Migration: lightning.json missing — skip 1.1.4 additive")
+			return nil
+		}
+		return err
+	}
+	var live map[string]interface{}
+	if err := json.Unmarshal(data, &live); err != nil {
+		return fmt.Errorf("parse lightning.json: %w", err)
+	}
+	changed := false
+
+	mon, _ := live["monitor"].(map[string]interface{})
+	if mon != nil {
+		fo, _ := mon["failover"].(map[string]interface{})
+		if fo != nil {
+			tr, _ := fo["triggers"].(map[string]interface{})
+			if tr == nil {
+				tr = map[string]interface{}{}
+				fo["triggers"] = tr
+			}
+			if _, ok := tr["telemetry_collapse"]; !ok {
+				tr["telemetry_collapse"] = true
+				changed = true
+				log.Printf("Migration: lightning.json failover.triggers.telemetry_collapse defaulted to true")
+			}
+			if _, ok := fo["telemetry_collapse"]; !ok {
+				def := defaultTelemetryCollapseThresholds()
+				fo["telemetry_collapse"] = map[string]interface{}{
+					"history_samples": def.HistorySamples,
+					"elevated_lhl":    def.ElevatedLHL,
+					"elevated_di":     def.ElevatedDI,
+					"elevated_ad":     def.ElevatedAD,
+					"floor_lhl_max":   def.FloorLHLMax,
+				}
+				changed = true
+				log.Printf("Migration: lightning.json failover.telemetry_collapse thresholds added")
+			}
+		}
+		live["monitor"] = mon
 	}
 
 	if !changed {
@@ -749,6 +819,11 @@ func migrateFromPackageSeeds(packageJSONDir string) error {
 		return nil
 	}
 
+	// Generic installer-parity: copy any missing non-protected json/* from package.
+	if err := installMissingJSONSeeds(packageJSONDir); err != nil {
+		log.Printf("Warning: generic JSON seed install: %v", err)
+	}
+
 	if err := migrateEnsureBrowardTGCatalog(packageJSONDir); err != nil {
 		log.Printf("Warning: browardtg catalog migrate from package: %v", err)
 	}
@@ -775,6 +850,55 @@ func migrateFromPackageSeeds(packageJSONDir string) error {
 	return migrateLightningAdditive(nil)
 }
 
+// installMissingJSONSeeds copies package json/* into live json/ only when the live file is absent.
+// Protected basenames are never copied (operator secrets / selections).
+func installMissingJSONSeeds(packageJSONDir string) error {
+	entries, err := os.ReadDir(packageJSONDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	liveDir := ""
+	if app != nil && app.Config != nil && app.Config.JSONDir != "" {
+		liveDir = app.Config.JSONDir
+	} else {
+		liveDir = "json"
+	}
+	if err := os.MkdirAll(liveDir, 0755); err != nil {
+		return err
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasSuffix(strings.ToLower(name), ".json") {
+			continue
+		}
+		if shouldSkipJSONOverwrite(name) {
+			continue
+		}
+		dest := filepath.Join(liveDir, name)
+		if fileExists(dest) {
+			continue
+		}
+		src := filepath.Join(packageJSONDir, name)
+		data, err := os.ReadFile(src)
+		if err != nil {
+			log.Printf("Warning: read package seed %s: %v", name, err)
+			continue
+		}
+		if err := os.WriteFile(dest, data, 0644); err != nil {
+			log.Printf("Warning: write live seed %s: %v", name, err)
+			continue
+		}
+		log.Printf("Migration: created json/%s from package seed", name)
+	}
+	return nil
+}
+
 func protectedJSONBasenames() map[string]bool {
 	return map[string]bool{
 		"admin_config.json":          true,
@@ -784,6 +908,7 @@ func protectedJSONBasenames() map[string]bool {
 		"audio_settings.json":        true,
 		"operating_hours.json":       true,
 		"install_version.json":       true,
+		"lightning.json":             true, // additive merge only — never bulk-copy over operator config
 	}
 }
 

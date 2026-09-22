@@ -12,7 +12,7 @@
             "failback_after_successes": 5,
             "failback_probe_interval_seconds": 0,
             "allow_failover_during_red_alert": true,
-            "allclear_release_mode": "primary_only",
+            "allclear_release_mode": "failover_vote",
             "preserve_condition_across_failover": true,
             "on_all_feeds_failed": "hold_last_condition",
             "triggers": {
@@ -24,7 +24,15 @@
                 "unknown_condition": true,
                 "displayname_mismatch": false,
                 "uniqueid_mismatch": false,
-                "stale_localtime": true
+                "stale_localtime": true,
+                "telemetry_collapse": false
+            },
+            "telemetry_collapse": {
+                "history_samples": 3,
+                "elevated_lhl": 3,
+                "elevated_di": 2.3,
+                "elevated_ad": 1,
+                "floor_lhl_max": 1
             }
         },
         "feeds": [
@@ -153,7 +161,7 @@
                 "match_sensor_id": "",
                 "match_displayname": "",
                 "audio_file": "",
-                "label": "primary \u2192 failover_1"
+                "label": "primary → failover_1"
             },
             {
                 "id": "p_to_f2",
@@ -164,10 +172,31 @@
                 "match_sensor_id": "",
                 "match_displayname": "",
                 "audio_file": "",
-                "label": "primary \u2192 failover_2"
+                "label": "primary → failover_2"
             }
         ],
-        "composite_red_alert_rules": []
+        "composite_red_alert_rules": [
+            {
+                "id": "cra_1790042047126",
+                "enabled": true,
+                "label": "Both failovers Warning → Red Alert",
+                "require_feed_ids": [
+                    "failover_1",
+                    "failover_2"
+                ],
+                "require_condition": "Warning"
+            },
+            {
+                "id": "cra_1790042065346",
+                "enabled": true,
+                "label": "Both failovers Red Alert → Red Alert",
+                "require_feed_ids": [
+                    "failover_1",
+                    "failover_2"
+                ],
+                "require_condition": "RedAlert"
+            }
+        ]
     },
     "lightning_announcements": [
         {

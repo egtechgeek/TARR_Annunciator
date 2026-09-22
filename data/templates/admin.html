@@ -697,6 +697,7 @@
                     <form method="post" action="/admin">
                         <div class="mb-3">
                             <label for="cron_json" class="form-label">Schedule Configuration (JSON):</label>
+                            <p class="form-text text-muted small mb-2">v1.1.4 keeps Schedule as raw JSON. Dynamic forms that auto-discover JSON/MP3 entries are planned for a later release.</p>
                             <textarea name="cron_json" class="form-control">{{printf "%s" .cron_data}}</textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">💾 Update Schedule</button>
@@ -1047,12 +1048,12 @@
                             <div class="card mb-3 border-danger">
                                 <div class="card-header"><h5 class="card-title mb-0">Manual Override</h5></div>
                                 <div class="card-body">
-                                    <p class="small text-muted">When all Thor feeds have failed. Distinct from Manual Test (audio drill).</p>
+                                    <p class="small text-muted">True override lock: Thor XML cannot change Red Alert / All Clear until you <strong>release</strong> the lock here. Fetches and failover still run. Distinct from Manual Test (audio drill).</p>
                                     <div id="lightning-override-status" class="alert alert-secondary py-2 small mb-3">Override: inactive</div>
                                     <div class="d-grid gap-2">
-                                        <button type="button" class="btn btn-danger" id="override-force-redalert">Force Red Alert (override)</button>
-                                        <button type="button" class="btn btn-success" id="override-force-allclear">Force All Clear / unlock (override)</button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="override-clear-flag">Clear override flag only</button>
+                                        <button type="button" class="btn btn-danger" id="override-force-redalert">Force Red Alert (override lock)</button>
+                                        <button type="button" class="btn btn-success" id="override-force-allclear">Force All Clear / unlock (override lock)</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="override-clear-flag">Release override lock</button>
                                     </div>
                                 </div>
                             </div>
@@ -1160,6 +1161,7 @@
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-displayname_mismatch"><label class="form-check-label" for="trig-displayname_mismatch">displayname_mismatch</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-uniqueid_mismatch"><label class="form-check-label" for="trig-uniqueid_mismatch">uniqueid_mismatch</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-stale_localtime" checked><label class="form-check-label" for="trig-stale_localtime">stale_localtime (XML date &gt;24h behind)</label></div></div>
+                                <div class="col-md-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-telemetry_collapse" checked><label class="form-check-label" for="trig-telemetry_collapse">telemetry_collapse (all of LHL+DI+AD elevated → floor cliff; sticky until DI&gt;0 or AD&gt;0 → switch feeds). Unlock denial always stays on.</label></div></div>
                             </div>
                             <h6 class="mt-3">During Red Alert</h6>
                             <div class="form-check">
@@ -1221,13 +1223,13 @@
                                 </div>
                                 <div class="col-md-8 mb-3">
                                     <label for="red-alert-reminder-file" class="form-label">Reminder MP3</label>
-                                    <select class="form-select lightning-mp3-select" id="red-alert-reminder-file" data-allow-empty="0"></select>
+                                    <select class="form-select lightning-mp3-select" id="red-alert-reminder-file" data-allow-empty="0" data-mp3-kind="voice"></select>
                                 </div>
                             </div>
                             <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-reminder-horn"><label class="form-check-label" for="red-alert-reminder-horn">Play horn before each reminder</label></div>
                             <div class="mb-2">
                                 <label for="red-alert-reminder-horn-file" class="form-label">Reminder horn MP3</label>
-                                <select class="form-select lightning-mp3-select" id="red-alert-reminder-horn-file" data-allow-empty="1"></select>
+                                <select class="form-select lightning-mp3-select" id="red-alert-reminder-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select>
                             </div>
                             <button type="button" class="btn btn-outline-danger btn-sm" id="test-red-alert-reminder">🔔 Play Reminder Now</button>
                             <div class="lightning-section-save">
@@ -1263,22 +1265,22 @@
                                 <h6>Red Alert</h6>
                                 <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-redalert-horn-enabled" checked><label class="form-check-label" for="ca-redalert-horn-enabled">Play horn before announce</label></div>
                                 <div class="row">
-                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-horn-file">Horn MP3</label><select class="form-select lightning-mp3-select" id="ca-redalert-horn-file" data-allow-empty="1"></select></div>
-                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-announce-file">Announce MP3</label><select class="form-select lightning-mp3-select" id="ca-redalert-announce-file" data-allow-empty="0"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-horn-file">Horn MP3</label><select class="form-select lightning-mp3-select" id="ca-redalert-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-announce-file">Announce MP3</label><select class="form-select lightning-mp3-select" id="ca-redalert-announce-file" data-allow-empty="0" data-mp3-kind="voice"></select></div>
                                 </div>
                             </div>
                             <div class="border rounded p-3 mb-3">
                                 <h6>All Clear</h6>
                                 <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-allclear-horn-enabled" checked><label class="form-check-label" for="ca-allclear-horn-enabled">Play horn before announce</label></div>
                                 <div class="row">
-                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-horn-file">Horn MP3</label><select class="form-select lightning-mp3-select" id="ca-allclear-horn-file" data-allow-empty="1"></select></div>
-                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-announce-file">Announce MP3</label><select class="form-select lightning-mp3-select" id="ca-allclear-announce-file" data-allow-empty="0"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-horn-file">Horn MP3</label><select class="form-select lightning-mp3-select" id="ca-allclear-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-announce-file">Announce MP3</label><select class="form-select lightning-mp3-select" id="ca-allclear-announce-file" data-allow-empty="0" data-mp3-kind="voice"></select></div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-warning-announce-file">Warning announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-warning-announce-file" data-allow-empty="1"></select></div>
-                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-caution-announce-file">Caution announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-caution-announce-file" data-allow-empty="1"></select></div>
-                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-unknown-announce-file">Unknown announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-unknown-announce-file" data-allow-empty="1"></select></div>
+                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-warning-announce-file">Warning announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-warning-announce-file" data-allow-empty="1" data-mp3-kind="voice"></select></div>
+                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-caution-announce-file">Caution announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-caution-announce-file" data-allow-empty="1" data-mp3-kind="voice"></select></div>
+                                <div class="col-md-4 mb-2"><label class="form-label" for="ca-unknown-announce-file">Unknown announce MP3</label><select class="form-select form-select-sm lightning-mp3-select" id="ca-unknown-announce-file" data-allow-empty="1" data-mp3-kind="voice"></select></div>
                             </div>
                             <div class="lightning-section-save">
                                 <button type="button" class="btn btn-primary btn-sm save-condition-audio">💾 Save Condition Audio</button>
@@ -3200,7 +3202,7 @@
                     }).join('') + '</div>' +
                     '<h6>Optional announce MP3 overrides</h6><div class="row">' +
                     ['RedAlert','Warning','Caution','AllClear','Unknown'].map(function(c) {
-                        return '<div class="col-md-4 mb-2"><label class="form-label">' + c + '</label><select class="form-select form-select-sm lightning-mp3-select feed-audio-' + c + '" data-allow-empty="1" data-idx="' + idx + '">' + lightningMp3OptionsHtml((audio[c] || ''), true) + '</select></div>';
+                        return '<div class="col-md-4 mb-2"><label class="form-label">' + c + '</label><select class="form-select form-select-sm lightning-mp3-select feed-audio-' + c + '" data-allow-empty="1" data-mp3-kind="voice" data-idx="' + idx + '">' + lightningMp3OptionsHtml((audio[c] || ''), true, 'voice') + '</select></div>';
                     }).join('') + '</div>' +
                     '<h6 class="mt-2">Horn overrides (Red Alert / All Clear)</h6>' +
                     ['RedAlert','AllClear'].map(function(c) {
@@ -3212,7 +3214,7 @@
                             '<div class="form-check mb-1"><input class="form-check-input feed-horn-custom" type="radio" name="feed-horn-' + c + '-' + idx + '" data-idx="' + idx + '" data-cond="' + c + '" value="0"' + (!inherit ? ' checked' : '') + '><label class="form-check-label">Custom for this feed</label></div>' +
                             '<div class="feed-horn-custom-fields ps-2" data-idx="' + idx + '" data-cond="' + c + '" style="' + (inherit ? 'display:none' : '') + '">' +
                             '<div class="form-check mb-1"><input class="form-check-input feed-horn-enabled" type="checkbox" data-idx="' + idx + '" data-cond="' + c + '"' + (h.enabled ? ' checked' : '') + '><label class="form-check-label">Play horn</label></div>' +
-                            '<select class="form-select form-select-sm lightning-mp3-select feed-horn-file" data-allow-empty="1" data-idx="' + idx + '" data-cond="' + c + '">' + lightningMp3OptionsHtml((h.audio_file || ''), true) + '</select>' +
+                            '<select class="form-select form-select-sm lightning-mp3-select feed-horn-file" data-allow-empty="1" data-mp3-kind="horn" data-idx="' + idx + '" data-cond="' + c + '">' + lightningMp3OptionsHtml((h.audio_file || ''), true, 'horn') + '</select>' +
                             '</div></div>';
                     }).join('') +
                     '</div></div>';
@@ -3340,7 +3342,7 @@
                     '<td><select class="form-select form-select-sm sw-to">' + feedOpts.replace('value="' + (r.to_feed_id || 'failover_1') + '"', 'value="' + (r.to_feed_id || 'failover_1') + '" selected') + '</select></td>' +
                     '<td><select class="form-select form-select-sm sw-reason">' + reasonOpts.replace('value="' + (r.reason || 'failover') + '"', 'value="' + (r.reason || 'failover') + '" selected') + '</select></td>' +
                     '<td><input class="form-control form-control-sm sw-sensor" placeholder="sensor id" value="' + (r.match_sensor_id || '') + '"></td>' +
-                    '<td><select class="form-select form-select-sm lightning-mp3-select sw-audio" data-allow-empty="1">' + lightningMp3OptionsHtml(r.audio_file || '', true) + '</select></td>' +
+                    '<td><select class="form-select form-select-sm lightning-mp3-select sw-audio" data-allow-empty="1" data-mp3-kind="voice">' + lightningMp3OptionsHtml(r.audio_file || '', true, 'voice') + '</select></td>' +
                     '<td><button type="button" class="btn btn-sm btn-outline-secondary sw-test">▶</button> <button type="button" class="btn btn-sm btn-outline-danger sw-del">×</button></td></tr>';
             }).join('');
             // Fix selected attributes properly
@@ -3388,10 +3390,11 @@
         }
 
 
-        let lightningMp3Files = [];
+        let lightningVoiceFiles = [];
+        let lightningHornFiles = [];
 
-        function lightningMp3OptionsHtml(selected, allowEmpty) {
-            const files = lightningMp3Files || [];
+        function lightningMp3OptionsHtml(selected, allowEmpty, kind) {
+            const files = (kind === 'horn' ? lightningHornFiles : lightningVoiceFiles) || [];
             let html = '';
             if (allowEmpty) {
                 html += '<option value="">— none —</option>';
@@ -3411,7 +3414,8 @@
         function fillLightningMp3Select(el, selected) {
             if (!el) return;
             const allowEmpty = el.getAttribute('data-allow-empty') === '1';
-            el.innerHTML = lightningMp3OptionsHtml(selected || '', allowEmpty);
+            const kind = el.getAttribute('data-mp3-kind') || 'voice';
+            el.innerHTML = lightningMp3OptionsHtml(selected || '', allowEmpty, kind);
             if (selected) el.value = selected;
         }
 
@@ -3453,6 +3457,7 @@
             setChecked('trig-displayname_mismatch', !!tr.displayname_mismatch);
             setChecked('trig-uniqueid_mismatch', !!tr.uniqueid_mismatch);
             setChecked('trig-stale_localtime', tr.stale_localtime !== false);
+            setChecked('trig-telemetry_collapse', tr.telemetry_collapse !== false);
 
             const announce = status.condition_announce || {};
             setChecked('announce-redalert', announce.RedAlert !== false);
@@ -3483,7 +3488,8 @@
             setValue('ca-caution-announce-file', (ca.Caution && ca.Caution.announce_file) || 'Voice_Caution.mp3');
             setValue('ca-unknown-announce-file', (ca.Unknown && ca.Unknown.announce_file) || 'Voice_Unknown.mp3');
 
-            lightningMp3Files = status.available_reminder_files || [];
+            lightningVoiceFiles = status.available_voice_files || status.available_reminder_files || [];
+            lightningHornFiles = status.available_horn_files || [];
             refreshAllLightningMp3Selects({
                 'red-alert-reminder-file': policy.reminder_audio_file || 'Voice_RedAlert_Reminder.mp3',
                 'red-alert-reminder-horn-file': policy.horn_audio_file || '',
@@ -3515,7 +3521,20 @@
 
             let banners = '';
             if (status.all_feeds_failed) banners += '<div class="alert alert-danger">All Thor feeds unreachable — holding last condition (never auto All Clear)</div>';
-            if (status.manual_override_active) banners += '<div class="alert alert-danger"><strong>MANUAL OVERRIDE ACTIVE</strong> — ' + (status.manual_override_condition || '') + ' since ' + (status.manual_override_at || '') + (status.manual_override_note ? ' (' + status.manual_override_note + ')' : '') + '</div>';
+            if (status.manual_override_active) banners += '<div class="alert alert-danger"><strong>MANUAL OVERRIDE LOCK ACTIVE</strong> — ' + (status.manual_override_condition || '') + ' since ' + (status.manual_override_at || '') + ' — Thor cannot change lock until released' + (status.manual_override_note ? ' (' + status.manual_override_note + ')' : '') + '</div>';
+            const health = status.feed_health || {};
+            const collapsedIds = [];
+            Object.keys(health).forEach(function(id) {
+                if (health[id] && health[id].telemetry_collapse) collapsedIds.push(id);
+            });
+            collapsedIds.sort();
+            if (collapsedIds.length) {
+                const label = collapsedIds.length === 1
+                    ? ('Feed <strong>' + collapsedIds[0] + '</strong> is')
+                    : ('Feeds <strong>' + collapsedIds.join(', ') + '</strong> are');
+                banners += '<div class="alert alert-danger"><strong>TELEMETRY COLLAPSE / UNTRUSTED</strong> — ' + label +
+                    ' in sticky hold (not trusted for conditions / All Clear until DI&gt;0 or AD&gt;0)</div>';
+            }
             if (status.on_failover) banners += '<div class="alert alert-warning">On failover feed: <strong>' + (status.active_feed_id || '') + '</strong></div>';
             if (status.pinned_feed_id) banners += '<div class="alert alert-info">PINNED active feed: <strong>' + status.pinned_feed_id + '</strong></div>';
             if (status.last_composite_enter) banners += '<div class="alert alert-warning small">Last composite enter: ' + status.last_composite_enter + '</div>';
@@ -3532,14 +3551,17 @@
 
             let healthRows = '';
             const feeds = status.feeds || [];
-            const health = status.feed_health || {};
             feeds.forEach(function(f) {
                 const h = health[f.id] || {};
                 const lastStatus = h.last_alert || '';
                 const statusBadge = lastStatus
                     ? '<span class="badge ' + getConditionBadgeClass(lastStatus) + '">' + lastStatus + '</span>'
                     : '—';
-                healthRows += '<tr><td>' + f.id + '</td><td>' + (f.enabled ? 'yes' : 'no') + '</td><td>' + (h.last_ok || '—') + '</td><td>' + (h.consecutive_failures || 0) + '</td><td class="small">' + (h.last_error || '—') + '</td><td>' + statusBadge + '</td><td>' + (h.last_displayname || '—') + '</td></tr>';
+                healthRows += '<tr><td>' + f.id + '</td><td>' + (f.enabled ? 'yes' : 'no') + '</td><td>' + (h.last_ok || '—') + '</td><td>' + (h.consecutive_failures || 0) + '</td><td class="small">' + (h.last_error || '—') + '</td><td>' + statusBadge + (h.telemetry_collapse ? ' <span class="badge bg-dark">collapse</span>' : '') + '</td><td class="small">' +
+                    (h.last_lhl != null ? 'LHL ' + h.last_lhl : '—') + ' / ' +
+                    (h.last_di != null ? 'DI ' + h.last_di : '—') + ' / ' +
+                    (h.last_ad != null ? 'AD ' + h.last_ad : '—') +
+                    '</td><td>' + (h.last_displayname || '—') + '</td></tr>';
             });
 
             content.innerHTML = banners +
@@ -3551,7 +3573,7 @@
                 (status.last_fetch_error ? '<div class="text-danger small">Last error: ' + status.last_fetch_error + '</div>' : '') +
                 (status.last_allclear_vote ? '<div class="small text-muted">Last vote: ' + status.last_allclear_vote + '</div>' : '') +
                 (status.red_alert_active ? '<div class="alert alert-danger mt-2 mb-2"><strong>RED ALERT ACTIVE</strong> since ' + (status.red_alert_since || '') + ' · next reminder ' + (status.next_reminder || '') + '</div>' : '') +
-                '<div class="table-responsive mt-2"><table class="table table-sm"><thead><tr><th>Feed</th><th>Enabled</th><th>Last OK</th><th>Fails</th><th>Last error</th><th>Last Status</th><th>Displayname</th></tr></thead><tbody>' + healthRows + '</tbody></table></div>';
+                '<div class="table-responsive mt-2"><table class="table table-sm"><thead><tr><th>Feed</th><th>Enabled</th><th>Last OK</th><th>Fails</th><th>Last error</th><th>Last Status</th><th>LHL / DI / AD</th><th>Displayname</th></tr></thead><tbody>' + healthRows + '</tbody></table></div>';
         }
 
         function loadLightningTriggerStatus(forceFormReload) {
@@ -3624,7 +3646,8 @@
                     unknown_condition: document.getElementById('trig-unknown_condition').checked,
                     displayname_mismatch: document.getElementById('trig-displayname_mismatch').checked,
                     uniqueid_mismatch: document.getElementById('trig-uniqueid_mismatch').checked,
-                    stale_localtime: document.getElementById('trig-stale_localtime').checked
+                    stale_localtime: document.getElementById('trig-stale_localtime').checked,
+                    telemetry_collapse: document.getElementById('trig-telemetry_collapse').checked
                 }
             };
         }
@@ -3936,9 +3959,9 @@
 
         function applyManualOverride(action) {
             const labels = {
-                redalert: 'Force Red Alert (manual override)? This sets the real lock — not a Manual Test drill.',
-                allclear: 'Force All Clear / unlock (manual override)? This clears the Red Alert lock.',
-                clear: 'Clear the manual override flag only (lock/condition unchanged)?'
+                redalert: 'Force Red Alert and HOLD override lock? Thor cannot unlock until you Release override lock.',
+                allclear: 'Force All Clear / unlock and HOLD override lock? Thor cannot re-enter Red Alert until you Release override lock.',
+                clear: 'Release the manual override lock? Current lock/condition stays; Thor may drive again on the next poll.'
             };
             if (!confirm(labels[action] || ('Apply override: ' + action + '?'))) return;
             fetch('/admin/lightning/override', {

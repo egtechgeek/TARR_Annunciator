@@ -240,3 +240,1445 @@ ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) Unknown PCM default
 2026/09/21 12:51:11 Lightning feed primary failure (unknown_condition): Unknown
 2026/09/21 12:52:11 Lightning feed primary failure (unknown_condition): Unknown
 2026/09/21 12:53:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 12:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 12:54:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 12:55:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 12:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 12:58:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 12:59:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:00:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:01:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:02:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:03:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:04:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:04:11 Lightning: active feed changed primary → failover_1 (reason=failover)
+2026/09/21 13:05:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 13:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:06:11 Lightning trigger fetch recovered after: Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 13:07:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 13:08:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 13:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:09:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 13:10:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 13:11:11 Lightning trigger fetch recovered after: Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 13:11:11 Lightning: active feed changed failover_1 → primary (reason=failback)
+2026/09/21 13:11:11 Lightning condition changed from 'AllClear' to 'Unknown' (feed=primary)
+2026/09/21 13:11:11 Lightning status 'Unknown' - ignoring condition change
+2026/09/21 13:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:14:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:15:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:16:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:19:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:20:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:21:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:22:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:25:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:26:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:27:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:28:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:31:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:32:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:34:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:35:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:36:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:37:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:38:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:40:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:41:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:42:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 13:43:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:43:11 ✓ Time sync from pool.ntp.org (offset -341ms, app time 2026-09-21 13:43:11 EDT)
+2026/09/21 13:44:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:48:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:48:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:49:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:50:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:51:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:51:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:52:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 13:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 13:59:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:00:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:01:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:02:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:04:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:05:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:06:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:07:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:11:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:12:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:13:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:14:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:15:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:18:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:19:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:20:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:23:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:24:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:25:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:26:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:27:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:29:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:30:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:31:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:32:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:33:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:34:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:35:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:36:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:37:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:38:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:39:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:40:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:40:11 Lightning: active feed changed primary → failover_1 (reason=failover)
+2026/09/21 14:41:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 14:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:42:11 Lightning trigger fetch recovered after: Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 14:42:11 Lightning condition changed from 'AllClear' to 'Warning' (feed=failover_1)
+2026/09/21 14:42:11 Lightning announce skipped for 'Warning' — disabled for feed failover_1 / global
+2026/09/21 14:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 14:43:11 ✓ Time sync from pool.ntp.org (offset -402ms, app time 2026-09-21 14:43:11 EDT)
+2026/09/21 14:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:45:11 Lightning: active feed changed failover_1 → primary (reason=failback)
+2026/09/21 14:45:11 Lightning condition changed from 'Warning' to 'Unknown' (feed=primary)
+2026/09/21 14:45:11 Lightning status 'Unknown' - ignoring condition change
+2026/09/21 14:46:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:47:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:48:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:48:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 14:48:11 Lightning condition changed from 'Warning' to 'RedAlert' (feed=primary)
+2026/09/21 14:48:11 THOR Guard Red Alert ACTIVE — suppressing non-emergency announcements until All Clear
+2026/09/21 14:48:11 THOR Guard Red Alert preempted 0 announcement(s)
+2026/09/21 14:48:11 THOR Guard Red Alert reminders armed: every 5 minute(s) using Voice_RedAlert_Reminder.mp3
+2026/09/21 14:48:11 Playing lightning announcement: THOR Red Alert
+2026/09/21 14:48:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_files:[Horn_RedAlert.mp3 Voice_RedAlert.mp3] condition:RedAlert message:THOR RED ALERT: Extreme lightning danger detected. All personnel must take immediate shelter. Suspend all outdoor activities immediately. trigger_source:LIGHTNING_TRIGGER]
+2026/09/21 14:48:11 DEBUG: Lightning announcement for condition: RedAlert
+2026/09/21 14:48:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Horn_RedAlert.mp3 /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert.mp3]
+2026/09/21 14:48:11 Queued announcement: ID=ann_1790016491_2, Type=lightning, Priority=10, Scheduled=2026-09-21T14:48:11-04:00
+2026/09/21 14:48:11 Queued HIGHEST PRIORITY lightning announcement: THOR Red Alert (ID: ann_1790016491_2)
+2026/09/21 14:48:11 Starting announcement: ID=ann_1790016491_2, Type=lightning, Priority=10
+2026/09/21 14:48:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 14:48:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Horn_RedAlert.mp3
+2026/09/21 14:48:11 🔓 Audio mutex unlocked due to error
+2026/09/21 14:48:11 Failed to play announcement: ID=ann_1790016491_2, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Horn_RedAlert.mp3: audio not available
+2026/09/21 14:51:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:52:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 14:53:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 14:53:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 14:53:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 14:53:11 Queued announcement: ID=ann_1790016791_3, Type=lightning, Priority=10, Scheduled=2026-09-21T14:53:11-04:00
+2026/09/21 14:53:11 Queued THOR Guard Red Alert reminder #1 (ID: ann_1790016791_3, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 14:53:11 Starting announcement: ID=ann_1790016791_3, Type=lightning, Priority=10
+2026/09/21 14:53:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 14:53:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 14:53:11 🔓 Audio mutex unlocked due to error
+2026/09/21 14:53:11 Failed to play announcement: ID=ann_1790016791_3, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 14:53:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 14:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:54:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 14:55:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 14:56:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 14:56:41 Lightning: active feed changed primary → failover_1 (reason=failover)
+2026/09/21 14:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 14:57:41 Lightning feed failover_1 failure (http_error): Get "https://broward.thormobile4.net/qwp/FL0110.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 14:57:41 Lightning: active feed changed failover_1 → failover_2 (reason=failover)
+2026/09/21 14:58:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 14:58:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 14:58:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 14:58:11 Queued announcement: ID=ann_1790017091_4, Type=lightning, Priority=10, Scheduled=2026-09-21T14:58:11-04:00
+2026/09/21 14:58:11 Queued THOR Guard Red Alert reminder #2 (ID: ann_1790017091_4, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 14:58:11 Starting announcement: ID=ann_1790017091_4, Type=lightning, Priority=10
+2026/09/21 14:58:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 14:58:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 14:58:11 🔓 Audio mutex unlocked due to error
+2026/09/21 14:58:11 Failed to play announcement: ID=ann_1790017091_4, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 14:58:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 14:58:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 14:59:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 14:59:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:00:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:00:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:01:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:01:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:02:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:02:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:03:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:03:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:03:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:03:11 Queued announcement: ID=ann_1790017391_5, Type=lightning, Priority=10, Scheduled=2026-09-21T15:03:11-04:00
+2026/09/21 15:03:11 Queued THOR Guard Red Alert reminder #3 (ID: ann_1790017391_5, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:03:11 Starting announcement: ID=ann_1790017391_5, Type=lightning, Priority=10
+2026/09/21 15:03:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:03:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:03:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:03:11 Failed to play announcement: ID=ann_1790017391_5, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:03:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:03:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:04:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:04:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:05:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:05:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:06:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:06:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:07:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:07:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:08:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:08:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:08:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:08:11 Queued announcement: ID=ann_1790017691_6, Type=lightning, Priority=10, Scheduled=2026-09-21T15:08:11-04:00
+2026/09/21 15:08:11 Queued THOR Guard Red Alert reminder #4 (ID: ann_1790017691_6, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:08:11 Starting announcement: ID=ann_1790017691_6, Type=lightning, Priority=10
+2026/09/21 15:08:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:08:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:08:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:08:11 Failed to play announcement: ID=ann_1790017691_6, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:08:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:08:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:09:12 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:09:12 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:10:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:10:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:11:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:11:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:12:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:12:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:13:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:13:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:13:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:13:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:13:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:13:11 Queued announcement: ID=ann_1790017991_7, Type=lightning, Priority=10, Scheduled=2026-09-21T15:13:11-04:00
+2026/09/21 15:13:11 Queued THOR Guard Red Alert reminder #5 (ID: ann_1790017991_7, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:13:11 Starting announcement: ID=ann_1790017991_7, Type=lightning, Priority=10
+2026/09/21 15:13:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:13:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:13:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:13:11 Failed to play announcement: ID=ann_1790017991_7, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:14:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:14:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:15:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:15:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:16:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:16:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:17:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:17:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:18:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:18:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:18:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:18:11 Queued announcement: ID=ann_1790018291_8, Type=lightning, Priority=10, Scheduled=2026-09-21T15:18:11-04:00
+2026/09/21 15:18:11 Queued THOR Guard Red Alert reminder #6 (ID: ann_1790018291_8, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:18:11 Starting announcement: ID=ann_1790018291_8, Type=lightning, Priority=10
+2026/09/21 15:18:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:18:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:18:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:18:11 Failed to play announcement: ID=ann_1790018291_8, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:18:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:18:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:19:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:19:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:20:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:20:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:21:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:21:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:22:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:22:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:23:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:23:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:23:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:23:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:23:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:23:11 Queued announcement: ID=ann_1790018591_9, Type=lightning, Priority=10, Scheduled=2026-09-21T15:23:11-04:00
+2026/09/21 15:23:11 Queued THOR Guard Red Alert reminder #7 (ID: ann_1790018591_9, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:23:11 Starting announcement: ID=ann_1790018591_9, Type=lightning, Priority=10
+2026/09/21 15:23:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:23:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:23:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:23:11 Failed to play announcement: ID=ann_1790018591_9, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:24:11 Lightning feed failover_2 failure (stale_localtime): localtime date more than 24h behind app time (sensor date 09/06/2026)
+2026/09/21 15:24:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:25:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:25:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:26:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:26:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:27:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:27:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:28:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:28:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:28:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:28:11 Queued announcement: ID=ann_1790018891_10, Type=lightning, Priority=10, Scheduled=2026-09-21T15:28:11-04:00
+2026/09/21 15:28:11 Queued THOR Guard Red Alert reminder #8 (ID: ann_1790018891_10, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:28:11 Starting announcement: ID=ann_1790018891_10, Type=lightning, Priority=10
+2026/09/21 15:28:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:28:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:28:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:28:11 Failed to play announcement: ID=ann_1790018891_10, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:28:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:28:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:29:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:29:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:30:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:30:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:31:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:31:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:32:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:32:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:33:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:33:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:33:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:33:11 Queued announcement: ID=ann_1790019191_11, Type=lightning, Priority=10, Scheduled=2026-09-21T15:33:11-04:00
+2026/09/21 15:33:11 Queued THOR Guard Red Alert reminder #9 (ID: ann_1790019191_11, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:33:11 Starting announcement: ID=ann_1790019191_11, Type=lightning, Priority=10
+2026/09/21 15:33:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:33:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:33:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:33:11 Failed to play announcement: ID=ann_1790019191_11, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:33:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:33:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:34:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:34:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:35:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:35:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:36:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:36:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:37:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:37:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:38:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:38:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:38:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:38:11 Queued announcement: ID=ann_1790019491_12, Type=lightning, Priority=10, Scheduled=2026-09-21T15:38:11-04:00
+2026/09/21 15:38:11 Queued THOR Guard Red Alert reminder #10 (ID: ann_1790019491_12, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:38:11 Starting announcement: ID=ann_1790019491_12, Type=lightning, Priority=10
+2026/09/21 15:38:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:38:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:38:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:38:11 Failed to play announcement: ID=ann_1790019491_12, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:38:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:38:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:39:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:39:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:40:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:40:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:41:13 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": read tcp 172.17.199.56:37934->184.168.22.44:443: read: no route to host
+2026/09/21 15:41:13 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:42:21 Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 15:42:21 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 15:43:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:43:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:43:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:43:11 Queued announcement: ID=ann_1790019791_13, Type=lightning, Priority=10, Scheduled=2026-09-21T15:43:11-04:00
+2026/09/21 15:43:11 Queued THOR Guard Red Alert reminder #11 (ID: ann_1790019791_13, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:43:11 Starting announcement: ID=ann_1790019791_13, Type=lightning, Priority=10
+2026/09/21 15:43:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:43:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:43:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:43:11 Failed to play announcement: ID=ann_1790019791_13, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:43:16 Lightning trigger fetch recovered after: Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 15:43:20 ✓ Time sync from time.cloudflare.com (offset -427ms, app time 2026-09-21 15:43:19 EDT)
+2026/09/21 15:44:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:45:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:46:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:47:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:48:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:48:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:48:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:48:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:48:11 Queued announcement: ID=ann_1790020091_14, Type=lightning, Priority=10, Scheduled=2026-09-21T15:48:11-04:00
+2026/09/21 15:48:11 Queued THOR Guard Red Alert reminder #12 (ID: ann_1790020091_14, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:48:11 Starting announcement: ID=ann_1790020091_14, Type=lightning, Priority=10
+2026/09/21 15:48:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:48:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:48:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:48:11 Failed to play announcement: ID=ann_1790020091_14, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:48:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:48:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:49:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:49:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:50:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:50:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:51:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:51:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:51:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:52:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:52:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:53:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:53:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:53:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:53:11 Queued announcement: ID=ann_1790020391_15, Type=lightning, Priority=10, Scheduled=2026-09-21T15:53:11-04:00
+2026/09/21 15:53:11 Queued THOR Guard Red Alert reminder #13 (ID: ann_1790020391_15, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:53:11 Starting announcement: ID=ann_1790020391_15, Type=lightning, Priority=10
+2026/09/21 15:53:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:53:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:53:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:53:11 Failed to play announcement: ID=ann_1790020391_15, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:53:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:53:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:54:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:54:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:55:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:55:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:56:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:56:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 15:57:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:57:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:58:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 15:58:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 15:58:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 15:58:11 Queued announcement: ID=ann_1790020691_16, Type=lightning, Priority=10, Scheduled=2026-09-21T15:58:11-04:00
+2026/09/21 15:58:11 Queued THOR Guard Red Alert reminder #14 (ID: ann_1790020691_16, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 15:58:11 Starting announcement: ID=ann_1790020691_16, Type=lightning, Priority=10
+2026/09/21 15:58:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 15:58:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 15:58:11 🔓 Audio mutex unlocked due to error
+2026/09/21 15:58:11 Failed to play announcement: ID=ann_1790020691_16, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 15:58:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:58:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 15:59:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 15:59:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 16:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:00:11 Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 16:00:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 16:01:11 Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 16:01:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 16:02:11 Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 16:02:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 16:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:03:11 Lightning trigger fetch recovered after: Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 16:03:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 16:03:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 16:03:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 16:03:11 Queued announcement: ID=ann_1790020991_17, Type=lightning, Priority=10, Scheduled=2026-09-21T16:03:11-04:00
+2026/09/21 16:03:11 Queued THOR Guard Red Alert reminder #15 (ID: ann_1790020991_17, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 16:03:11 Starting announcement: ID=ann_1790020991_17, Type=lightning, Priority=10
+2026/09/21 16:03:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 16:03:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 16:03:11 🔓 Audio mutex unlocked due to error
+2026/09/21 16:03:11 Failed to play announcement: ID=ann_1790020991_17, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 16:04:11 Lightning: active feed changed failover_2 → primary (reason=failback)
+2026/09/21 16:04:11 Lightning condition changed from 'RedAlert' to 'Unknown' (feed=primary)
+2026/09/21 16:04:11 Lightning status 'Unknown' - ignoring condition change
+2026/09/21 16:05:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:06:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:07:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:08:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:08:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 16:08:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 16:08:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 16:08:11 Queued announcement: ID=ann_1790021291_18, Type=lightning, Priority=10, Scheduled=2026-09-21T16:08:11-04:00
+2026/09/21 16:08:11 Queued THOR Guard Red Alert reminder #16 (ID: ann_1790021291_18, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 16:08:11 Starting announcement: ID=ann_1790021291_18, Type=lightning, Priority=10
+2026/09/21 16:08:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 16:08:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 16:08:11 🔓 Audio mutex unlocked due to error
+2026/09/21 16:08:11 Failed to play announcement: ID=ann_1790021291_18, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 16:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:09:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:09:11 Lightning: active feed changed primary → failover_1 (reason=failover)
+2026/09/21 16:10:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:10:11 Lightning condition changed from 'RedAlert' to 'Caution' (feed=failover_1)
+2026/09/21 16:10:11 Lightning announce skipped for 'Caution' — disabled for feed failover_1 / global
+2026/09/21 16:11:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 16:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:12:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 16:13:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_file:Voice_RedAlert_Reminder.mp3 condition:redalert_reminder horn_file:Horn_RedAlert.mp3 include_horn:false trigger_source:THOR_RED_ALERT_REMINDER]
+2026/09/21 16:13:11 DEBUG: Lightning announcement for condition: redalert_reminder
+2026/09/21 16:13:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3]
+2026/09/21 16:13:11 Queued announcement: ID=ann_1790021591_19, Type=lightning, Priority=10, Scheduled=2026-09-21T16:13:11-04:00
+2026/09/21 16:13:11 Queued THOR Guard Red Alert reminder #17 (ID: ann_1790021591_19, file: Voice_RedAlert_Reminder.mp3)
+2026/09/21 16:13:11 Starting announcement: ID=ann_1790021591_19, Type=lightning, Priority=10
+2026/09/21 16:13:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 16:13:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3
+2026/09/21 16:13:11 🔓 Audio mutex unlocked due to error
+2026/09/21 16:13:11 Failed to play announcement: ID=ann_1790021591_19, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_RedAlert_Reminder.mp3: audio not available
+2026/09/21 16:13:11 Lightning trigger fetch recovered after: Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 16:14:11 Lightning: active feed changed failover_1 → primary (reason=failback)
+2026/09/21 16:14:11 Lightning condition changed from 'Caution' to 'Unknown' (feed=primary)
+2026/09/21 16:14:11 Lightning status 'Unknown' - ignoring condition change
+2026/09/21 16:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:15:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:16:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:16:11 Lightning condition changed from 'Caution' to 'AllClear' (feed=primary)
+2026/09/21 16:16:11 AllClear condition accepted — previous condition was 'Caution' (feed=primary mode=primary_only)
+2026/09/21 16:16:11 THOR Guard All Clear — Red Alert lock released, normal announcements resumed
+2026/09/21 16:16:11 Playing lightning announcement: THOR All Clear
+2026/09/21 16:16:11 DEBUG buildAudioSequence: Type=lightning, Parameters=map[audio_files:[Horn_AllClear.mp3 Voice_AllClear.mp3] condition:AllClear message:THOR All Clear: Lightning threat has diminished. Normal operations may resume with continued monitoring. trigger_source:LIGHTNING_TRIGGER]
+2026/09/21 16:16:11 DEBUG: Lightning announcement for condition: AllClear
+2026/09/21 16:16:11 DEBUG: Lightning audio sequence: [/mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Horn_AllClear.mp3 /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Voice_AllClear.mp3]
+2026/09/21 16:16:11 Queued announcement: ID=ann_1790021771_20, Type=lightning, Priority=10, Scheduled=2026-09-21T16:16:11-04:00
+2026/09/21 16:16:11 Queued HIGHEST PRIORITY lightning announcement: THOR All Clear (ID: ann_1790021771_20)
+2026/09/21 16:16:11 Starting announcement: ID=ann_1790021771_20, Type=lightning, Priority=10
+2026/09/21 16:16:11 🔒 Audio mutex locked - starting announcement playback
+2026/09/21 16:16:11 Audio not available - would play: /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Horn_AllClear.mp3
+2026/09/21 16:16:11 🔓 Audio mutex unlocked due to error
+2026/09/21 16:16:11 Failed to play announcement: ID=ann_1790021771_20, Error=error playing /mnt/c/Users/Ari Ellenbogen/Documents/GitHub/TARR_Annunciator/data/static/mp3/lightning/Horn_AllClear.mp3: audio not available
+2026/09/21 16:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:19:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:20:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:21:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:22:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:23:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:24:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:25:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:26:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:27:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:28:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:30:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:31:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:32:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:33:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:34:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:35:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:36:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:37:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:38:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:38:11 Lightning condition changed from 'AllClear' to 'Caution' (feed=primary)
+2026/09/21 16:38:11 Lightning announce skipped for 'Caution' — disabled for feed primary / global
+2026/09/21 16:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:41:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:42:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 16:43:11 ✓ Time sync from pool.ntp.org (offset -505ms, app time 2026-09-21 16:43:11 EDT)
+2026/09/21 16:43:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:44:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:46:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:47:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:48:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:48:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:48:11 Lightning condition changed from 'Caution' to 'AllClear' (feed=primary)
+2026/09/21 16:48:11 AllClear condition ignored for announce/lock — previous condition was 'Caution' (not RedAlert)
+2026/09/21 16:51:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:51:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:52:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:53:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:54:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:55:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:56:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 16:58:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 16:59:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:00:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:01:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:02:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:03:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:04:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:05:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:07:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:08:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:09:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:10:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:13:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:14:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:15:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:17:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:18:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:19:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:20:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:21:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:22:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:23:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:24:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:25:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:26:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:31:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:32:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:35:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:36:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:37:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:39:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:40:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:41:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:42:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 17:43:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:43:11 Lightning: active feed changed primary → failover_1 (reason=failover)
+2026/09/21 17:43:11 ✓ Time sync from pool.ntp.org (offset -583ms, app time 2026-09-21 17:43:11 EDT)
+2026/09/21 17:44:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 17:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:45:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 17:46:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 17:47:11 Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 17:48:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:48:11 Lightning trigger fetch recovered after: Lightning feed failover_1 failure (unknown_condition): Unknown
+2026/09/21 17:48:11 Lightning: active feed changed failover_1 → primary (reason=failback)
+2026/09/21 17:50:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:51:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:51:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:55:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:56:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 17:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 17:57:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:00:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:01:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:02:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:03:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:05:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:06:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:07:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:08:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:09:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:11:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:12:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:13:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:17:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:18:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:21:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:22:20 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:23:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:24:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:25:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:26:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:27:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:28:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:29:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:32:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:33:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:34:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:35:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:36:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:40:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:41:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:42:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 18:43:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:43:14 ✓ Time sync from time.google.com (offset -607ms, app time 2026-09-21 18:43:14 EDT)
+2026/09/21 18:44:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:45:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:46:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:48:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:48:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:49:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:50:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:51:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:55:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:56:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 18:57:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 18:59:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:00:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:01:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:02:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:03:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:04:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:05:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:06:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:07:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:08:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:09:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:10:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:11:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:12:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:13:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:16:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:17:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:18:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:21:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:22:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:23:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:24:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:26:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:27:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:28:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:29:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:30:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:31:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:32:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:33:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:34:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:36:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:37:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:38:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:39:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:40:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:41:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:42:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 19:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 19:43:11 ✓ Time sync from pool.ntp.org (offset -710ms, app time 2026-09-21 19:43:11 EDT)
+2026/09/21 19:43:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:44:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:45:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:45:41 Lightning: active feed changed primary → failover_1 (reason=failover)
+2026/09/21 19:46:41 Lightning feed failover_1 failure (http_error): Get "https://broward.thormobile4.net/qwp/FL0110.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:47:41 Lightning feed failover_1 failure (http_error): Get "https://broward.thormobile4.net/qwp/FL0110.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:47:41 Lightning: active feed changed failover_1 → failover_2 (reason=failover)
+2026/09/21 19:48:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:48:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:48:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:49:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:49:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:50:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:50:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:51:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:51:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:51:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:52:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:52:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:53:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:53:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:54:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:54:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:55:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:55:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:56:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:56:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 19:57:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:57:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:58:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:58:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 19:59:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 19:59:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 20:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:00:11 Lightning trigger fetch recovered after: Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 20:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:04:11 Lightning: active feed changed failover_2 → primary (reason=failback)
+2026/09/21 20:04:11 Lightning condition changed from 'AllClear' to 'Unknown' (feed=primary)
+2026/09/21 20:04:11 Lightning status 'Unknown' - ignoring condition change
+2026/09/21 20:05:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:06:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:07:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:08:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:09:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:10:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:11:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:13:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:14:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:15:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:16:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:19:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:20:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:21:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:24:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:25:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:26:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:27:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:28:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:29:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:30:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:31:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:32:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:33:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:35:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:36:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:37:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:41:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:42:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 20:43:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:43:11 ✓ Time sync from pool.ntp.org (offset -755ms, app time 2026-09-21 20:43:10 EDT)
+2026/09/21 20:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:46:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:47:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:48:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:49:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:50:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:51:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:51:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:52:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:53:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:54:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:54:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:56:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:57:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 20:57:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:58:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 20:59:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:00:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:00:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:02:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:03:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:03:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:04:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:06:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:07:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:08:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:09:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:09:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:10:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:11:41 Lightning feed primary failure (http_error): Get "https://broward.thormobile4.net/tp/FL0115.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:11:41 Lightning: active feed changed primary → failover_1 (reason=failover)
+2026/09/21 21:12:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:12:41 Lightning feed failover_1 failure (http_error): Get "https://broward.thormobile4.net/qwp/FL0110.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:13:41 Lightning feed failover_1 failure (http_error): Get "https://broward.thormobile4.net/qwp/FL0110.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:14:41 Lightning feed failover_1 failure (http_error): Get "https://broward.thormobile4.net/qwp/FL0110.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:15:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:15:41 Lightning feed failover_1 failure (http_error): Get "https://broward.thormobile4.net/qwp/FL0110.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:15:41 Lightning: active feed changed failover_1 → failover_2 (reason=failover)
+2026/09/21 21:16:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:16:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:17:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:17:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:18:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:18:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:18:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:19:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:19:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:20:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:20:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:21:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:21:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:21:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:22:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:22:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:23:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:23:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:24:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:24:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:24:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:25:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:25:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:26:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:26:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:27:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:27:41 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+2026/09/21 21:27:41 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:28:13 Lightning feed failover_2 failure (http_error): Get "https://broward.thormobile4.net/ff/FL0105.xml": read tcp 172.17.199.56:54966->184.168.22.44:443: read: no route to host
+2026/09/21 21:28:13 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:29:11 Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 21:29:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:30:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:30:11 Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 21:30:11 Lightning: all feeds failed (holding last condition; mode=hold_last_condition)
+2026/09/21 21:31:11 Lightning trigger fetch recovered after: Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 21:32:11 Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 21:33:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:33:11 Lightning trigger fetch recovered after: Lightning feed failover_2 failure (unknown_condition): Unknown
+2026/09/21 21:33:11 Lightning: active feed changed failover_2 → primary (reason=failback)
+2026/09/21 21:35:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:36:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:36:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:37:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:39:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:42:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:43:11 Note: timedatectl set-ntp true skipped (exit status 1)
+2026/09/21 21:43:11 ✓ Time sync from pool.ntp.org (offset -798ms, app time 2026-09-21 21:43:10 EDT)
+2026/09/21 21:44:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:45:00 Skipping scheduled safety announcement (outside operating hours)
+2026/09/21 21:45:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:46:11 Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:47:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+2026/09/21 21:48:00 Skipping scheduled safety announcement (outside operating hours)
+[GIN] 2026/09/21 - 21:48:08 | 200 |   33.202901ms |             ::1 | GET      "/"
+[GIN] 2026/09/21 - 21:48:08 | 200 |      4.0428ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:48:08 | 200 |      7.1543ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:48:08 | 404 |         4.7µs |             ::1 | GET      "/favicon.ico"
+2026/09/21 21:48:11 Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:48:13 | 200 |      3.9403ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:48:13 | 200 |      7.0871ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:48:18 | 200 |      4.0588ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:48:18 | 200 |      6.8976ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:48:23 | 200 |      5.7723ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:48:23 | 200 |     12.9849ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:48:28 | 200 |      3.7151ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:48:28 | 200 |      7.7131ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:48:33 | 200 |      3.6541ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:48:33 | 200 |      6.7084ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:48:36 | 200 |   32.118799ms |             ::1 | GET      "/"
+[GIN] 2026/09/21 - 21:48:36 | 200 |       4.765ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:48:36 | 200 |       8.097ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:48:41 | 200 |      3.7129ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:48:41 | 200 |      6.3898ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:48:45 | 302 |        83.5µs |             ::1 | GET      "/admin"
+[GIN] 2026/09/21 - 21:48:45 | 200 |       111.1µs |             ::1 | GET      "/admin/login"
+[GIN] 2026/09/21 - 21:48:49 | 302 |     10.4536ms |             ::1 | POST     "/admin/login"
+2026/09/21 21:48:49 DEBUG: About to load emergencies JSON...
+2026/09/21 21:48:49 DEBUG: loadJSON returned, type assertion complete
+2026/09/21 21:48:49 Detected platform: linux
+2026/09/21 21:48:49 PipeWire not available (pw-cli): exec: "pw-cli": executable file not found in $PATH
+2026/09/21 21:48:49 PipeWire not available (wpctl): exec: "wpctl": executable file not found in $PATH
+2026/09/21 21:48:49 Trying PipeWire through PulseAudio compatibility layer
+2026/09/21 21:48:50 PulseAudio compatibility layer not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:48:50 PulseAudio not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:48:50 No audio devices detected, using default
+2026/09/21 21:48:50 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/21 21:48:50 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/21 21:48:50 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/21 21:48:50 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/21 21:48:50 DEBUG: Emergency 4: All Clear (all_clear)
+[GIN] 2026/09/21 - 21:48:50 | 200 |  886.070199ms |             ::1 | GET      "/admin"
+[GIN] 2026/09/21 - 21:48:50 | 200 |       2.851ms |             ::1 | GET      "/admin/updates/status"
+[GIN] 2026/09/21 - 21:48:50 | 200 |     10.5574ms |             ::1 | GET      "/admin/operating-hours"
+[GIN] 2026/09/21 - 21:48:50 | 200 |       141.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:48:50 | 200 |       755.9µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:48:50 | 200 |      4.8593ms |             ::1 | GET      "/admin/credentials"
+[GIN] 2026/09/21 - 21:48:50 | 200 |      4.0998ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:48:50 | 200 |      5.5384ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:48:50 | 200 |     13.5073ms |             ::1 | GET      "/admin/track-layout"
+2026/09/21 21:48:50 Error getting devices: exec: "bluetoothctl": executable file not found in $PATH
+[GIN] 2026/09/21 - 21:48:50 | 200 |    129.5621ms |             ::1 | GET      "/admin/bluetooth/paired"
+2026/09/21 21:48:50 Detected platform: linux
+2026/09/21 21:48:51 PipeWire not available (pw-cli): exec: "pw-cli": executable file not found in $PATH
+2026/09/21 21:48:51 PipeWire not available (wpctl): exec: "wpctl": executable file not found in $PATH
+2026/09/21 21:48:51 Trying PipeWire through PulseAudio compatibility layer
+[GIN] 2026/09/21 - 21:48:51 | 200 |  854.936899ms |             ::1 | GET      "/admin/system/platform-info"
+2026/09/21 21:48:51 PulseAudio compatibility layer not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:48:51 PulseAudio not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:48:51 No audio devices detected, using default
+[GIN] 2026/09/21 - 21:48:51 | 200 |  1.048785298s |             ::1 | GET      "/api/platform"
+[GIN] 2026/09/21 - 21:48:55 | 200 |        81.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:48:55 | 200 |         217µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:48:55 | 200 |      3.4981ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:00 | 200 |      6.2781ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:49:00 | 200 |        88.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:00 | 200 |         186µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:00 | 200 |      4.0526ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:05 | 200 |        91.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:05 | 200 |       190.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:05 | 200 |      3.8958ms |             ::1 | GET      "/admin/lightning/status"
+2026/09/21 21:49:05 DEBUG: About to load emergencies JSON...
+2026/09/21 21:49:05 DEBUG: loadJSON returned, type assertion complete
+2026/09/21 21:49:05 Detected platform: linux
+2026/09/21 21:49:06 PipeWire not available (pw-cli): exec: "pw-cli": executable file not found in $PATH
+2026/09/21 21:49:06 PipeWire not available (wpctl): exec: "wpctl": executable file not found in $PATH
+2026/09/21 21:49:06 Trying PipeWire through PulseAudio compatibility layer
+2026/09/21 21:49:06 PulseAudio compatibility layer not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:49:06 PulseAudio not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:49:06 No audio devices detected, using default
+2026/09/21 21:49:06 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/21 21:49:06 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/21 21:49:06 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/21 21:49:06 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/21 21:49:06 DEBUG: Emergency 4: All Clear (all_clear)
+[GIN] 2026/09/21 - 21:49:06 | 200 |  863.175096ms |             ::1 | GET      "/admin"
+[GIN] 2026/09/21 - 21:49:06 | 200 |        92.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:06 | 200 |       355.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:06 | 200 |      4.0616ms |             ::1 | GET      "/admin/updates/status"
+[GIN] 2026/09/21 - 21:49:06 | 200 |      3.8974ms |             ::1 | GET      "/admin/credentials"
+[GIN] 2026/09/21 - 21:49:06 | 200 |      4.2875ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:49:06 | 200 |     12.0013ms |             ::1 | GET      "/admin/operating-hours"
+[GIN] 2026/09/21 - 21:49:06 | 200 |      6.6982ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:06 | 200 |     11.4019ms |             ::1 | GET      "/admin/track-layout"
+2026/09/21 21:49:07 Error getting devices: exec: "bluetoothctl": executable file not found in $PATH
+[GIN] 2026/09/21 - 21:49:07 | 200 |  123.044299ms |             ::1 | GET      "/admin/bluetooth/paired"
+2026/09/21 21:49:07 Detected platform: linux
+2026/09/21 21:49:07 PipeWire not available (pw-cli): exec: "pw-cli": executable file not found in $PATH
+2026/09/21 21:49:07 PipeWire not available (wpctl): exec: "wpctl": executable file not found in $PATH
+2026/09/21 21:49:07 Trying PipeWire through PulseAudio compatibility layer
+[GIN] 2026/09/21 - 21:49:07 | 200 |  812.157895ms |             ::1 | GET      "/admin/system/platform-info"
+2026/09/21 21:49:07 PulseAudio compatibility layer not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:49:07 PulseAudio not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:49:07 No audio devices detected, using default
+[GIN] 2026/09/21 - 21:49:07 | 200 |  1.007150694s |             ::1 | GET      "/api/platform"
+2026/09/21 21:49:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:49:11 | 200 |       124.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:11 | 200 |       205.1µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:11 | 200 |        3.96ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:16 | 200 |        90.4µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:16 | 200 |       223.3µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:16 | 200 |      4.7919ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:16 | 200 |      7.7978ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:49:21 | 200 |       109.1µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:21 | 200 |       262.1µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:21 | 200 |      4.1919ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:26 | 400 |      2.1926ms |             ::1 | POST     "/audio/test"
+[GIN] 2026/09/21 - 21:49:26 | 200 |        64.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:26 | 200 |       208.2µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:26 | 200 |      4.3085ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:26 | 200 |      7.6415ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:49:31 | 200 |        87.4µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:31 | 200 |       179.3µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:31 | 200 |      3.8694ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:36 | 200 |          78µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:36 | 200 |       192.1µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:36 | 200 |      3.2551ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:49:36 | 200 |      4.6409ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:36 | 200 |      7.5958ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:49:41 | 200 |        95.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:41 | 200 |       190.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:41 | 200 |      5.9779ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:46 | 200 |        75.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:46 | 200 |       176.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:46 | 200 |      4.4461ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:46 | 200 |      7.5059ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:49:51 | 200 |       112.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:51 | 200 |       166.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:51 | 200 |       4.134ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:56 | 200 |         115µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:49:56 | 200 |       163.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:49:56 | 200 |      4.3254ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:49:56 | 200 |      7.2102ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:50:01 | 200 |        72.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:01 | 200 |       268.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:01 | 200 |       4.061ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:06 | 200 |        98.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:06 | 200 |       213.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:06 | 200 |      3.8196ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:50:06 | 200 |        4.73ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:06 | 200 |      7.8286ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:50:10 | 400 |      1.9536ms |             ::1 | POST     "/audio/test"
+2026/09/21 21:50:11 Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:50:11 | 200 |        97.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:11 | 200 |       165.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:11 | 200 |      4.0097ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:16 | 200 |        94.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:16 | 200 |       174.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:16 | 200 |      4.4527ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:16 | 200 |      7.3359ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:50:21 | 200 |          97µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:21 | 200 |       186.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:21 | 200 |      4.2917ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:26 | 200 |        96.4µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:26 | 200 |       191.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:26 | 200 |       4.276ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:26 | 200 |      7.6433ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:50:31 | 200 |       100.1µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:31 | 200 |       181.1µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:31 | 200 |      4.0258ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:36 | 200 |        59.1µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:36 | 200 |       168.7µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:36 | 200 |      3.8605ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:50:36 | 200 |      4.4255ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:36 | 200 |      7.7361ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:50:41 | 200 |        98.4µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:41 | 200 |       168.1µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:41 | 200 |       4.648ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:46 | 200 |       196.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:46 | 200 |        70.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:46 | 200 |      5.7391ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:46 | 200 |      8.7928ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:50:51 | 200 |        80.4µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:51 | 200 |       188.7µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:51 | 200 |      4.0956ms |             ::1 | GET      "/admin/lightning/status"
+2026/09/21 21:50:55 DEBUG: About to load emergencies JSON...
+2026/09/21 21:50:55 DEBUG: loadJSON returned, type assertion complete
+2026/09/21 21:50:55 Detected platform: linux
+2026/09/21 21:50:56 PipeWire not available (pw-cli): exec: "pw-cli": executable file not found in $PATH
+2026/09/21 21:50:56 PipeWire not available (wpctl): exec: "wpctl": executable file not found in $PATH
+2026/09/21 21:50:56 Trying PipeWire through PulseAudio compatibility layer
+2026/09/21 21:50:56 PulseAudio compatibility layer not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:50:56 PulseAudio not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:50:56 No audio devices detected, using default
+2026/09/21 21:50:56 DEBUG: Admin handler - loaded 4 emergencies
+2026/09/21 21:50:56 DEBUG: Emergency 1: Severe Weather Warning (severe_weather)
+2026/09/21 21:50:56 DEBUG: Emergency 2: Power Outage (power_outage)
+2026/09/21 21:50:56 DEBUG: Emergency 3: System Shutdown (system_shutdown)
+2026/09/21 21:50:56 DEBUG: Emergency 4: All Clear (all_clear)
+[GIN] 2026/09/21 - 21:50:56 | 200 |  790.068707ms |             ::1 | GET      "/admin"
+[GIN] 2026/09/21 - 21:50:56 | 200 |       190.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:50:56 | 200 |      4.4211ms |             ::1 | GET      "/admin/updates/status"
+[GIN] 2026/09/21 - 21:50:56 | 200 |       313.3µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:50:56 | 200 |     13.2742ms |             ::1 | GET      "/admin/operating-hours"
+[GIN] 2026/09/21 - 21:50:56 | 200 |      3.3442ms |             ::1 | GET      "/admin/credentials"
+[GIN] 2026/09/21 - 21:50:56 | 200 |      3.6253ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:50:56 | 200 |     12.7227ms |             ::1 | GET      "/admin/track-layout"
+[GIN] 2026/09/21 - 21:50:56 | 200 |      5.4177ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:50:56 | 404 |         3.5µs |             ::1 | GET      "/favicon.ico"
+2026/09/21 21:50:57 Error getting devices: exec: "bluetoothctl": executable file not found in $PATH
+[GIN] 2026/09/21 - 21:50:57 | 200 |  128.139901ms |             ::1 | GET      "/admin/bluetooth/paired"
+2026/09/21 21:50:57 Detected platform: linux
+2026/09/21 21:50:57 PipeWire not available (pw-cli): exec: "pw-cli": executable file not found in $PATH
+2026/09/21 21:50:57 PipeWire not available (wpctl): exec: "wpctl": executable file not found in $PATH
+2026/09/21 21:50:57 Trying PipeWire through PulseAudio compatibility layer
+2026/09/21 21:50:57 PulseAudio compatibility layer not available: exec: "pactl": executable file not found in $PATH
+[GIN] 2026/09/21 - 21:50:58 | 200 |  1.086148409s |             ::1 | GET      "/admin/system/platform-info"
+2026/09/21 21:50:58 PulseAudio not available: exec: "pactl": executable file not found in $PATH
+2026/09/21 21:50:58 No audio devices detected, using default
+[GIN] 2026/09/21 - 21:50:58 | 200 |   1.21117241s |             ::1 | GET      "/api/platform"
+2026/09/21 21:51:00 Skipping scheduled safety announcement (outside operating hours)
+[GIN] 2026/09/21 - 21:51:01 | 200 |       243.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:01 | 200 |       782.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:01 | 200 |      4.3014ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:07 | 200 |          69µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:07 | 200 |       160.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:07 | 200 |      4.3068ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:07 | 200 |      7.0641ms |             ::1 | GET      "/admin/time-status"
+2026/09/21 21:51:11 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:51:12 | 200 |        97.1µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:12 | 200 |       251.7µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:12 | 200 |      4.1397ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:17 | 200 |        72.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:17 | 200 |       213.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:17 | 200 |      4.2712ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:17 | 200 |      7.3434ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:51:22 | 200 |       143.1µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:22 | 200 |       191.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:22 | 200 |      4.0777ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:27 | 200 |        90.1µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:27 | 200 |       175.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:27 | 200 |      3.9312ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:51:27 | 200 |      4.8436ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:27 | 200 |      8.0776ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:51:32 | 200 |       132.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:32 | 200 |       208.7µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:32 | 200 |      5.4687ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:37 | 200 |        67.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:37 | 200 |       320.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:37 | 200 |      4.3137ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:37 | 200 |      7.3092ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:51:42 | 200 |        89.9µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:42 | 200 |       196.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:42 | 200 |      4.5364ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:47 | 200 |        68.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:47 | 200 |       161.2µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:47 | 200 |      4.0958ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:47 | 200 |      6.9187ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:51:52 | 200 |        90.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:52 | 200 |       170.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:52 | 200 |      4.1112ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:56 | 200 |        84.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:51:56 | 200 |       194.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:51:56 | 200 |      3.1749ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:51:56 | 200 |       4.342ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:51:56 | 200 |      6.6846ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:52:01 | 200 |       105.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:01 | 200 |       226.3µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:01 | 200 |      4.4145ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:06 | 200 |        76.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:06 | 200 |       183.2µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:06 | 200 |      4.5969ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:06 | 200 |      8.3094ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:52:12 | 200 |       120.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:12 | 200 |       210.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:12 | 200 |      3.7962ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:17 | 200 |        68.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:17 | 200 |       211.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:17 | 200 |      4.5349ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:17 | 200 |      7.7906ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:52:21 | 200 |        94.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:21 | 200 |       159.3µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:21 | 200 |       4.226ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:23 | 400 |      2.0227ms |             ::1 | POST     "/audio/test"
+[GIN] 2026/09/21 - 21:52:26 | 200 |       138.7µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:26 | 200 |       847.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:26 | 200 |      3.9129ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:52:26 | 200 |      4.6355ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:26 | 200 |      7.0136ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:52:31 | 200 |       131.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:31 | 200 |       683.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:31 | 200 |       9.481ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:37 | 200 |        63.9µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:37 | 200 |       177.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:37 | 200 |      4.2615ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:37 | 200 |      7.3949ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:52:42 | 200 |       127.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:42 | 200 |       234.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:42 | 200 |      4.0917ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:46 | 200 |        64.7µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:46 | 200 |       168.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:46 | 200 |      4.1051ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:46 | 200 |      7.2619ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:52:52 | 200 |          87µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:52 | 200 |       174.2µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:52 | 200 |      4.1817ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:57 | 200 |        91.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:52:57 | 200 |       199.2µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:52:57 | 200 |      3.6564ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:52:57 | 200 |      4.6059ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:52:57 | 200 |      7.6946ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:53:02 | 200 |       136.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:02 | 200 |         243µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:02 | 200 |      4.2994ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:07 | 200 |       132.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:07 | 200 |       163.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:07 | 200 |      4.1887ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:07 | 200 |      7.4033ms |             ::1 | GET      "/admin/time-status"
+2026/09/21 21:53:11 Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:53:11 | 200 |        91.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:11 | 200 |       203.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:11 | 200 |      4.1776ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:16 | 200 |        69.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:16 | 200 |       176.1µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:16 | 200 |      4.1459ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:16 | 200 |       7.053ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:53:21 | 200 |       251.1µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:21 | 200 |       300.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:21 | 200 |      4.0934ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:26 | 200 |        93.9µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:26 | 200 |       850.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:26 | 200 |      3.7388ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:53:26 | 200 |      4.3423ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:26 | 200 |      7.1318ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:53:31 | 200 |        69.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:31 | 200 |       211.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:31 | 200 |      3.8362ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:36 | 200 |        65.9µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:36 | 200 |       171.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:36 | 200 |      4.1681ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:36 | 200 |      6.9032ms |             ::1 | GET      "/admin/time-status"
+2026/09/21 21:53:37 Lightning trigger 'Lightning Alert Monitor' stopped
+2026/09/21 21:53:37 Lightning monitor config applied — enabled=true active=primary feeds=3
+2026/09/21 21:53:37 Lightning trigger 'Lightning Alert Monitor' started with 60 second interval
+[GIN] 2026/09/21 - 21:53:37 | 200 |    153.3778ms |             ::1 | POST     "/admin/lightning/config"
+[GIN] 2026/09/21 - 21:53:37 | 200 |      3.5548ms |             ::1 | GET      "/admin/lightning/status"
+2026/09/21 21:53:38 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:53:41 | 200 |        93.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:41 | 200 |       183.4µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:41 | 200 |      3.7114ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:46 | 200 |        89.5µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:46 | 200 |       170.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:46 | 200 |      4.0932ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:46 | 200 |      6.9501ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:53:51 | 200 |        91.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:51 | 200 |       168.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:51 | 200 |      4.3683ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:56 | 200 |        64.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:53:56 | 200 |       689.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:53:56 | 200 |      3.7174ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:53:56 | 200 |      4.5138ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:53:56 | 200 |      8.6649ms |             ::1 | GET      "/admin/time-status"
+2026/09/21 21:54:00 Skipping scheduled safety announcement (outside operating hours)
+[GIN] 2026/09/21 - 21:54:01 | 200 |       106.1µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:01 | 200 |       184.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:01 | 200 |      4.1274ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:06 | 200 |          63µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:06 | 200 |       199.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:06 | 200 |      5.1463ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:06 | 200 |       8.185ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:54:11 | 200 |        79.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:11 | 200 |       182.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:11 | 200 |      4.0886ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:16 | 200 |        70.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:16 | 200 |       238.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:16 | 200 |      4.5486ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:16 | 200 |      7.4788ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:54:21 | 200 |        85.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:21 | 200 |       184.2µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:21 | 200 |       3.986ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:26 | 200 |        64.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:26 | 200 |       165.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:26 | 200 |      2.8324ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:54:26 | 200 |      4.2744ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:26 | 200 |      7.0104ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:54:31 | 200 |        99.3µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:31 | 200 |       162.5µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:31 | 200 |      3.9898ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:36 | 200 |       119.1µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:36 | 200 |       634.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:36 | 200 |      4.7928ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:36 | 200 |      8.2839ms |             ::1 | GET      "/admin/time-status"
+2026/09/21 21:54:37 Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:54:41 | 200 |        79.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:41 | 200 |       199.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:41 | 200 |      4.2626ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:46 | 200 |        78.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:46 | 200 |       172.6µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:46 | 200 |      4.2831ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:46 | 200 |      7.1623ms |             ::1 | GET      "/admin/time-status"
+2026/09/21 21:54:50 Lightning trigger 'Lightning Alert Monitor' stopped
+2026/09/21 21:54:50 Lightning monitor config applied — enabled=true active=primary feeds=3
+2026/09/21 21:54:50 Lightning trigger 'Lightning Alert Monitor' started with 60 second interval
+[GIN] 2026/09/21 - 21:54:50 | 200 |  153.609299ms |             ::1 | POST     "/admin/lightning/config"
+[GIN] 2026/09/21 - 21:54:50 | 200 |       3.324ms |             ::1 | GET      "/admin/lightning/status"
+2026/09/21 21:54:50 Lightning trigger fetch recovered after: Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:54:51 | 200 |       128.8µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:51 | 200 |       858.2µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:51 | 200 |      5.6608ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:56 | 200 |   13.124999ms |             ::1 | POST     "/admin/lightning/config"
+[GIN] 2026/09/21 - 21:54:56 | 200 |      3.2382ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:56 | 200 |        74.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:54:56 | 200 |       212.8µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:54:56 | 200 |      3.4584ms |             ::1 | GET      "/admin/system/info"
+[GIN] 2026/09/21 - 21:54:56 | 200 |      4.5982ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:54:56 | 200 |      7.2838ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:55:01 | 200 |        97.2µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:55:01 | 200 |       170.1µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:55:01 | 200 |       3.769ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:55:06 | 200 |       106.7µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:55:06 | 200 |       251.7µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:55:06 | 200 |      4.2052ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:55:06 | 200 |       7.048ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:55:11 | 200 |        83.4µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:55:11 | 200 |       226.9µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:55:11 | 200 |      3.9424ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:55:16 | 200 |        68.6µs |             ::1 | GET      "/api/queue/status"
+[GIN] 2026/09/21 - 21:55:16 | 200 |       182.2µs |             ::1 | GET      "/api/queue/history?limit=10"
+[GIN] 2026/09/21 - 21:55:16 | 200 |      4.4411ms |             ::1 | GET      "/admin/lightning/status"
+[GIN] 2026/09/21 - 21:55:16 | 200 |      7.4448ms |             ::1 | GET      "/admin/time-status"
+[GIN] 2026/09/21 - 21:55:18 | 200 |     30.3487ms |             ::1 | GET      "/"
+[GIN] 2026/09/21 - 21:55:18 | 200 |       6.451ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:18 | 200 |     14.6924ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:55:23 | 200 |      3.9351ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:23 | 200 |    7.252299ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:55:28 | 200 |    3.716799ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:28 | 200 |    6.772499ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:55:33 | 200 |    3.914299ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:33 | 200 |    6.992799ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:55:38 | 200 |    4.015299ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:38 | 200 |    7.479899ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:55:43 | 200 |      4.1519ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:43 | 200 |      6.8572ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:55:48 | 200 |       4.058ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:48 | 200 |      6.8148ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:55:53 | 200 |      3.8326ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:53 | 200 |      6.6074ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:55:58 | 200 |      4.0593ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:55:58 | 200 |      6.9238ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:03 | 200 |      4.1735ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:03 | 200 |      7.7434ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:08 | 200 |      5.3125ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:08 | 200 |   10.742099ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:13 | 200 |      5.0173ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:13 | 200 |      9.0977ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:18 | 200 |       3.969ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:18 | 200 |      7.0691ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:23 | 200 |      3.9276ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:23 | 200 |      7.0957ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:28 | 200 |      4.2254ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:28 | 200 |      7.4135ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:33 | 200 |      3.9391ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:33 | 200 |      7.0298ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:38 | 200 |      3.9218ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:38 | 200 |      7.5278ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:43 | 200 |      4.0882ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:43 | 200 |      7.0089ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:48 | 200 |      4.0282ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:48 | 200 |       7.388ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:50 | 200 |     27.6283ms |             ::1 | GET      "/"
+[GIN] 2026/09/21 - 21:56:50 | 200 |      5.1168ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:50 | 200 |      8.6824ms |             ::1 | GET      "/scheduler_status"
+2026/09/21 21:56:50 Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:56:52 | 200 |     25.3547ms |             ::1 | GET      "/"
+[GIN] 2026/09/21 - 21:56:52 | 200 |    4.380899ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:52 | 200 |    7.746299ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:56:57 | 200 |      3.8267ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:56:57 | 200 |      6.6657ms |             ::1 | GET      "/scheduler_status"
+2026/09/21 21:57:00 Skipping scheduled safety announcement (outside operating hours)
+[GIN] 2026/09/21 - 21:57:02 | 200 |    3.818001ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:02 | 200 |    6.928201ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:07 | 200 |      3.9307ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:07 | 200 |      6.6799ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:12 | 200 |      4.3494ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:12 | 200 |      7.7381ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:17 | 200 |      4.0891ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:17 | 200 |      7.0163ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:22 | 200 |       3.951ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:22 | 200 |       6.883ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:27 | 200 |       4.176ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:27 | 200 |      6.9999ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:32 | 200 |      3.9418ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:32 | 200 |      6.6248ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:37 | 200 |      3.9025ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:37 | 200 |      6.9494ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:42 | 200 |    4.030101ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:42 | 200 |    7.132502ms |             ::1 | GET      "/scheduler_status"
+[GIN] 2026/09/21 - 21:57:47 | 200 |       3.835ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:47 | 200 |      6.8511ms |             ::1 | GET      "/scheduler_status"
+2026/09/21 21:57:50 Lightning feed primary failure (unknown_condition): Unknown
+[GIN] 2026/09/21 - 21:57:52 | 200 |      3.8724ms |             ::1 | GET      "/lightning_status"
+[GIN] 2026/09/21 - 21:57:52 | 200 |      6.8614ms |             ::1 | GET      "/scheduler_status"
+2026/09/21 21:57:55 Received shutdown signal, cleaning up...
+2026/09/21 21:57:55 Scheduler stopped
+2026/09/21 21:57:55 Lightning trigger stopped
+2026/09/21 21:57:55 === TARR Annunciator Shutting Down ===
+2026/09/21 21:57:55 Lightning trigger 'Lightning Alert Monitor' stopped
+2026/09/21 21:57:55 Timestamp: 2026-09-21 21:57:55
+2026/09/21 21:57:55 =======================================

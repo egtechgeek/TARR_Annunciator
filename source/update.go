@@ -24,7 +24,7 @@ import (
 const (
 	githubOwner = "egtechgeek"
 	githubRepo  = "TARR_Annunciator"
-	updateUA    = "TARR-Annunciator-Updater/1.1.1"
+	updateUA    = "TARR-Annunciator-Updater/1.1.4"
 )
 
 type updatePackageMeta struct {
@@ -453,13 +453,36 @@ func performUpdate(remote *remoteUpdateInfo) error {
 		return fmt.Errorf("static: %w", err)
 	}
 
-	updateJob.set("applying", "Running additive JSON migrations")
+	// Generic missing-seed install now (installer parity) using package json/.
+	// Full schema migrations + install_version finalize happen on next startup via update_pending.
 	fromVer := getInstalledVersion()
-	if err := migrateFromPackageSeeds(filepath.Join(root, "json")); err != nil {
-		return err
+	pkgVer := normalizeVersion(meta.AppVersion)
+	if pkgVer == "" {
+		pkgVer = remote.AppVersion
 	}
-	if err := runSchemaMigrations(fromVer); err != nil {
-		return err
+	pkgVer = normalizeVersion(pkgVer)
+
+	updateJob.set("applying", "Staging update_pending and installing missing JSON seeds")
+	clearUpdatePending()
+	if err := stageUpdatePendingJSON(filepath.Join(root, "json")); err != nil {
+		return fmt.Errorf("stage update_pending json: %w", err)
+	}
+	if err := installMissingJSONSeeds(filepath.Join(root, "json")); err != nil {
+		log.Printf("Warning: installMissingJSONSeeds: %v", err)
+	}
+	// Best-effort additive seed merge while old binary still runs (helps mid-jump);
+	// new binary will re-run from pending on startup with correct from→to.
+	if err := migrateFromPackageSeeds(filepath.Join(root, "json")); err != nil {
+		log.Printf("Warning: migrateFromPackageSeeds during apply: %v", err)
+	}
+	if err := writeUpdatePendingMeta(updatePendingMeta{
+		FromVersion:   fromVer,
+		TargetVersion: pkgVer,
+		SeedsRelpath:  "json",
+		TagName:       remote.TagName,
+		CreatedAt:     nowRFC3339UTC(),
+	}); err != nil {
+		return fmt.Errorf("write update_pending meta: %w", err)
 	}
 
 	updateJob.set("applying", "Installing new binary")
@@ -475,15 +498,8 @@ func performUpdate(remote *remoteUpdateInfo) error {
 		return fmt.Errorf("binary swap failed: %w", err)
 	}
 
-	pkgVer := normalizeVersion(meta.AppVersion)
-	if pkgVer == "" {
-		pkgVer = remote.AppVersion
-	}
-	if err := writeInstallVersion(pkgVer, "github-release:"+remote.TagName); err != nil {
-		log.Printf("Warning: could not write install_version.json: %v", err)
-	}
-
-	updateJob.set("done", fmt.Sprintf("Installed %s (backup: %s)", pkgVer, backupDir))
+	// Do NOT stamp install_version to target here — new binary finalizes after migrations.
+	updateJob.set("done", fmt.Sprintf("Installed binary for %s (pending migrations from %s; backup: %s)", pkgVer, fromVer, backupDir))
 	return nil
 }
 

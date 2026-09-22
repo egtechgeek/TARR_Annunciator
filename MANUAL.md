@@ -516,7 +516,7 @@ This is the life-safety heart of the system. Settings are grouped into numbered 
 4. **Failover policy** (which feed is trusted) is separate from **feed-switch announcements** (optional PA when the active feed changes).  
 5. **All Clear release authority** only controls **unlocking** Red Alert — not what can *enter* Red Alert.  
 6. **Composite enter rules** can treat distant failover Warning combinations as Red Alert enter — unlock rules stay separate.  
-7. **Manual Override** is for total sensor failure — it sets real lock state. It is **not** the same as Manual Test (audio drill).  
+7. **Manual Override** is a true hold lock — Thor cannot change it until Admin releases the override. It is **not** the same as Manual Test (audio drill).  
 8. Unsaved edits show a yellow banner; live status still refreshes, but typed values are not overwritten until you Discard or Save.
 
 ### Sections (top to bottom)
@@ -663,14 +663,15 @@ This does **not** decide who may clear/unlock Red Alert.
 | Mode | Behavior |
 |------|----------|
 | **primary_only** (recommended) | Only the **Primary** feed may unlock Red Alert |
-| **failover_vote** | Primary may unlock alone; **or**, if a non-primary path is used, **both** Failover 1 and Failover 2 must return **All Clear** at vote time |
+| **failover_vote** | Primary may unlock alone; **or**, if a non-primary path is used, **both** Failover 1 and Failover 2 must return a **trusted All Clear** at vote time |
 
 ### Critical details for failover_vote
 
 - Enabled feeds with URLs are **required**, but **not enough** by themselves  
-- The vote counts only strict **All Clear** results  
-- **Unknown**, Warning, Caution, Red Alert, bad XML, or download errors count as **0**  
-- One All Clear + one Unknown = **stay locked**  
+- The vote counts only **trusted All Clear**: alert is All Clear **and** the probe is not in telemetry collapse/hold **and** metrics show **`DI > 0` or `AD > 0`**  
+- Floor AllClear (`DI = 0` and `AD = 0`) does **not** count — blocks regional Thor fake-AllClear from unlocking via vote  
+- **Unknown**, Warning, Caution, Red Alert, sticky collapse, bad XML, or download errors count as **0**  
+- One trusted All Clear + one Unknown/floor = **stay locked**  
 - If only one failover is configured, you **cannot** clear via vote  
 
 ### What this setting does *not* do
@@ -777,24 +778,25 @@ Treat **Test Red Alert** carefully on a live PA — it can engage lock behavior 
 Forces Primary / Failover 1 / Failover 2 for drills.  
 **Unpin** returns to automatic failover selection.
 
-### Manual Override (all sensors failed)
+### Manual Override (true hold lock)
 
-Use when **Primary, Failover 1, and Failover 2** are unreachable or unusable and operators must set lock state by hand.
+Use when operators must set lock state by hand (e.g. all Thor feeds failed or untrusted). This is a **separate override lock**, not a one-shot trigger.
 
 | Action | Meaning |
 |--------|---------|
-| **Force Red Alert (override)** | Sets real Red Alert lock + plays Red Alert sequence; Live Status shows **MANUAL OVERRIDE ACTIVE** |
-| **Force All Clear / unlock (override)** | Clears the Red Alert lock + plays All Clear; override flag remains until cleared or feeds recover |
-| **Clear override flag only** | Removes the override banner; does **not** change the current lock/condition |
+| **Force Red Alert (override lock)** | Sets real Red Alert lock + plays Red Alert; Live Status shows **MANUAL OVERRIDE ACTIVE**; **Thor cannot unlock** until release |
+| **Force All Clear / unlock (override lock)** | Clears the Red Alert lock + plays All Clear; override lock remains so **Thor cannot re-enter** Red Alert until release |
+| **Release override lock** | Removes the override hold; does **not** change the current lock/condition — Thor may drive again on the next poll |
 
 Notes:
-- This is **not** Manual Test. Override changes operational lock state.
-- When any Thor feed recovers successfully, the override **flag** auto-clears; the next real condition drives state.
-- **Reset THOR Guard State** also clears the override flag.
+- This is **not** Manual Test. Override changes operational lock state and **holds** it.
+- While the override lock is active, valid Thor XML and composite enter rules are ignored for condition/lock changes. Fetches, Live Status metrics, and failover still run.
+- The override lock does **not** auto-clear when feeds recover — only **Release override lock** (or Reset THOR Guard State) releases it.
+- **Reset THOR Guard State** also clears the override lock.
 
 ### Reset THOR Guard State
 
-Clears cached condition, Red Alert lock, reminder timer, and manual override.  
+Clears cached condition, Red Alert lock, reminder timer, and manual override lock.  
 Use after a drill or if the lock is stuck because of a bad test — **not** as a substitute for a real All Clear during an actual storm.
 
 ---
@@ -825,10 +827,11 @@ Example rule operators may enable: require **failover_1** and **failover_2** eac
 | Primary Red Alert → Failover All Clear (`primary_only`) | Stay locked |
 | Caution → All Clear (never had Red Alert) | No unlock |
 | Failover enters Red Alert (Primary down) → only that failover says All Clear | Stay locked under both release modes |
-| `failover_vote`, both failovers All Clear | Unlock allowed (after rule 2) |
+| `failover_vote`, both failovers trusted All Clear (DI/AD activity) | Unlock allowed (after rule 2) |
+| `failover_vote`, both failovers floor All Clear (DI=AD=0) | Stay locked |
 | `failover_vote`, one All Clear + one Unknown | Stay locked |
 | Composite: both failovers Warning → Red Alert | Lock enters; unlock still needs authorized All Clear |
-| All feeds down → Manual Override Force Red Alert | Lock active; Live Status shows override |
+| All feeds down → Manual Override Force Red Alert | Lock active; Live Status shows override; Thor cannot unlock until Release override lock |
 
 ---
 
@@ -854,24 +857,46 @@ Under the install directory, sounds live in:
 
 ```text
 static/mp3/
-  lightning/     ← Thor horns and voices (Horn_*.mp3, Voice_*.mp3)
+  horns-chimes-tones/  ← Station chime + Thor horns (chime.mp3, Horn_*.mp3)
+  lightning/           ← Thor voice announces (Voice_*.mp3)
   emergency/
   promo/
   safety/
   … (station pieces as configured)
 ```
 
-### Lightning files used by v1.1.2 defaults
+### Lightning / tone files used by v1.1.4 defaults
 
-| File | Role |
-|------|------|
-| `Horn_RedAlert.mp3` | Red Alert attention horn |
-| `Voice_RedAlert.mp3` | Red Alert spoken message |
-| `Horn_AllClear.mp3` | All Clear horn |
-| `Voice_AllClear.mp3` | All Clear spoken message |
-| `Voice_Warning.mp3` | Warning |
-| `Voice_Caution.mp3` | Caution |
-| `Voice_RedAlert_Reminder.mp3` | Repeating reminder while locked |
+| File | Folder | Role |
+|------|--------|------|
+| `chime.mp3` | `horns-chimes-tones/` | Station announcement pre-chime |
+| `Horn_RedAlert.mp3` | `horns-chimes-tones/` | Red Alert attention horn |
+| `Horn_AllClear.mp3` | `horns-chimes-tones/` | All Clear horn |
+| `Voice_RedAlert.mp3` | `lightning/` | Red Alert spoken message |
+| `Voice_AllClear.mp3` | `lightning/` | All Clear spoken message |
+| `Voice_Warning.mp3` | `lightning/` | Warning |
+| `Voice_Caution.mp3` | `lightning/` | Caution |
+| `Voice_Unknown.mp3` | `lightning/` | Unknown |
+| `Voice_RedAlert_Reminder.mp3` | `lightning/` | Repeating reminder while locked |
+
+Upgrades look for horns/chime under `horns-chimes-tones/` first, then fall back to the old `lightning/` or root `chime.mp3` paths.
+
+### Telemetry collapse (sensor silent-fail)
+
+Thor may keep publishing valid XML with **AllClear** when a physical sensor dies. TARR tracks **LHL / DI / AD**. Collapse trips only when the **previous poll had all three elevated** (`LHL ≥ 3`, `DI ≥ 2.3`, `AD ≥ 1`) and the next poll is an immediate floor (`LHL ≤ 1`, `DI = 0`, `AD = 0`). LHL-only spikes do not count.
+
+After a collapse, that feed stays **sticky-unreliable**: fetches continue, but the feed cannot drive conditions/triggers (including All Clear unlock) until a later poll shows **`DI > 0` or `AD > 0`**. Floor AllClear alone does not clear the hold.
+
+- **Always (Layer A):** collapsed/held sample cannot unlock Red Alert or play All Clear (even on the first failure, and on every held poll after).
+- **Admin trigger `telemetry_collapse` (default on):** also counts toward consecutive failures so active feed can switch to a failover.
+
+Calm clear weather with steady zeros does **not** trip. Single-metric spikes (LHL-only, AD flicker) do **not** trip. Gradual storm recovery does **not** trip. Detection is metric-based (not tied to the AllClear string).
+
+Live Status shows last LHL / DI / AD per feed.
+
+### Schedule Admin
+
+Schedule remains **raw JSON** in Admin for v1.1.4. Dynamic forms are planned later.
 
 If you replace a file, keep the **same filename** or update Admin Condition Audio to the new name, then test.
 

@@ -9,11 +9,11 @@ import (
 )
 
 // AppVersion is the product release version embedded in this binary.
-// Override at build time: -ldflags "-X main.AppVersion=1.1.3"
+// Override at build time: -ldflags "-X main.AppVersion=1.1.4"
 //
 // Deployed Pi units before in-app updater work are treated as v1.0.0
-// (see BaselineInstalledVersion). This codebase ships as v1.1.3.
-var AppVersion = "1.1.3"
+// (see BaselineInstalledVersion). This codebase ships as v1.1.4.
+var AppVersion = "1.1.4"
 
 // BaselineInstalledVersion is assumed when install_version.json is missing
 // (current live Pi before in-app updates existed).

@@ -194,7 +194,7 @@ func (am *AnnouncementManager) buildAudioSequence(announcementType AnnouncementT
 	case TypeStation:
 		// Station announcement sequence: chime + train + direction + destination + track
 		audioFiles = []string{
-			fmt.Sprintf("%s/chime.mp3", app.Config.MP3Dir),
+			stationChimePath(),
 			fmt.Sprintf("%s/train/%s.mp3", app.Config.MP3Dir, parameters["train_number"]),
 			fmt.Sprintf("%s/direction/%s.mp3", app.Config.MP3Dir, parameters["direction"]),
 			fmt.Sprintf("%s/destination/%s.mp3", app.Config.MP3Dir, parameters["destination"]),

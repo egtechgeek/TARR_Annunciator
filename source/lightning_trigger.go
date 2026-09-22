@@ -481,6 +481,7 @@ func lightningAudioPath(name string) string {
 	name = strings.TrimSpace(name)
 	name = strings.ReplaceAll(name, "\\", "/")
 	name = strings.TrimPrefix(name, "lightning/")
+	name = strings.TrimPrefix(name, "horns-chimes-tones/")
 	name = filepath.Base(name)
 	if name == "" {
 		name = "Voice_RedAlert.mp3"
@@ -488,10 +489,39 @@ func lightningAudioPath(name string) string {
 	if !strings.HasSuffix(strings.ToLower(name), ".mp3") {
 		name += ".mp3"
 	}
+	mp3Root := "static/mp3"
 	if app != nil && app.Config != nil && app.Config.MP3Dir != "" {
-		return filepath.Join(app.Config.MP3Dir, "lightning", name)
+		mp3Root = app.Config.MP3Dir
 	}
-	return filepath.Join("static", "mp3", "lightning", name)
+	// Horns live under horns-chimes-tones/ (prefer), with fallback to lightning/ for upgrades.
+	if strings.HasPrefix(strings.ToLower(name), "horn_") {
+		preferred := filepath.Join(mp3Root, "horns-chimes-tones", name)
+		if fileExists(preferred) {
+			return preferred
+		}
+		legacy := filepath.Join(mp3Root, "lightning", name)
+		if fileExists(legacy) {
+			return legacy
+		}
+		return preferred
+	}
+	return filepath.Join(mp3Root, "lightning", name)
+}
+
+func stationChimePath() string {
+	mp3Root := "static/mp3"
+	if app != nil && app.Config != nil && app.Config.MP3Dir != "" {
+		mp3Root = app.Config.MP3Dir
+	}
+	preferred := filepath.Join(mp3Root, "horns-chimes-tones", "chime.mp3")
+	if fileExists(preferred) {
+		return preferred
+	}
+	legacy := filepath.Join(mp3Root, "chime.mp3")
+	if fileExists(legacy) {
+		return legacy
+	}
+	return preferred
 }
 
 // Load lightning configuration from JSON
@@ -710,6 +740,10 @@ type feedFetchResult struct {
 	displayname   string
 	uniqueid      string
 	xmlString     string
+	lhl           float64
+	di            float64
+	ad            float64
+	metricsOK     bool
 }
 
 func (t *LightningTrigger) fetchOneFeed(feed LightningFeedConfig, globalTimeout int) feedFetchResult {
@@ -834,6 +868,8 @@ func (t *LightningTrigger) triggerEnabled(class string) bool {
 		return tr.UniqueIDMismatch
 	case "stale_localtime":
 		return tr.StaleLocaltime
+	case "telemetry_collapse":
+		return tr.TelemetryCollapse
 	default:
 		return true
 	}
@@ -847,7 +883,7 @@ func (t *LightningTrigger) recordFeedFailure(feedID, class, msg string) {
 	h.LastError = fmt.Sprintf("%s: %s", class, msg)
 	h.LastErrorAt = now
 	h.ConsecutiveSuccesses = 0
-	if class == "stale_localtime" {
+	if class == "stale_localtime" || class == "telemetry_collapse" {
 		h.LastAlert = "Unknown"
 	}
 	window := t.failover.FailureWindowSeconds
@@ -880,6 +916,7 @@ func (t *LightningTrigger) recordFeedSuccess(feedID, alert, dn, uid string) {
 	h.LastAlert = alert
 	h.LastDisplayname = dn
 	h.LastUniqueID = uid
+	// TelemetryCollapse is sticky; cleared only in applyTelemetryToResult on DI/AD activity.
 	t.noteFetchSuccess()
 }
 
@@ -899,14 +936,18 @@ func (t *LightningTrigger) recordStandbyObservation(feedID string, res feedFetch
 		h.LastAlert = res.alert
 		h.LastDisplayname = res.displayname
 		h.LastUniqueID = res.uniqueid
+		// TelemetryCollapse is sticky; cleared only in applyTelemetryToResult on DI/AD activity.
 		return
 	}
 	h.ConsecutiveSuccesses = 0
 	h.ConsecutiveFailures++
 	h.LastError = fmt.Sprintf("%s: %s", res.failureClass, res.errMsg)
 	h.LastErrorAt = now
-	if res.failureClass == "stale_localtime" {
+	if res.failureClass == "stale_localtime" || res.failureClass == "telemetry_collapse" {
 		h.LastAlert = "Unknown"
+		if res.failureClass == "telemetry_collapse" {
+			h.TelemetryCollapse = true
+		}
 		if res.displayname != "" {
 			h.LastDisplayname = res.displayname
 		}
@@ -914,6 +955,25 @@ func (t *LightningTrigger) recordStandbyObservation(feedID string, res feedFetch
 			h.LastUniqueID = res.uniqueid
 		}
 	}
+}
+
+// recordTelemetryCollapseStatusOnly surfaces cliff in Live Status without counting toward failover.
+func (t *LightningTrigger) recordTelemetryCollapseStatusOnly(feedID string, res feedFetchResult) {
+	h := t.healthFor(feedID)
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	h.LastError = fmt.Sprintf("%s: %s", res.failureClass, res.errMsg)
+	h.LastErrorAt = time.Now()
+	h.LastAlert = "Unknown"
+	h.TelemetryCollapse = true
+	h.ConsecutiveSuccesses = 0
+	if res.displayname != "" {
+		h.LastDisplayname = res.displayname
+	}
+	if res.uniqueid != "" {
+		h.LastUniqueID = res.uniqueid
+	}
+	t.logFetchProblem(fmt.Sprintf("Lightning feed %s telemetry_collapse (Layer A only, failover trigger off): %s", feedID, res.errMsg))
 }
 
 func (t *LightningTrigger) fetchEnabledFeedsParallel(feeds []LightningFeedConfig, timeout int) map[string]feedFetchResult {
@@ -928,6 +988,7 @@ func (t *LightningTrigger) fetchEnabledFeedsParallel(feeds []LightningFeedConfig
 		go func(feed LightningFeedConfig) {
 			defer wg.Done()
 			r := t.fetchOneFeed(feed, timeout)
+			r = t.applyTelemetryToResult(feed.ID, r)
 			mu.Lock()
 			out[feed.ID] = r
 			mu.Unlock()
@@ -1004,8 +1065,20 @@ func (t *LightningTrigger) fetchAndCheck() {
 	}
 
 	if !res.ok {
-		// Stale localtime always counts — frozen sensors must not keep driving lock/announce.
-		applyFail := res.failureClass == "stale_localtime" || t.triggerEnabled(res.failureClass)
+		// Layer A: any !ok path returns without processConditionChange (lock/announce safe).
+		// Layer B: consecutive failures / failover — stale always; telemetry_collapse if trigger on.
+		applyFail := false
+		switch res.failureClass {
+		case "stale_localtime":
+			applyFail = true
+		case "telemetry_collapse":
+			applyFail = t.triggerEnabled("telemetry_collapse")
+			if !applyFail {
+				t.recordTelemetryCollapseStatusOnly(active.ID, res)
+			}
+		default:
+			applyFail = t.triggerEnabled(res.failureClass)
+		}
 		if applyFail {
 			t.recordFeedFailure(active.ID, res.failureClass, res.errMsg)
 			t.maybeFailover(mon, active)
@@ -1047,17 +1120,10 @@ func (t *LightningTrigger) fetchAndCheck() {
 
 	t.recordFeedSuccess(active.ID, res.alert, res.displayname, res.uniqueid)
 	t.mu.Lock()
-	wasAllFailed := t.allFeedsFailed
-	overrideActive := t.manualOverrideActive
 	t.activeDisplayname = res.displayname
 	t.activeUniqueID = res.uniqueid
 	t.URL = strings.TrimSpace(active.URL)
 	t.allFeedsFailed = false
-	if overrideActive && wasAllFailed {
-		t.manualOverrideActive = false
-		t.manualOverrideNote = "cleared on feed recovery"
-		log.Printf("Lightning manual override cleared — feed recovered (%s)", active.ID)
-	}
 	t.mu.Unlock()
 
 	// Failback using this cycle's standby success counters (no extra probe fetch needed)
@@ -1087,8 +1153,7 @@ func (t *LightningTrigger) fetchAndCheck() {
 						t.activeUniqueID = prefRes.uniqueid
 						t.URL = strings.TrimSpace(active.URL)
 						t.mu.Unlock()
-						t.processConditionChange(active, prefRes.alert)
-						t.evaluateCompositeRedAlertEnter()
+						t.applyThorDrivenCondition(active, prefRes.alert)
 						return
 					}
 				}
@@ -1096,8 +1161,30 @@ func (t *LightningTrigger) fetchAndCheck() {
 		}
 	}
 
-	t.processConditionChange(active, res.alert)
+	t.applyThorDrivenCondition(active, res.alert)
+}
+
+// applyThorDrivenCondition applies XML/composite-driven condition changes only when
+// manual override lock is inactive. Fetches, failover, and Live Status still update.
+func (t *LightningTrigger) applyThorDrivenCondition(feed *LightningFeedConfig, alert string) {
+	if t.isManualOverrideActive() {
+		log.Printf("Thor condition ignored — manual override lock active (%s); release from Admin to resume Thor-driven changes", t.manualOverrideConditionLocked())
+		return
+	}
+	t.processConditionChange(feed, alert)
 	t.evaluateCompositeRedAlertEnter()
+}
+
+func (t *LightningTrigger) isManualOverrideActive() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.manualOverrideActive
+}
+
+func (t *LightningTrigger) manualOverrideConditionLocked() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.manualOverrideCondition
 }
 
 func (t *LightningTrigger) maybeFailover(mon LightningMonitorConfig, active *LightningFeedConfig) {
@@ -1147,6 +1234,10 @@ func (t *LightningTrigger) maybeFailover(mon LightningMonitorConfig, active *Lig
 }
 
 func (t *LightningTrigger) processConditionChange(feed *LightningFeedConfig, lightningAlert string) {
+	if t.isManualOverrideActive() {
+		log.Printf("processConditionChange skipped — manual override lock active")
+		return
+	}
 	t.mu.Lock()
 	prev := t.LastCondition
 	skipAnnounce := t.skipNextConditionAnnounce
@@ -1531,6 +1622,11 @@ func (t *LightningTrigger) authorizeAllClearRelease(feed *LightningFeedConfig) b
 		log.Printf("AllClear release denied — no feed context")
 		return false
 	}
+	// Layer A: never unlock from a feed in sticky telemetry_collapse (even if Admin disabled Layer B).
+	if t.feedHasTelemetryCollapse(feed.ID) {
+		log.Printf("AllClear release denied — feed %s has telemetry_collapse", feed.ID)
+		return false
+	}
 	mode := normalizeAllClearReleaseMode(t.failover.AllClearReleaseMode)
 	if strings.EqualFold(feed.ID, "primary") {
 		return true
@@ -1554,7 +1650,8 @@ func (t *LightningTrigger) authorizeAllClearRelease(feed *LightningFeedConfig) b
 }
 
 // evaluateFailoverAllClearVote fetches failover_1 and failover_2 in parallel.
-// Accept only when both normalize strictly to AllClear (count == 2).
+// Accept only when both are trusted AllClear for unlock: not collapsed/held, alert AllClear,
+// and DI > 0 or AD > 0 (floor AllClear alone cannot unlock — regional Thor fake-AllClear).
 func (t *LightningTrigger) evaluateFailoverAllClearVote() (bool, string) {
 	mon := t.monitorSnapshot()
 	f1 := feedByID(mon, "failover_1")
@@ -1569,10 +1666,9 @@ func (t *LightningTrigger) evaluateFailoverAllClearVote() (bool, string) {
 		timeout = 30
 	}
 	type voteResult struct {
-		id    string
-		alert string
-		ok    bool
-		err   string
+		id     string
+		detail string
+		ok     bool
 	}
 	results := make([]voteResult, 2)
 	var wg sync.WaitGroup
@@ -1580,42 +1676,40 @@ func (t *LightningTrigger) evaluateFailoverAllClearVote() (bool, string) {
 	go func() {
 		defer wg.Done()
 		r := t.fetchOneFeed(*f1, timeout)
-		vr := voteResult{id: f1.ID}
-		if !r.ok {
-			vr.err = r.failureClass + ": " + r.errMsg
-		} else {
-			vr.alert = r.alert
-			vr.ok = strings.EqualFold(strings.TrimSpace(r.alert), "allclear")
+		r = t.applyTelemetryToResult(f1.ID, r)
+		ok, detail := allClearVoteBallotAccepted(r)
+		if t.feedHasTelemetryCollapse(f1.ID) {
+			ok = false
+			if !strings.Contains(detail, "telemetry_collapse") {
+				detail = "telemetry_collapse: sticky hold"
+			}
 		}
-		results[0] = vr
+		results[0] = voteResult{id: f1.ID, detail: detail, ok: ok}
 	}()
 	go func() {
 		defer wg.Done()
 		r := t.fetchOneFeed(*f2, timeout)
-		vr := voteResult{id: f2.ID}
-		if !r.ok {
-			vr.err = r.failureClass + ": " + r.errMsg
-		} else {
-			vr.alert = r.alert
-			vr.ok = strings.EqualFold(strings.TrimSpace(r.alert), "allclear")
+		r = t.applyTelemetryToResult(f2.ID, r)
+		ok, detail := allClearVoteBallotAccepted(r)
+		if t.feedHasTelemetryCollapse(f2.ID) {
+			ok = false
+			if !strings.Contains(detail, "telemetry_collapse") {
+				detail = "telemetry_collapse: sticky hold"
+			}
 		}
-		results[1] = vr
+		results[1] = voteResult{id: f2.ID, detail: detail, ok: ok}
 	}()
 	wg.Wait()
 
 	count := 0
 	parts := make([]string, 0, 2)
 	for _, vr := range results {
-		if vr.err != "" {
-			parts = append(parts, fmt.Sprintf("%s=error(%s)", vr.id, vr.err))
-			continue
-		}
-		parts = append(parts, fmt.Sprintf("%s=%s", vr.id, vr.alert))
+		parts = append(parts, fmt.Sprintf("%s=%s", vr.id, vr.detail))
 		if vr.ok {
 			count++
 		}
 	}
-	summary := fmt.Sprintf("allclear_count=%d [%s]", count, strings.Join(parts, ", "))
+	summary := fmt.Sprintf("trusted_allclear_count=%d [%s]", count, strings.Join(parts, ", "))
 	return count == 2, summary
 }
 
@@ -1661,8 +1755,10 @@ func (t *LightningTrigger) ResetState() {
 	log.Printf("THOR Guard cached state reset to Reset")
 }
 
-// ApplyManualOverride sets operational lightning lock state when Thor feeds are unusable.
-// Distinct from TestCondition (audio drill). action: redalert | allclear | clear
+// ApplyManualOverride sets operational lightning lock state and holds it until Admin
+// releases the override lock. While active, Thor XML / composite enter cannot change
+// lock or condition (fetches and failover still run). Distinct from TestCondition (audio drill).
+// action: redalert | allclear | clear
 func (t *LightningTrigger) ApplyManualOverride(action, note string) (string, error) {
 	action = strings.ToLower(strings.TrimSpace(action))
 	note = strings.TrimSpace(note)
@@ -1682,7 +1778,7 @@ func (t *LightningTrigger) ApplyManualOverride(action, note string) (string, err
 		t.mu.Unlock()
 		t.applyConditionEffects("RedAlert")
 		t.playLightningAnnouncement("RedAlert")
-		msg := "Manual override: Force Red Alert applied"
+		msg := "Manual override lock: Force Red Alert — Thor cannot change lock until Admin releases override"
 		log.Printf("%s (by %s)", msg, note)
 		return msg, nil
 	case "allclear", "force_allclear":
@@ -1697,7 +1793,7 @@ func (t *LightningTrigger) ApplyManualOverride(action, note string) (string, err
 		t.mu.Unlock()
 		t.applyConditionEffects("AllClear")
 		t.playLightningAnnouncement("AllClear")
-		msg := "Manual override: Force All Clear / unlock applied"
+		msg := "Manual override lock: Force All Clear / unlock — Thor cannot change lock until Admin releases override"
 		log.Printf("%s (by %s)", msg, note)
 		return msg, nil
 	case "clear", "clear_flag":
@@ -1710,9 +1806,9 @@ func (t *LightningTrigger) ApplyManualOverride(action, note string) (string, err
 		t.manualOverrideNote = note
 		t.mu.Unlock()
 		if !was {
-			return "Manual override flag was already inactive", nil
+			return "Manual override lock was already inactive", nil
 		}
-		msg := fmt.Sprintf("Manual override flag cleared (was %s); lock/condition unchanged", cond)
+		msg := fmt.Sprintf("Manual override lock released (was %s); lock/condition unchanged — Thor may drive again on next poll", cond)
 		log.Printf("%s (by %s)", msg, note)
 		return msg, nil
 	default:
@@ -1721,8 +1817,11 @@ func (t *LightningTrigger) ApplyManualOverride(action, note string) (string, err
 }
 
 // evaluateCompositeRedAlertEnter checks Admin composite enter rules (e.g. both failovers Warning → Red Alert).
-// Unlock / All Clear release authority is never modified here.
+// Unlock / All Clear release authority is never modified here. Skipped while manual override lock is active.
 func (t *LightningTrigger) evaluateCompositeRedAlertEnter() {
+	if t.isManualOverrideActive() {
+		return
+	}
 	if isRedAlertActive() {
 		return
 	}
@@ -1998,7 +2097,7 @@ func applyRedAlertPolicy(policy RedAlertPolicy) error {
 	return nil
 }
 
-func listLightningAudioFiles() []string {
+func listMP3BasenamesInDirs(dirs []string, known []string) []string {
 	seen := map[string]bool{}
 	var files []string
 	add := func(name string) {
@@ -2012,51 +2111,136 @@ func listLightningAudioFiles() []string {
 		seen[name] = true
 		files = append(files, name)
 	}
-	// Prefer what is actually on disk under static/mp3/lightning/
-	dir := ""
-	if app != nil && app.Config != nil && app.Config.MP3Dir != "" {
-		dir = filepath.Join(app.Config.MP3Dir, "lightning")
-	} else {
-		dir = filepath.Join("static", "mp3", "lightning")
-	}
-	if entries, err := os.ReadDir(dir); err == nil {
-		for _, entry := range entries {
-			if !entry.IsDir() && strings.HasSuffix(strings.ToLower(entry.Name()), ".mp3") {
-				add(entry.Name())
+	for _, dir := range dirs {
+		if entries, err := os.ReadDir(dir); err == nil {
+			for _, entry := range entries {
+				if !entry.IsDir() && strings.HasSuffix(strings.ToLower(entry.Name()), ".mp3") {
+					add(entry.Name())
+				}
 			}
 		}
 	}
-	// Also keep any currently configured / known names so Admin select can show (not on disk)
-	known := []string{
-		"Horn_RedAlert.mp3",
-		"Horn_AllClear.mp3",
+	for _, name := range known {
+		add(name)
+	}
+	sort.Strings(files)
+	return files
+}
+
+func mp3Subdir(name string) string {
+	mp3Root := "static/mp3"
+	if app != nil && app.Config != nil && app.Config.MP3Dir != "" {
+		mp3Root = app.Config.MP3Dir
+	}
+	return filepath.Join(mp3Root, name)
+}
+
+// listLightningVoiceFiles returns announce/voice MP3s from lightning/.
+func listLightningVoiceFiles() []string {
+	files := listMP3BasenamesInDirs([]string{mp3Subdir("lightning")}, []string{
 		"Voice_RedAlert.mp3",
 		"Voice_RedAlert_Reminder.mp3",
 		"Voice_AllClear.mp3",
 		"Voice_Warning.mp3",
 		"Voice_Caution.mp3",
 		"Voice_Unknown.mp3",
-	}
-	for _, name := range known {
-		add(name)
+	})
+	var voices []string
+	seen := map[string]bool{}
+	for _, f := range files {
+		if strings.HasPrefix(strings.ToLower(f), "horn_") {
+			continue
+		}
+		seen[f] = true
+		voices = append(voices, f)
 	}
 	if lightningConfig != nil {
+		add := func(name string) {
+			name = filepath.Base(strings.TrimSpace(name))
+			if name == "" || seen[name] {
+				return
+			}
+			if strings.HasPrefix(strings.ToLower(name), "horn_") {
+				return
+			}
+			if !strings.HasSuffix(strings.ToLower(name), ".mp3") {
+				name += ".mp3"
+			}
+			seen[name] = true
+			voices = append(voices, name)
+		}
 		for _, announcement := range lightningConfig.LightningAnnouncements {
 			add(announcement.AudioFile)
 		}
 		add(lightningConfig.RedAlertPolicy.ReminderAudioFile)
-		add(lightningConfig.RedAlertPolicy.HornAudioFile)
 		ca := lightningConfig.ConditionAudio
-		add(ca.RedAlert.HornFile)
 		add(ca.RedAlert.AnnounceFile)
-		add(ca.AllClear.HornFile)
 		add(ca.AllClear.AnnounceFile)
 		add(ca.Warning.AnnounceFile)
 		add(ca.Caution.AnnounceFile)
 		add(ca.Unknown.AnnounceFile)
 	}
-	sort.Strings(files)
-	return files
+	sort.Strings(voices)
+	return voices
+}
+
+// listLightningHornFiles returns Horn_*.mp3 from horns-chimes-tones/ (legacy lightning/ fallback).
+func listLightningHornFiles() []string {
+	files := listMP3BasenamesInDirs([]string{
+		mp3Subdir("horns-chimes-tones"),
+		mp3Subdir("lightning"),
+	}, []string{
+		"Horn_RedAlert.mp3",
+		"Horn_AllClear.mp3",
+	})
+	var horns []string
+	seen := map[string]bool{}
+	for _, f := range files {
+		if !strings.HasPrefix(strings.ToLower(f), "horn_") {
+			continue
+		}
+		seen[f] = true
+		horns = append(horns, f)
+	}
+	if lightningConfig != nil {
+		add := func(name string) {
+			name = filepath.Base(strings.TrimSpace(name))
+			if name == "" || seen[name] {
+				return
+			}
+			if !strings.HasSuffix(strings.ToLower(name), ".mp3") {
+				name += ".mp3"
+			}
+			if !strings.HasPrefix(strings.ToLower(name), "horn_") {
+				return
+			}
+			seen[name] = true
+			horns = append(horns, name)
+		}
+		add(lightningConfig.RedAlertPolicy.HornAudioFile)
+		ca := lightningConfig.ConditionAudio
+		add(ca.RedAlert.HornFile)
+		add(ca.AllClear.HornFile)
+	}
+	if len(horns) == 0 {
+		return []string{"Horn_AllClear.mp3", "Horn_RedAlert.mp3"}
+	}
+	sort.Strings(horns)
+	return horns
+}
+
+// listLightningAudioFiles returns combined voice+horn list (legacy callers).
+func listLightningAudioFiles() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, f := range append(listLightningVoiceFiles(), listLightningHornFiles()...) {
+		if !seen[f] {
+			seen[f] = true
+			out = append(out, f)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // UpdateConfig is a legacy single-URL updater (maps onto primary feed).
@@ -2094,6 +2278,7 @@ func (t *LightningTrigger) ApplyMonitorConfig(mon LightningMonitorConfig, timing
 	}
 	mon.Failover.AllClearReleaseMode = normalizeAllClearReleaseMode(mon.Failover.AllClearReleaseMode)
 	mon.Failover.RequireAllClearFromSameFeed = false
+	mon.Failover.TelemetryCollapse = mon.Failover.TelemetryCollapse.normalized()
 	if len(mon.Feeds) > 3 {
 		mon.Feeds = mon.Feeds[:3]
 	}
@@ -2203,7 +2388,9 @@ func getLightningTriggerStatus() map[string]interface{} {
 			"red_alert_active":         false,
 			"reminder_count":           0,
 			"red_alert_policy":         getRedAlertPolicy(),
-			"available_reminder_files": listLightningAudioFiles(),
+			"available_reminder_files": listLightningVoiceFiles(),
+			"available_voice_files":    listLightningVoiceFiles(),
+			"available_horn_files":     listLightningHornFiles(),
 			"known_sensors":            getBrowardTGSensors(),
 		}
 	}
@@ -2248,7 +2435,7 @@ func getLightningTriggerStatus() map[string]interface{} {
 		if !h.LastOK.IsZero() {
 			lastOK = h.LastOK.Format("2006-01-02 15:04:05")
 		}
-		healthCopy[id] = map[string]interface{}{
+		entry := map[string]interface{}{
 			"consecutive_failures":  h.ConsecutiveFailures,
 			"consecutive_successes": h.ConsecutiveSuccesses,
 			"last_ok":               lastOK,
@@ -2256,7 +2443,18 @@ func getLightningTriggerStatus() map[string]interface{} {
 			"last_displayname":      h.LastDisplayname,
 			"last_uniqueid":         h.LastUniqueID,
 			"last_alert":            h.LastAlert,
+			"telemetry_collapse":    h.TelemetryCollapse,
 		}
+		if h.LastLHL != nil {
+			entry["last_lhl"] = *h.LastLHL
+		}
+		if h.LastDI != nil {
+			entry["last_di"] = *h.LastDI
+		}
+		if h.LastAD != nil {
+			entry["last_ad"] = *h.LastAD
+		}
+		healthCopy[id] = entry
 	}
 	lightningTrigger.mu.Unlock()
 
@@ -2281,7 +2479,9 @@ func getLightningTriggerStatus() map[string]interface{} {
 		"next_reminder":            nextReminder,
 		"red_alert_policy":         getRedAlertPolicy(),
 		"condition_audio":          getConditionAudioConfig(),
-		"available_reminder_files": listLightningAudioFiles(),
+		"available_reminder_files": listLightningVoiceFiles(),
+		"available_voice_files":    listLightningVoiceFiles(),
+		"available_horn_files":     listLightningHornFiles(),
 		"condition_announce":       announcementEnableSnapshot(),
 		"feeds":                    mon.Feeds,
 		"failover":                 mon.Failover,

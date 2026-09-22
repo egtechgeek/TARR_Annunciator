@@ -49,7 +49,27 @@ type FailoverTriggers struct {
 	UnknownCondition      bool `json:"unknown_condition"`
 	DisplaynameMismatch   bool `json:"displayname_mismatch"`
 	UniqueIDMismatch      bool `json:"uniqueid_mismatch"`
-	StaleLocaltime        bool `json:"stale_localtime"` // XML <localtime> date >24h behind app time
+	StaleLocaltime        bool `json:"stale_localtime"`      // XML <localtime> date >24h behind app time
+	TelemetryCollapse     bool `json:"telemetry_collapse"`   // sticky LHL/DI/AD cliff — Layer B feed switch only
+}
+
+// TelemetryCollapseThresholds controls the LHL/DI/AD cliff detector (JSON/MANUAL defaults).
+type TelemetryCollapseThresholds struct {
+	HistorySamples   int     `json:"history_samples"`    // lookback N (default 3)
+	ElevatedLHL      float64 `json:"elevated_lhl"`       // default 3
+	ElevatedDI       float64 `json:"elevated_di"`        // default 2.3
+	ElevatedAD       float64 `json:"elevated_ad"`        // default 1
+	FloorLHLMax      float64 `json:"floor_lhl_max"`      // default 1 (0 or 1 = floor)
+}
+
+func defaultTelemetryCollapseThresholds() TelemetryCollapseThresholds {
+	return TelemetryCollapseThresholds{
+		HistorySamples: 3,
+		ElevatedLHL:    3,
+		ElevatedDI:     2.3,
+		ElevatedAD:     1,
+		FloorLHLMax:    1,
+	}
 }
 
 // LightningFailoverPolicy is Admin-owned failover/failback policy (no PA fields).
@@ -64,8 +84,9 @@ type LightningFailoverPolicy struct {
 	AllClearReleaseMode           string           `json:"allclear_release_mode"` // primary_only | failover_vote
 	RequireAllClearFromSameFeed   bool             `json:"require_allclear_from_same_feed,omitempty"` // legacy; ignored at runtime
 	PreserveConditionAcrossFail   bool             `json:"preserve_condition_across_failover"`
-	OnAllFeedsFailed              string           `json:"on_all_feeds_failed"` // hold_last_condition | force_unknown_status
-	Triggers                      FailoverTriggers `json:"triggers"`
+	OnAllFeedsFailed              string                       `json:"on_all_feeds_failed"` // hold_last_condition | force_unknown_status
+	Triggers                      FailoverTriggers             `json:"triggers"`
+	TelemetryCollapse             TelemetryCollapseThresholds  `json:"telemetry_collapse,omitempty"`
 }
 
 // CompositeRedAlertRule enters Red Alert lock when multiple feeds each report a required condition.
@@ -104,6 +125,15 @@ type DisplaynameOverride struct {
 	AudioByCondition map[string]string `json:"audio_by_condition"`
 }
 
+// TelemetrySample is one poll's LHL/DI/AD snapshot for cliff detection.
+type TelemetrySample struct {
+	At  time.Time `json:"at"`
+	LHL float64   `json:"lhl"`
+	DI  float64   `json:"di"`
+	AD  float64   `json:"ad"`
+	OK  bool      `json:"ok"` // false if any metric tag was missing/unparseable
+}
+
 // FeedHealth is runtime health for one feed slot (status API).
 type FeedHealth struct {
 	ConsecutiveFailures  int       `json:"consecutive_failures"`
@@ -114,7 +144,12 @@ type FeedHealth struct {
 	LastDisplayname      string    `json:"last_displayname,omitempty"`
 	LastUniqueID         string    `json:"last_uniqueid,omitempty"`
 	LastAlert            string    `json:"last_alert,omitempty"`
+	LastLHL              *float64  `json:"last_lhl,omitempty"`
+	LastDI               *float64  `json:"last_di,omitempty"`
+	LastAD               *float64  `json:"last_ad,omitempty"`
+	TelemetryCollapse    bool      `json:"telemetry_collapse,omitempty"` // sticky until DI>0 or AD>0
 	FailureTimes         []time.Time `json:"-"`
+	TelemetryHistory     []TelemetrySample `json:"-"`
 }
 
 func defaultFailoverTriggers() FailoverTriggers {
@@ -128,6 +163,7 @@ func defaultFailoverTriggers() FailoverTriggers {
 		DisplaynameMismatch:   false,
 		UniqueIDMismatch:      false,
 		StaleLocaltime:        true,
+		TelemetryCollapse:     true,
 	}
 }
 
@@ -145,6 +181,7 @@ func defaultLightningFailoverPolicy() LightningFailoverPolicy {
 		PreserveConditionAcrossFail:  true,
 		OnAllFeedsFailed:             "hold_last_condition",
 		Triggers:                     defaultFailoverTriggers(),
+		TelemetryCollapse:            defaultTelemetryCollapseThresholds(),
 	}
 }
 

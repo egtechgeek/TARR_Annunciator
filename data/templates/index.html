@@ -80,7 +80,8 @@
         .status .status-error { color: #f44336; }
         .status a { color: var(--tarr-link); }
         .text-muted { color: var(--tarr-muted) !important; }
-        #red-alert-banner {
+        #red-alert-banner,
+        #telemetry-collapse-banner {
             display: none;
             background: #b71c1c;
             color: #fff;
@@ -90,6 +91,9 @@
             max-width: 720px;
             border-radius: 8px;
             font-weight: bold;
+        }
+        #telemetry-collapse-banner {
+            background: #880e4f;
         }
         .nav-tabs .nav-link { color: var(--tarr-nav); }
         .nav-tabs .nav-link.active {
@@ -127,6 +131,7 @@
     <button type="button" class="theme-toggle" id="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle color theme">🌙 Dark</button>
     <h1>TARR Annunciator Control</h1>
     <div id="red-alert-banner">THOR GUARD RED ALERT ACTIVE — station, promo, safety, and scheduled announcements are suspended until All Clear</div>
+    <div id="telemetry-collapse-banner">THOR GUARD SENSOR UNTRUSTED — feed(s) in telemetry collapse / sticky hold</div>
 
     <div class="status">
         <p>
@@ -414,8 +419,25 @@
                 if (banner) {
                     banner.style.display = data.red_alert_active ? 'block' : 'none';
                 }
-                if (!el) return;
                 const health = data.feed_health || {};
+                const collapsedIds = [];
+                Object.keys(health).forEach(function(id) {
+                    if (health[id] && health[id].telemetry_collapse) collapsedIds.push(id);
+                });
+                const collapseBanner = document.getElementById('telemetry-collapse-banner');
+                if (collapseBanner) {
+                    if (collapsedIds.length) {
+                        const label = collapsedIds.length === 1
+                            ? ('sensor ' + collapsedIds[0] + ' is')
+                            : ('sensors ' + collapsedIds.join(', ') + ' are');
+                        collapseBanner.textContent = 'THOR GUARD SENSOR UNTRUSTED — ' + label +
+                            ' in telemetry collapse / sticky hold (not trusted for All Clear until DI/AD activity restores)';
+                        collapseBanner.style.display = 'block';
+                    } else {
+                        collapseBanner.style.display = 'none';
+                    }
+                }
+                if (!el) return;
                 const feeds = Array.isArray(data.feeds) ? data.feeds : [];
                 let rows = '';
                 const list = feeds.length
@@ -427,14 +449,18 @@
                     const badge = last
                         ? '<span class="badge-cond ' + conditionBadgeClass(last) + '">' + last + '</span>'
                         : '—';
-                    rows += '<tr><td>' + (f.id || '—') + '</td><td>' + (f.enabled ? 'yes' : 'no') + '</td><td>' + badge + '</td><td>' + (h.last_displayname || '—') + '</td></tr>';
+                    const collapse = h.telemetry_collapse
+                        ? ' <span class="badge-cond bg-secondary">collapse</span>'
+                        : '';
+                    rows += '<tr><td>' + (f.id || '—') + '</td><td>' + (f.enabled ? 'yes' : 'no') + '</td><td>' + badge + collapse + '</td><td>' + (h.last_displayname || '—') + '</td></tr>';
                 });
                 el.innerHTML =
                     '<div><strong>Active feed:</strong> ' + (data.active_feed_id || '—') +
                     (data.active_displayname ? ' · ' + data.active_displayname : '') +
                     (data.on_failover ? ' · <span style="color:#ff9800">on failover</span>' : '') + '</div>' +
                     '<div class="mt-1"><strong>Condition:</strong> <span class="badge-cond ' + conditionBadgeClass(data.last_condition) + '">' + (data.last_condition || '—') + '</span>' +
-                    (data.red_alert_active ? ' · <strong style="color:#ff5252">LOCK ON</strong>' : '') + '</div>' +
+                    (data.red_alert_active ? ' · <strong style="color:#ff5252">LOCK ON</strong>' : '') +
+                    (collapsedIds.length ? ' · <strong style="color:#ff80ab">UNTRUSTED FEED(S)</strong>' : '') + '</div>' +
                     '<div class="table-responsive mt-2"><table class="lightning-mini"><thead><tr><th>Feed</th><th>Enabled</th><th>Last Status</th><th>Displayname</th></tr></thead><tbody>' +
                     (rows || '<tr><td colspan="4">No feed data</td></tr>') +
                     '</tbody></table></div>';

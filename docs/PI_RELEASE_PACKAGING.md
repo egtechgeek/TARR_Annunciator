@@ -119,6 +119,24 @@ TARR_Annunciator_Pi_arm64_v1.1.0/
 
 Install must **never** bulk-overwrite live operator JSON. Migrations are additive only.
 
+### Updater apply contract (v1.1.4+)
+
+The **running** binary applies the package as follows:
+
+1. Replace `templates/`; merge `static/` (new MP3 folders land via merge).
+2. Copy any **missing** non-protected files from package `json/` into live `json/` (installer parity). Never overwrite operator/protected basenames (`admin_config.json`, `lightning.json`, `*_selected.json`, etc.).
+3. Stage package `json/` under durable `update_pending/json/` and write `update_pending/meta.json` (`from_version`, `target_version`).
+4. Swap `tarr-annunciator` binary.
+5. **Do not** stamp `install_version.json` to the target yet.
+
+On next startup the **new** binary:
+
+1. Runs `ensureEmbeddedJSONSeeds()` (e.g. embedded `browardtg.json` if missing).
+2. If `update_pending/meta.json` exists: `migrateFromPackageSeeds` + `runSchemaMigrations(from → AppVersion)`, then finalize `install_version.json` and remove `update_pending/`.
+3. Otherwise runs normal additive schema migrations.
+
+This prevents mid-release migrations from being skipped when an older updater stamped `install_version` before the new binary could run them.
+
 ---
 
 ## `UPDATE_PACKAGE.json` (updater contract)

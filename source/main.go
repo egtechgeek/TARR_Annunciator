@@ -170,14 +170,49 @@ type App struct {
 
 var app *App
 
+// resolveAppBaseDir picks the install root that contains json/ + static/.
+// Prefer the executable's directory (Windows double-click / shortcut safe),
+// then fall back to the process working directory.
+func resolveAppBaseDir() string {
+	candidates := []string{}
+	if exe, err := os.Executable(); err == nil {
+		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+			candidates = append(candidates, filepath.Dir(resolved))
+		} else {
+			candidates = append(candidates, filepath.Dir(exe))
+		}
+	}
+	if wd, err := os.Getwd(); err == nil {
+		candidates = append(candidates, wd)
+	}
+	for _, dir := range candidates {
+		if dir == "" {
+			continue
+		}
+		mp3 := filepath.Join(dir, "static", "mp3")
+		json := filepath.Join(dir, "json")
+		if dirExists(mp3) || dirExists(json) {
+			return dir
+		}
+	}
+	if len(candidates) > 0 && candidates[0] != "" {
+		return candidates[0]
+	}
+	wd, _ := os.Getwd()
+	return wd
+}
+
 func main() {
 	fmt.Println("Starting TARR Annunciator...")
 
-	// Initialize paths first
-	baseDir, _ := os.Getwd()
+	// Prefer directory of the executable so double-click / IDE launches still find
+	// json/ and static/ next to the binary (Getwd alone breaks Windows testing).
+	baseDir := resolveAppBaseDir()
 	jsonDir := filepath.Join(baseDir, "json")
 	mp3Dir := filepath.Join(baseDir, "static", "mp3")
 	logDir := filepath.Join(baseDir, "logs")
+
+	log.Printf("Base directory: %s", baseDir)
 
 	// Initialize logging system
 	if err := initializeLogging(logDir); err != nil {
@@ -234,13 +269,31 @@ func main() {
 	// NTP/time sync and operating-hours gate for scheduled announcements
 	initializeTimeAndHours()
 
+	// Embedded catalog safety net (runs even when install_version already matches AppVersion)
+	ensureEmbeddedJSONSeeds()
+
+	// Pending update handoff from previous apply (deferred install_version finalize)
+	pendingFailed := false
+	if err := processUpdatePendingIfAny(); err != nil {
+		pendingFailed = true
+		log.Printf("ERROR: update_pending migrations failed: %v (leaving update_pending in place)", err)
+	}
+
 	// Additive schema migrations (never overwrite existing settings)
 	fromVer := getInstalledVersion()
 	if err := runSchemaMigrations(fromVer); err != nil {
 		log.Printf("Warning: schema migrations failed: %v", err)
-	} else if err := writeInstallVersion(AppVersion, "startup"); err != nil {
-		log.Printf("Warning: could not update install_version.json: %v", err)
+	} else if !pendingFailed {
+		// Do not stamp success if pending update is still broken
+		if _, err := readUpdatePendingMeta(); err == nil {
+			log.Printf("Note: update_pending still present — deferring install_version stamp")
+		} else if err := writeInstallVersion(AppVersion, "startup"); err != nil {
+			log.Printf("Warning: could not update install_version.json: %v", err)
+		}
 	}
+
+	// Re-ensure catalogs after migrations (covers from==to early exit path)
+	ensureEmbeddedJSONSeeds()
 
 	// Initialize announcement queue system
 	InitializeAnnouncementManager()
@@ -625,7 +678,7 @@ func schedulerStatusHandler(c *gin.Context) {
 }
 
 func audioStatusHandler(c *gin.Context) {
-	chimePath := filepath.Join(app.Config.MP3Dir, "chime.mp3")
+	chimePath := stationChimePath()
 	chimeExists := fileExists(chimePath)
 	mp3DirExists := dirExists(app.Config.MP3Dir)
 
@@ -844,14 +897,17 @@ func setVolumeHandler(c *gin.Context) {
 }
 
 func testAudioHandler(c *gin.Context) {
-	chimePath := filepath.Join(app.Config.MP3Dir, "chime.mp3")
+	chimePath := stationChimePath()
 	if !fileExists(chimePath) {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Test audio file not found"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   fmt.Sprintf("Test audio file not found: %s (base=%s mp3=%s)", chimePath, app.Config.BaseDir, app.Config.MP3Dir),
+		})
 		return
 	}
 
 	if err := playAudio(chimePath); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Audio test failed"})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": fmt.Sprintf("Audio test failed: %v", err)})
 		return
 	}
 

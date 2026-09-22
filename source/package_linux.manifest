@@ -39,7 +39,7 @@ FILES=(
     "templates/index.html"
     
     # Audio files
-    "static/mp3/chime.mp3"
+    "static/mp3/horns-chimes-tones/chime.mp3"
     "static/mp3/destination/goodwin_station.mp3"
     "static/mp3/destination/hialeah.mp3"
     "static/mp3/destination/picnic_station.mp3"

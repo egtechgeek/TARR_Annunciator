@@ -1,0 +1,211 @@
+{
+  "announce_timing": {
+    "min_seconds_between_any_lightning_announce": 0,
+    "min_seconds_between_same_condition": 0
+  },
+  "condition_audio": {
+    "AllClear": {
+      "announce_file": "Voice_AllClear.mp3",
+      "horn_enabled": true,
+      "horn_file": "Horn_AllClear.mp3"
+    },
+    "Caution": {
+      "announce_file": "Voice_Caution.mp3",
+      "horn_enabled": false,
+      "horn_file": ""
+    },
+    "RedAlert": {
+      "announce_file": "Voice_RedAlert.mp3",
+      "horn_enabled": true,
+      "horn_file": "Horn_RedAlert.mp3"
+    },
+    "Unknown": {
+      "announce_file": "Voice_Unknown.mp3",
+      "horn_enabled": false,
+      "horn_file": ""
+    },
+    "Warning": {
+      "announce_file": "Voice_Warning.mp3",
+      "horn_enabled": false,
+      "horn_file": ""
+    }
+  },
+  "displayname_overrides": [],
+  "lightning_announcements": [
+    {
+      "audio_file": "Voice_Caution.mp3",
+      "category": "system_alert",
+      "description": "THOR system caution - lightning risk developing",
+      "enabled": false,
+      "id": "THOR_Caution",
+      "name": "THOR Caution",
+      "priority": 6,
+      "tts_text": "THOR Caution: Lightning monitoring system reports developing weather risk. Remain aware of changing conditions."
+    },
+    {
+      "audio_file": "Voice_Warning.mp3",
+      "category": "system_alert",
+      "description": "THOR system warning - elevated lightning risk",
+      "enabled": false,
+      "id": "THOR_Warning",
+      "name": "THOR Warning",
+      "priority": 8,
+      "tts_text": "THOR Warning: Lightning activity detected by monitoring system. Exercise caution and be prepared to seek shelter."
+    }
+  ],
+  "monitor": {
+    "composite_red_alert_rules": [],
+    "enabled": false,
+    "failover": {
+      "allclear_release_mode": "primary_only",
+      "allow_failover_during_red_alert": true,
+      "consecutive_failures": 3,
+      "failback_after_successes": 2,
+      "failback_mode": "prefer_primary",
+      "failback_probe_interval_seconds": 0,
+      "failure_window_seconds": 0,
+      "min_dwell_on_feed_seconds": 0,
+      "on_all_feeds_failed": "hold_last_condition",
+      "preserve_condition_across_failover": true,
+      "require_allclear_from_same_feed": false,
+      "telemetry_collapse": {
+        "elevated_ad": 1,
+        "elevated_di": 2.3,
+        "elevated_lhl": 3,
+        "floor_lhl_max": 1,
+        "history_samples": 3
+      },
+      "triggers": {
+        "displayname_mismatch": false,
+        "empty_body": true,
+        "encoding_error": true,
+        "http_error": true,
+        "http_status_not_ok": true,
+        "missing_lightningalert": true,
+        "stale_localtime": true,
+        "telemetry_collapse": true,
+        "uniqueid_mismatch": false,
+        "unknown_condition": false
+      }
+    },
+    "feed_switch_announcements": [
+      {
+        "audio_file": "",
+        "enabled": false,
+        "from_feed_id": "primary",
+        "id": "p_to_f1",
+        "label": "Primary to Failover 1",
+        "match_displayname": "",
+        "match_sensor_id": "",
+        "reason": "failover",
+        "to_feed_id": "failover_1"
+      },
+      {
+        "audio_file": "",
+        "enabled": false,
+        "from_feed_id": "primary",
+        "id": "p_to_f2",
+        "label": "Primary to Failover 2",
+        "match_displayname": "",
+        "match_sensor_id": "",
+        "reason": "failover",
+        "to_feed_id": "failover_2"
+      }
+    ],
+    "feeds": [
+      {
+        "announce": {
+          "inherit_global": true
+        },
+        "audio_by_condition": {},
+        "enabled": false,
+        "expected_displayname": "",
+        "expected_uniqueid": "",
+        "horn_by_condition": {
+          "AllClear": {
+            "audio_file": "",
+            "enabled": true,
+            "inherit_global": true
+          },
+          "RedAlert": {
+            "audio_file": "",
+            "enabled": true,
+            "inherit_global": true
+          }
+        },
+        "id": "primary",
+        "label": "Primary",
+        "sensor_id": "",
+        "source": "custom",
+        "timeout_seconds": 0,
+        "url": ""
+      },
+      {
+        "announce": {
+          "inherit_global": true
+        },
+        "audio_by_condition": {},
+        "enabled": false,
+        "expected_displayname": "",
+        "expected_uniqueid": "",
+        "horn_by_condition": {
+          "AllClear": {
+            "audio_file": "",
+            "enabled": true,
+            "inherit_global": true
+          },
+          "RedAlert": {
+            "audio_file": "",
+            "enabled": true,
+            "inherit_global": true
+          }
+        },
+        "id": "failover_1",
+        "label": "Failover 1",
+        "sensor_id": "",
+        "source": "custom",
+        "timeout_seconds": 0,
+        "url": ""
+      },
+      {
+        "announce": {
+          "inherit_global": true
+        },
+        "audio_by_condition": {},
+        "enabled": false,
+        "expected_displayname": "",
+        "expected_uniqueid": "",
+        "horn_by_condition": {
+          "AllClear": {
+            "audio_file": "",
+            "enabled": true,
+            "inherit_global": true
+          },
+          "RedAlert": {
+            "audio_file": "",
+            "enabled": true,
+            "inherit_global": true
+          }
+        },
+        "id": "failover_2",
+        "label": "Failover 2",
+        "sensor_id": "",
+        "source": "custom",
+        "timeout_seconds": 0,
+        "url": ""
+      }
+    ],
+    "fetch_interval": 60,
+    "timeout": 30,
+    "url": ""
+  },
+  "red_alert_policy": {
+    "horn_audio_file": "Horn_RedAlert.mp3",
+    "preempt_queue": true,
+    "reminder_audio_file": "Voice_RedAlert_Reminder.mp3",
+    "reminder_enabled": true,
+    "reminder_include_horn": false,
+    "reminder_interval_minutes": 5,
+    "suppress_non_emergency": true
+  }
+}

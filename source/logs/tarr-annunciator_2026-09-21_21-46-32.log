@@ -1,0 +1,39 @@
+2026/09/21 21:46:32 === TARR Annunciator Started ===
+2026/09/21 21:46:32 Version: 1.1.4 (installed record: 1.0.0)
+2026/09/21 21:46:32 Platform: windows/amd64
+2026/09/21 21:46:32 Log file: C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\source\logs\tarr-annunciator_2026-09-21_21-46-32.log
+2026/09/21 21:46:32 Log rotation: max 10 MB per file, keep 5 files, delete after 30 days
+2026/09/21 21:46:32 Timestamp: 2026-09-21 21:46:32
+2026/09/21 21:46:32 =====================================
+2026/09/21 21:46:32 Log retention: 1 file(s), 0.00 MB total (max 10 MB/file, keep 5 files, 30 days)
+2026/09/21 21:46:32 Warning: Could not load admin config, using defaults: open C:\Users\Ari Ellenbogen\Documents\GitHub\TARR_Annunciator\source\json\admin_config.json: The system cannot find the path specified.
+2026/09/21 21:46:33 ✓ Audio system initialized successfully
+2026/09/21 21:46:33 ✓ Time sync from pool.ntp.org (offset -813ms, app time 2026-09-21 21:46:32 EDT)
+2026/09/21 21:46:33 Operating hours disabled — scheduler runs 24/7
+2026/09/21 21:46:33 Migration: installed browardtg.json from embedded seed (3449 bytes)
+2026/09/21 21:46:33 ✓ Loaded Broward Thor Guard catalog (19 sensors)
+2026/09/21 21:46:33 Schema migrations: 1.0.0 → 1.1.4
+2026/09/21 21:46:33 Migration: created operating_hours.json with defaults
+2026/09/21 21:46:33 Migration: lightning.json added missing key "red_alert_policy"
+2026/09/21 21:46:33 Migration: lightning.json added announcement "THOR_Caution"
+2026/09/21 21:46:33 Migration: lightning.json added announcement "THOR_Warning"
+2026/09/21 21:46:33 Migration: lightning.json added empty monitor block (set URL in Admin — not invented in code)
+2026/09/21 21:46:33 ✓ Loaded Broward Thor Guard catalog (19 sensors)
+2026/09/21 21:46:33 Migration: lightning.json monitor.feeds created from legacy url
+2026/09/21 21:46:33 Migration: lightning.json monitor.failover defaults added
+2026/09/21 21:46:33 Migration: lightning.json condition_audio defaults added
+2026/09/21 21:46:33 Migration: browardtg.json merge — no changes
+2026/09/21 21:46:33 ✓ Loaded Broward Thor Guard catalog (19 sensors)
+2026/09/21 21:46:33 Migration: lightning audio filenames already current — leaving unchanged
+2026/09/21 21:46:33 Migration: lightning.json composite_red_alert_rules initialized
+2026/09/21 21:46:33 Migration: lightning.json failover.triggers.stale_localtime defaulted to true
+2026/09/21 21:46:33 Migration: condition_audio.Unknown.announce_file → Voice_Unknown.mp3
+2026/09/21 21:46:33 Migration: lightning.json failover.triggers.telemetry_collapse defaulted to true
+2026/09/21 21:46:33 Migration: lightning.json failover.telemetry_collapse thresholds added
+2026/09/21 21:46:33 Announcement manager initialized with queuing system
+2026/09/21 21:46:33 ✓ Announcement queue system initialized
+2026/09/21 21:46:33 ✓ Loaded Broward Thor Guard catalog (19 sensors)
+2026/09/21 21:46:33 ✓ Loaded lightning configuration with 2 announcements
+2026/09/21 21:46:33   - Red Alert policy: preempt=true suppress=true reminder=true every 5m file=Voice_RedAlert_Reminder.mp3
+2026/09/21 21:46:33 Lightning monitor has no enabled feed URL — monitoring will stay stopped until configured in Admin
+2026/09/21 21:46:33 ✓ Lightning trigger system initialized (disabled)

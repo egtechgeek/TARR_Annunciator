@@ -161,7 +161,7 @@ func playStationAnnouncement(trainNumber, direction, destination, trackNumber st
 		defer globalAudioMutex.Unlock()
 
 		audioSequence := []string{
-			filepath.Join(app.Config.MP3Dir, "chime.mp3"),
+			stationChimePath(),
 			filepath.Join(app.Config.MP3Dir, "train", trainNumber+".mp3"),
 			filepath.Join(app.Config.MP3Dir, "direction", direction+".mp3"),
 			filepath.Join(app.Config.MP3Dir, "destination", destination+".mp3"),

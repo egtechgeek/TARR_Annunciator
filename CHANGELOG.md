@@ -5,7 +5,43 @@ All notable changes to TARR Annunciator are documented here.
 Product versions match `AppVersion` in `source/version.go` and GitHub Release tags (`vX.Y.Z`).
 Target platform going forward: **Raspberry Pi OS 64-bit (`linux/arm64`)**.
 
-Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** → **`1.1.3`** (current).
+Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** → **`1.1.3`** → **`1.1.4`** (current).
+
+---
+
+## [1.1.4] - 2026-09-22
+
+Field follow-up after v1.1.3 production: updater seed gap (`browardtg.json`) and Thor silent sensor death (valid AllClear XML with metric cliff / regional fake-AllClear).
+
+### Added
+
+- **Updater pending handoff:** apply stages `update_pending/` with package JSON seeds, swaps binary, and **defers** `install_version` finalize until the new binary runs migrations on startup
+- **Generic missing-JSON seed install** (installer parity): copy package `json/*` when live file is absent; protected/operator files never overwritten
+- **`go:embed` browardtg.json safety net:** every startup installs catalog if missing (covers 1.1.1→1.1.3-style jumps applied by old updaters)
+- **Telemetry collapse (`telemetry_collapse`):** detect Thor silent-fail when metrics cliff to floor in one poll — applies per feed to **primary, failover_1, and failover_2**
+  - **Layer A (always on):** collapsed/held feed never drives `processConditionChange` — no All Clear announce, no Red Alert unlock
+  - **Layer B (Admin trigger, default on):** counts toward consecutive failures / failover switch
+  - Live Status shows LHL / DI / AD per feed; Admin failover checkbox for Layer B
+- **`static/mp3/horns-chimes-tones/`:** `chime.mp3` + `Horn_*.mp3`; voices remain in `lightning/`; dual-path resolve for upgrades; Admin horn vs voice MP3 selects
+
+### Changed
+
+- `AppVersion` **1.1.4**
+- Schedule Admin remains **raw JSON** (dynamic forms deferred)
+- Packaging / MANUAL / PI_RELEASE_PACKAGING updated for updater contract, audio layout, and telemetry collapse / All Clear vote rules
+- **Collapse trip gate (field harden):** previous sample must have **all three** elevated — `LHL ≥ 3` **and** `DI ≥ 2.3` **and** `AD ≥ 1` — before a floor cliff counts. LHL-only spikes (observed false positive: `LHL=4 DI=0 AD=0`) and AD-only clear-day flicker do not trip
+- **Collapse sticky hold (field harden):** after a cliff, that feed stays unreliable while fetches continue; it cannot drive conditions/triggers until a later poll shows **`DI > 0` or `AD > 0`**. Floor AllClear alone cannot clear the hold or unlock on the next 60s poll
+- **Failover vote harden (field harden):** `failover_vote` unlock requires **trusted** AllClear on **both** failover_1 and failover_2 — not sticky/held, alert AllClear, and **`DI > 0` or `AD > 0`**. Floor AllClear XML alone cannot unlock via the vote (blocks regional Thor outage fake-AllClear)
+- **Manual override true hold:** Force Red Alert / Force All Clear set a **separate override lock**; while active, Thor XML and composite enter cannot change lock/condition. Only Admin **Release override lock** (or Reset) clears it — no auto-clear on feed recovery
+- **Collapse status banners:** Main Control shows a red banner when any feed is in telemetry collapse / sticky hold; Admin Live Status shows a matching danger strip listing affected feeds
+
+### Safety
+
+- Floor definition: `LHL ≤ 1` AND `DI == 0` AND `AD == 0`; metric cliff alone (not tied to AllClear tag); calm zeros / gradual decline / cold start do not trip
+- Layer A unlock denial applies on the cliff poll **and** every sticky-hold poll after; disabling Layer B must not allow unlock from a collapsed/held feed
+- Fake AllClear on primary cannot release Red Alert while that feed remains in sticky collapse
+- Fake AllClear on failover_1/failover_2 (floor metrics or sticky collapse) cannot unlock via `failover_vote`
+- Manual override lock blocks Thor-driven unlock/re-enter until explicitly released from Admin
 
 ---
 
