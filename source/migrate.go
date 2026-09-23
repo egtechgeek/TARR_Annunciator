@@ -65,6 +65,16 @@ func runSchemaMigrations(fromVersion string) error {
 		}
 	}
 
+	// 1.1.6: calendar_rules + quiet_hours + after-hours lightning audio keys
+	if compareSemver(fromVersion, "1.1.6") < 0 && compareSemver(toVersion, "1.1.6") >= 0 {
+		if err := migrateOperatingHours116Additive(); err != nil {
+			return fmt.Errorf("operating_hours 1.1.6 migration: %w", err)
+		}
+		if err := migrateLightning116Additive(); err != nil {
+			return fmt.Errorf("lightning 1.1.6 migration: %w", err)
+		}
+	}
+
 	// Idempotent repairs — run even when from == to was skipped above via early return;
 	// callers that hit early return must still invoke ensureEmbeddedJSONSeeds / pending handoff separately.
 	if compareSemver(toVersion, "1.1.3") >= 0 {
@@ -75,6 +85,14 @@ func runSchemaMigrations(fromVersion string) error {
 	if compareSemver(toVersion, "1.1.4") >= 0 {
 		if err := migrateLightning114Additive(); err != nil {
 			return fmt.Errorf("lightning 1.1.4 additive repair: %w", err)
+		}
+	}
+	if compareSemver(toVersion, "1.1.6") >= 0 {
+		if err := migrateOperatingHours116Additive(); err != nil {
+			return fmt.Errorf("operating_hours 1.1.6 additive repair: %w", err)
+		}
+		if err := migrateLightning116Additive(); err != nil {
+			return fmt.Errorf("lightning 1.1.6 additive repair: %w", err)
 		}
 	}
 
@@ -252,6 +270,127 @@ func migrateLightning114Additive() error {
 			}
 		}
 		live["monitor"] = mon
+	}
+
+	if !changed {
+		return nil
+	}
+	out, err := json.MarshalIndent(live, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(out, '\n'), 0644)
+}
+
+// migrateOperatingHours116Additive injects calendar_rules and quiet_hours when missing.
+// Never overwrites existing operator open/close times or day enables.
+func migrateOperatingHours116Additive() error {
+	path := operatingHoursPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return migrateEnsureOperatingHours()
+		}
+		return err
+	}
+	var live map[string]interface{}
+	if err := json.Unmarshal(data, &live); err != nil {
+		return fmt.Errorf("parse operating_hours.json: %w", err)
+	}
+	changed := false
+
+	if _, ok := live["calendar_rules"]; !ok {
+		live["calendar_rules"] = []map[string]interface{}{
+			{
+				"id":       "third_weekend",
+				"enabled":  true,
+				"mode":     "open",
+				"type":     "nth_weekday",
+				"nth":      3,
+				"weekdays": []string{"saturday", "sunday"},
+			},
+		}
+		changed = true
+		log.Printf("Migration: operating_hours.json calendar_rules → 3rd Sat+Sun")
+	}
+
+	if _, ok := live["quiet_hours"]; !ok {
+		live["quiet_hours"] = map[string]interface{}{
+			"enabled": true,
+			"start":   "20:00",
+			"end":     "07:00",
+		}
+		changed = true
+		log.Printf("Migration: operating_hours.json quiet_hours → 20:00–07:00")
+	}
+
+	if !changed {
+		return nil
+	}
+	out, err := json.MarshalIndent(live, "", "    ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(out, '\n'), 0644)
+}
+
+// migrateLightning116Additive adds empty after-hours audio keys when missing (no overwrite).
+func migrateLightning116Additive() error {
+	path := lightningConfigPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Printf("Migration: lightning.json missing — skip 1.1.6 additive")
+			return nil
+		}
+		return err
+	}
+	var live map[string]interface{}
+	if err := json.Unmarshal(data, &live); err != nil {
+		return fmt.Errorf("parse lightning.json: %w", err)
+	}
+	changed := false
+
+	ensureClipAH := func(clip map[string]interface{}, label, defaultAnnounce string) {
+		if clip == nil {
+			return
+		}
+		if v, ok := clip["announce_file_after_hours"].(string); !ok || strings.TrimSpace(v) == "" {
+			clip["announce_file_after_hours"] = defaultAnnounce
+			changed = true
+			log.Printf("Migration: condition_audio.%s.announce_file_after_hours → %s", label, defaultAnnounce)
+		}
+		if _, ok := clip["horn_file_after_hours"]; !ok {
+			clip["horn_file_after_hours"] = ""
+			changed = true
+		}
+		if _, ok := clip["horn_enabled_after_hours"]; !ok {
+			clip["horn_enabled_after_hours"] = false
+			changed = true
+		}
+	}
+
+	if ca, ok := live["condition_audio"].(map[string]interface{}); ok {
+		if clip, ok := ca["RedAlert"].(map[string]interface{}); ok {
+			ensureClipAH(clip, "RedAlert", "Voice_RedAlert_AfterHours.mp3")
+		}
+		if clip, ok := ca["AllClear"].(map[string]interface{}); ok {
+			ensureClipAH(clip, "AllClear", "Voice_AllClear_AfterHours.mp3")
+		}
+		live["condition_audio"] = ca
+	}
+
+	if pol, ok := live["red_alert_policy"].(map[string]interface{}); ok {
+		if v, ok := pol["reminder_audio_file_after_hours"].(string); !ok || strings.TrimSpace(v) == "" {
+			pol["reminder_audio_file_after_hours"] = "Voice_RedAlert_Reminder.mp3"
+			changed = true
+			log.Printf("Migration: red_alert_policy.reminder_audio_file_after_hours → Voice_RedAlert_Reminder.mp3")
+		}
+		if _, ok := pol["horn_audio_file_after_hours"]; !ok {
+			pol["horn_audio_file_after_hours"] = ""
+			changed = true
+		}
+		live["red_alert_policy"] = pol
 	}
 
 	if !changed {

@@ -24,7 +24,7 @@ import (
 const (
 	githubOwner = "egtechgeek"
 	githubRepo  = "TARR_Annunciator"
-	updateUA    = "TARR-Annunciator-Updater/1.1.4"
+	updateUA    = "TARR-Annunciator-Updater/1.1.6"
 )
 
 type updatePackageMeta struct {

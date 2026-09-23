@@ -38,14 +38,15 @@ This manual explains **what the system does**, **where you click**, **what each 
 26. [Lightning — Global Condition Audio (horn + voice)](#26-lightning--global-condition-audio-horn--voice)
 27. [Lightning — Red Alert Policy](#27-lightning--red-alert-policy)
 28. [Lightning — Manual Tests, Pin, Reset, and Manual Override](#28-lightning--manual-tests-pin-reset-and-manual-override)
-29. [How Red Alert / All Clear really work (rules)](#29-how-red-alert--all-clear-really-work-rules)
-30. [Announcement types and priority](#30-announcement-types-and-priority)
-31. [Sound files (MP3 folders)](#31-sound-files-mp3-folders)
-32. [Where settings are stored on the Pi](#32-where-settings-are-stored-on-the-pi)
-33. [API Docs (for integrations)](#33-api-docs-for-integrations)
-34. [Everyday checklists](#34-everyday-checklists)
-35. [Troubleshooting](#35-troubleshooting)
-36. [Safety reminders](#36-safety-reminders)
+29. [Admin — Web Console](#29-admin--web-console)
+30. [How Red Alert / All Clear really work (rules)](#30-how-red-alert--all-clear-really-work-rules)
+31. [Announcement types and priority](#31-announcement-types-and-priority)
+32. [Sound files (MP3 folders)](#32-sound-files-mp3-folders)
+33. [Where settings are stored on the Pi](#33-where-settings-are-stored-on-the-pi)
+34. [API Docs (for integrations)](#34-api-docs-for-integrations)
+35. [Everyday checklists](#35-everyday-checklists)
+36. [Troubleshooting](#36-troubleshooting)
+37. [Safety reminders](#37-safety-reminders)
 
 ---
 
@@ -227,7 +228,7 @@ The announcement goes into the **queue** and plays when its turn comes (and when
 3. Enter the **username** and **password** provided by your site administrator  
 4. After login you see tabs across the top of Admin  
 
-**Change passwords** under **User & API Management** (do not leave factory/default passwords on a live station).
+**Change passwords** under **User & API Management** (do not leave factory/default passwords on a live station). Admin shows a red **Change default credentials** banner on System Status until the factory admin password (`tarr2025`) is changed; rotate the default API key as well.
 
 **Session timeout:** After a period of no activity (often 60 minutes, configurable), Admin may ask you to log in again.
 
@@ -278,11 +279,13 @@ Also on this tab:
 2. Go to **System Status**  
 3. Click **Check for Updates**  
 4. Wait for the release list to fill  
-5. In **Target release**, pick the version your site wants (usually the newest approved release, e.g. `v1.1.2`)  
+5. In **Target release**, pick the version your site wants (usually the newest approved release, e.g. `v1.1.6`)  
 6. Click **Download and Install Selected**  
 7. Watch the log area for progress  
 8. Wait for the app to come back; hard-refresh the browser (Ctrl+F5)  
 9. Confirm **App Version** shows the new number  
+
+Field upgrades from **v1.1.4+** use the same Admin Updates path — no SSH or manual binary copy is required when the GitHub release asset is named `TARR_Annunciator_Pi_arm64_vX.Y.Z.tar.gz`.
 
 ### What updates do *not* do
 
@@ -375,14 +378,23 @@ The scheduler uses the **app clock**. If the clock is wrong, automatic announcem
 
 | Setting | Meaning |
 |---------|---------|
-| **Pause scheduled announcements outside operating hours** | When checked, the schedule is silent outside hours |
+| **Pause scheduled announcements outside operating hours** | When checked, the schedule is silent outside public open times |
 | **Timezone** | Usually `America/New_York` for Broward |
-| **Default open / close** | Used when applying defaults to days |
+| **Default open / close** | Used when applying defaults to days (default **09:30–16:00** so early equipment checks still hear scheduled PA) |
 | **Per-day rows** | Enable/disable each weekday and set that day’s open/close |
 | **Apply default hours to all days** | Copies the default open/close onto every day |
+| **Public calendar rules** | Fully editable list: nth weekday, date range, or specific dates; mode open/closed. Optional “3rd Sat+Sun” preset only adds a rule you can edit/remove. No enabled rules = every enabled weekday is public |
+| **Quiet hours** | Mute **all** speakers (default 22:00–06:00). Queue is **cancelled** when quiet starts — nothing dumps when quiet ends |
+| **Live window badge** | Shows Operating / After-hours / Quiet |
 | **Save Hours & Time Settings** | **Required** — nothing sticks until you save |
 
-**Important:** Lightning, emergency, and **manual** announcements still run when the scheduler is paused for hours. Only the *automatic schedule* pauses.
+**Three windows:**
+
+1. **Operating** — public calendar day within open–close → scheduled PA runs; lightning uses operating MP3s  
+2. **After-hours** — not quiet, not operating → scheduled PA paused; Red Alert / All Clear / Reminder use **after-hours** MP3s (Admin Condition Audio + Red Alert Policy)  
+3. **Quiet** — speakers silent; Red Alert **lock** can still engage for Live Status  
+
+**Important:** During quiet, speakers are muted (including lightning PA). Outside quiet, lightning lock and PA still work even when the scheduler is paused for hours.
 
 ---
 
@@ -729,13 +741,13 @@ For each major condition, the play order is:
 
 | Control | Meaning |
 |---------|---------|
-| Play horn before announce | On/off |
-| Horn MP3 | e.g. `Horn_RedAlert.mp3` |
-| Announce MP3 | e.g. `Voice_RedAlert.mp3` |
+| Play horn before announce (operating) | On/off during public operating hours |
+| Horn / Announce MP3 (operating) | Used when the live window is **Operating** |
+| After-hours horn / announce | Used when **not quiet** and **outside** public open times. Empty announce falls back to the operating file |
 
 ### Warning / Caution / Unknown
 
-Usually voice-only fields (horn optional/empty).
+Usually voice-only fields (horn optional/empty). Same clip for all windows in v1.1.6.
 
 File names are chosen from the lightning MP3 folder (dropdown/datalist). After changing files on disk, restart or re-open Admin if the list looks stale.
 
@@ -753,9 +765,10 @@ Individual feeds may override Red Alert / All Clear horns.
 | **Suppress non-emergency until All Clear** | Blocks station/promo/safety/scheduled while locked |
 | **Repeating Red Alert reminder** | Plays a reminder on an interval while locked |
 | **Reminder interval (minutes)** | e.g. every 5 minutes |
-| **Reminder MP3** | e.g. `Voice_RedAlert_Reminder.mp3` |
+| **Reminder MP3 (operating)** | e.g. `Voice_RedAlert_Reminder.mp3` during public open |
+| **Reminder MP3 (after-hours)** | Default `Voice_RedAlert_Reminder.mp3` (same as operating); empty = use operating file |
 | **Play horn before each reminder** | Optional |
-| **Reminder horn MP3** | Used only if horn-before-reminder is on |
+| **Reminder horn MP3 (operating / after-hours)** | Used only if horn-before-reminder is on |
 
 Buttons:
 
@@ -801,7 +814,29 @@ Use after a drill or if the lock is stuck because of a bad test — **not** as a
 
 ---
 
-## 29. How Red Alert / All Clear really work (rules)
+## 29. Admin — Web Console
+
+**Tab:** 🖥️ Web Console
+
+Shows a **live stream** of the same diagnostic lines written to the process console and rotating log file (startup banner, lightning feed messages, quiet/operating hours, etc.).
+
+### Controls
+
+| Control | What it does |
+| --- | --- |
+| **Live / Connecting / Reconnecting** badge | Connection state to the server stream |
+| **Auto-scroll** | Keep the view pinned to the newest line |
+| **Pause** | Hold new lines in memory without appending (flush when you unpause) |
+| **Clear view** | Clears the on-screen buffer only (does not delete log files) |
+| **Reconnect** | Re-open the stream if it stalled |
+
+The stream opens when you open the tab and closes when you leave it. Recent buffered lines are sent first, then live updates. Admin login is required.
+
+Log files on disk are unchanged — still under `data/logs/` with the usual rotation settings.
+
+---
+
+## 30. How Red Alert / All Clear really work (rules)
 
 These rules are intentional and safety-critical (preserved from v1.1.1 / v1.1.2, still true in v1.1.3):
 
@@ -837,7 +872,7 @@ Example: require **failover_1** = Warning and **failover_2** = RedAlert → trea
 
 ---
 
-## 30. Announcement types and priority
+## 31. Announcement types and priority
 
 Higher priority plays before lower priority when both are waiting.
 
@@ -853,7 +888,7 @@ During Red Alert with **suppress** enabled, non-emergency items are blocked unti
 
 ---
 
-## 31. Sound files (MP3 folders)
+## 32. Sound files (MP3 folders)
 
 Under the install directory, sounds live in:
 
@@ -904,7 +939,7 @@ If you replace a file, keep the **same filename** or update Admin Condition Audi
 
 ---
 
-## 32. Where settings are stored on the Pi
+## 33. Where settings are stored on the Pi
 
 You usually should **not** hand-edit these unless a technician asks you to. Prefer Admin screens.
 
@@ -929,7 +964,7 @@ Also:
 
 ---
 
-## 33. API Docs (for integrations)
+## 34. API Docs (for integrations)
 
 For programmers connecting other systems:
 
@@ -942,7 +977,7 @@ API calls that change state need a configured **API key** (User & API Management
 
 ---
 
-## 34. Everyday checklists
+## 35. Everyday checklists
 
 ### Opening the station
 
@@ -975,7 +1010,7 @@ API calls that change state need a configured **API key** (User & API Management
 
 ---
 
-## 35. Troubleshooting
+## 36. Troubleshooting
 
 | Symptom | Things to try |
 |---------|----------------|
@@ -1002,7 +1037,7 @@ When contacting support, collect:
 
 ---
 
-## 36. Safety reminders
+## 37. Safety reminders
 
 - Thor Guard / lightning features are **life-safety**. Prefer the recommended defaults (`primary_only` All Clear release, Primary as the clearing authority).  
 - Never disable monitoring to “stop the noise” during a real event — disable announce audio if you must quiet a drill, understanding lock behavior still applies.  

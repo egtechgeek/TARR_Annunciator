@@ -28,3 +28,7 @@ This is an automated notification.
 Your Attention Please! 
 
 The THOR Guard Lightning Prediction and Detection System has changed to Warning status.
+# --- After-hours (v1.1.6) defaults ---
+# Voice_RedAlert_AfterHours.mp3
+# Voice_AllClear_AfterHours.mp3
+# Voice_RedAlert_Reminder.mp3 (same reminder file for after-hours by default)

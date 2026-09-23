@@ -104,9 +104,12 @@ type LightningConfig struct {
 
 // ConditionAudioClip is the Admin-owned horn + announce pair for one Thor condition.
 type ConditionAudioClip struct {
-	HornEnabled  bool   `json:"horn_enabled"`
-	HornFile     string `json:"horn_file"`
-	AnnounceFile string `json:"announce_file"`
+	HornEnabled            bool   `json:"horn_enabled"`
+	HornFile               string `json:"horn_file"`
+	AnnounceFile           string `json:"announce_file"`
+	HornEnabledAfterHours  bool   `json:"horn_enabled_after_hours"`
+	HornFileAfterHours     string `json:"horn_file_after_hours"`
+	AnnounceFileAfterHours string `json:"announce_file_after_hours"`
 }
 
 // ConditionAudioConfig holds global defaults for assembled lightning PA sequences.
@@ -120,13 +123,15 @@ type ConditionAudioConfig struct {
 
 // RedAlertPolicy controls THOR Guard Red Alert preemption, suppression, and reminders.
 type RedAlertPolicy struct {
-	PreemptQueue            bool   `json:"preempt_queue"`
-	SuppressNonEmergency    bool   `json:"suppress_non_emergency"`
-	ReminderEnabled         bool   `json:"reminder_enabled"`
-	ReminderIntervalMinutes int    `json:"reminder_interval_minutes"`
-	ReminderAudioFile       string `json:"reminder_audio_file"`
-	ReminderIncludeHorn     bool   `json:"reminder_include_horn"`
-	HornAudioFile           string `json:"horn_audio_file,omitempty"`
+	PreemptQueue                 bool   `json:"preempt_queue"`
+	SuppressNonEmergency         bool   `json:"suppress_non_emergency"`
+	ReminderEnabled              bool   `json:"reminder_enabled"`
+	ReminderIntervalMinutes      int    `json:"reminder_interval_minutes"`
+	ReminderAudioFile            string `json:"reminder_audio_file"`
+	ReminderAudioFileAfterHours  string `json:"reminder_audio_file_after_hours"`
+	ReminderIncludeHorn          bool   `json:"reminder_include_horn"`
+	HornAudioFile                string `json:"horn_audio_file,omitempty"`
+	HornAudioFileAfterHours      string `json:"horn_audio_file_after_hours,omitempty"`
 }
 
 // Global lightning trigger instance
@@ -192,23 +197,30 @@ func lightningConfigPath() string {
 
 func defaultRedAlertPolicy() RedAlertPolicy {
 	return RedAlertPolicy{
-		PreemptQueue:            true,
-		SuppressNonEmergency:    true,
-		ReminderEnabled:         true,
-		ReminderIntervalMinutes: 5,
-		ReminderAudioFile:       "Voice_RedAlert_Reminder.mp3",
-		ReminderIncludeHorn:     false,
-		HornAudioFile:           "Horn_RedAlert.mp3",
+		PreemptQueue:                true,
+		SuppressNonEmergency:        true,
+		ReminderEnabled:             true,
+		ReminderIntervalMinutes:     5,
+		ReminderAudioFile:           "Voice_RedAlert_Reminder.mp3",
+		ReminderAudioFileAfterHours: "Voice_RedAlert_Reminder.mp3",
+		ReminderIncludeHorn:         false,
+		HornAudioFile:               "Horn_RedAlert.mp3",
 	}
 }
 
 func defaultConditionAudioConfig() ConditionAudioConfig {
 	return ConditionAudioConfig{
-		RedAlert: ConditionAudioClip{HornEnabled: true, HornFile: "Horn_RedAlert.mp3", AnnounceFile: "Voice_RedAlert.mp3"},
-		AllClear: ConditionAudioClip{HornEnabled: true, HornFile: "Horn_AllClear.mp3", AnnounceFile: "Voice_AllClear.mp3"},
-		Warning:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Warning.mp3"},
-		Caution:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Caution.mp3"},
-		Unknown:  ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Unknown.mp3"},
+		RedAlert: ConditionAudioClip{
+			HornEnabled: true, HornFile: "Horn_RedAlert.mp3", AnnounceFile: "Voice_RedAlert.mp3",
+			AnnounceFileAfterHours: "Voice_RedAlert_AfterHours.mp3",
+		},
+		AllClear: ConditionAudioClip{
+			HornEnabled: true, HornFile: "Horn_AllClear.mp3", AnnounceFile: "Voice_AllClear.mp3",
+			AnnounceFileAfterHours: "Voice_AllClear_AfterHours.mp3",
+		},
+		Warning: ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Warning.mp3"},
+		Caution: ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Caution.mp3"},
+		Unknown: ConditionAudioClip{HornEnabled: false, HornFile: "", AnnounceFile: "Voice_Unknown.mp3"},
 	}
 }
 
@@ -240,9 +252,9 @@ func getConditionAudioClip(condition string) (ConditionAudioClip, bool) {
 
 func defaultLightningMonitorConfig() LightningMonitorConfig {
 	return LightningMonitorConfig{
-		Enabled:                 false,
-		URL:                     "",
-		FetchInterval:           60,
+		Enabled:                 true,
+		URL:                     "https://broward.thormobile4.net/tp/FL0115.xml",
+		FetchInterval:           45,
 		Timeout:                 30,
 		Failover:                defaultLightningFailoverPolicy(),
 		Feeds:                   defaultFeedSlots(),
@@ -1017,18 +1029,39 @@ func (t *LightningTrigger) fetchEnabledFeedsParallel(feeds []LightningFeedConfig
 	return out
 }
 
-// unknownFlickerRetries is how many immediate re-fetches to attempt when Thor
-// returns <lightningalert>Unknown</lightningalert> (server update-cycle flicker).
-const unknownFlickerRetries = 2
-const unknownFlickerRetryDelay = 200 * time.Millisecond
+// Unknown flicker recovery (Thor briefly publishes Unknown between XML updates):
+//   1× 250ms re-fetch, then optionally 1× 5s follow-up — then stop.
+// Extra hits are rate-limited per feed so sustained Unknown cannot look like
+// attack traffic or overload Thor (cooldown between full retry ladders).
+const unknownFlickerRetries = 1
+const unknownFlickerRetryDelay = 250 * time.Millisecond
+const unknownFollowUpDelay = 5 * time.Second
+const unknownRetryLadderCooldown = 3 * time.Minute
 
-// fetchOneFeedResolvingUnknown fetches once, then re-fetches briefly if alert is Unknown.
-// Thor often flickers Unknown between update cycles; a short retry usually recovers AllClear/etc.
+// fetchOneFeedResolvingUnknown fetches once, then may re-fetch if alert is Unknown.
+// At most one fast retry + one 5s follow-up per ladder, and at most one ladder
+// per feed every unknownRetryLadderCooldown.
 func (t *LightningTrigger) fetchOneFeedResolvingUnknown(feed LightningFeedConfig, globalTimeout int) feedFetchResult {
 	res := t.fetchOneFeed(feed, globalTimeout)
 	if !res.ok || !strings.EqualFold(strings.TrimSpace(res.alert), "unknown") {
 		return res
 	}
+
+	h := t.healthFor(feed.ID)
+	t.mu.Lock()
+	lastLadder := h.LastUnknownRetryAt
+	cooldownActive := !lastLadder.IsZero() && time.Since(lastLadder) < unknownRetryLadderCooldown
+	t.mu.Unlock()
+	if cooldownActive {
+		log.Printf("Lightning feed %s: Unknown (retry ladder on cooldown until %s) — single fetch only",
+			feed.ID, lastLadder.Add(unknownRetryLadderCooldown).Format("15:04:05"))
+		return res
+	}
+
+	t.mu.Lock()
+	h.LastUnknownRetryAt = time.Now()
+	t.mu.Unlock()
+
 	for attempt := 1; attempt <= unknownFlickerRetries; attempt++ {
 		time.Sleep(unknownFlickerRetryDelay)
 		retry := t.fetchOneFeed(feed, globalTimeout)
@@ -1036,10 +1069,22 @@ func (t *LightningTrigger) fetchOneFeedResolvingUnknown(feed LightningFeedConfig
 			continue
 		}
 		if !strings.EqualFold(strings.TrimSpace(retry.alert), "unknown") {
-			log.Printf("Lightning feed %s: Unknown flicker resolved on retry %d → %s", feed.ID, attempt, retry.alert)
+			log.Printf("Lightning feed %s: Unknown flicker resolved on fast retry %d → %s", feed.ID, attempt, retry.alert)
 			return retry
 		}
 		res = retry
+	}
+
+	log.Printf("Lightning feed %s: still Unknown after fast retry — one %s follow-up (then cooldown %s)",
+		feed.ID, unknownFollowUpDelay, unknownRetryLadderCooldown)
+	time.Sleep(unknownFollowUpDelay)
+	follow := t.fetchOneFeed(feed, globalTimeout)
+	if follow.ok && !strings.EqualFold(strings.TrimSpace(follow.alert), "unknown") {
+		log.Printf("Lightning feed %s: Unknown resolved on 5s follow-up → %s", feed.ID, follow.alert)
+		return follow
+	}
+	if follow.ok {
+		return follow
 	}
 	return res
 }
@@ -1592,6 +1637,10 @@ func (t *LightningTrigger) playLightningAnnouncement(condition string) {
 }
 
 func (t *LightningTrigger) playLightningAnnouncementForFeed(feed *LightningFeedConfig, condition string) {
+	if quietHoursBlocksPA() {
+		log.Printf("Skipping lightning PA for %s — quiet hours (lock/state still update)", condition)
+		return
+	}
 	if lightningConfig == nil {
 		log.Printf("Lightning configuration not loaded, cannot play announcement")
 		return
@@ -2078,6 +2127,10 @@ func (t *LightningTrigger) playRedAlertReminder() {
 	if !isRedAlertActive() {
 		return
 	}
+	if quietHoursBlocksPA() {
+		log.Printf("Skipping Red Alert reminder — quiet hours active")
+		return
+	}
 
 	policy := getRedAlertPolicy()
 	if !policy.ReminderEnabled {
@@ -2089,11 +2142,26 @@ func (t *LightningTrigger) playRedAlertReminder() {
 		return
 	}
 
+	reminderFile := policy.ReminderAudioFile
+	hornFile := policy.HornAudioFile
+	if currentLightningAudioWindow() == AudioWindowAfterHours {
+		if strings.TrimSpace(policy.ReminderAudioFileAfterHours) != "" {
+			reminderFile = strings.TrimSpace(policy.ReminderAudioFileAfterHours)
+		}
+		if strings.TrimSpace(policy.HornAudioFileAfterHours) != "" {
+			hornFile = strings.TrimSpace(policy.HornAudioFileAfterHours)
+		} else if clip, ok := getConditionAudioClip("RedAlert"); ok {
+			if af := strings.TrimSpace(clip.HornFileAfterHours); af != "" {
+				hornFile = af
+			}
+		}
+	}
+
 	parameters := map[string]interface{}{
 		"condition":      "redalert_reminder",
-		"audio_file":     policy.ReminderAudioFile,
+		"audio_file":     reminderFile,
 		"include_horn":   policy.ReminderIncludeHorn,
-		"horn_file":      policy.HornAudioFile,
+		"horn_file":      hornFile,
 		"trigger_source": "THOR_RED_ALERT_REMINDER",
 	}
 
@@ -2110,7 +2178,7 @@ func (t *LightningTrigger) playRedAlertReminder() {
 	count := t.reminderCount
 	t.mu.Unlock()
 
-	log.Printf("Queued THOR Guard Red Alert reminder #%d (ID: %s, file: %s)", count, announcement.ID, policy.ReminderAudioFile)
+	log.Printf("Queued THOR Guard Red Alert reminder #%d (ID: %s, file: %s)", count, announcement.ID, reminderFile)
 }
 
 func isRedAlertActive() bool {
@@ -2234,9 +2302,12 @@ func listLightningVoiceFiles() []string {
 			add(announcement.AudioFile)
 		}
 		add(lightningConfig.RedAlertPolicy.ReminderAudioFile)
+		add(lightningConfig.RedAlertPolicy.ReminderAudioFileAfterHours)
 		ca := lightningConfig.ConditionAudio
 		add(ca.RedAlert.AnnounceFile)
+		add(ca.RedAlert.AnnounceFileAfterHours)
 		add(ca.AllClear.AnnounceFile)
+		add(ca.AllClear.AnnounceFileAfterHours)
 		add(ca.Warning.AnnounceFile)
 		add(ca.Caution.AnnounceFile)
 		add(ca.Unknown.AnnounceFile)
@@ -2279,9 +2350,12 @@ func listLightningHornFiles() []string {
 			horns = append(horns, name)
 		}
 		add(lightningConfig.RedAlertPolicy.HornAudioFile)
+		add(lightningConfig.RedAlertPolicy.HornAudioFileAfterHours)
 		ca := lightningConfig.ConditionAudio
 		add(ca.RedAlert.HornFile)
+		add(ca.RedAlert.HornFileAfterHours)
 		add(ca.AllClear.HornFile)
+		add(ca.AllClear.HornFileAfterHours)
 	}
 	if len(horns) == 0 {
 		return []string{"Horn_AllClear.mp3", "Horn_RedAlert.mp3"}
@@ -2540,6 +2614,8 @@ func getLightningTriggerStatus() map[string]interface{} {
 		"next_reminder":            nextReminder,
 		"red_alert_policy":         getRedAlertPolicy(),
 		"condition_audio":          getConditionAudioConfig(),
+		"audio_window":             currentLightningAudioWindow(),
+		"quiet_hours_active":       quietHoursBlocksPA(),
 		"available_reminder_files": listLightningVoiceFiles(),
 		"available_voice_files":    listLightningVoiceFiles(),
 		"available_horn_files":     listLightningHornFiles(),

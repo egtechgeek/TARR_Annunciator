@@ -191,6 +191,9 @@ type FeedHealth struct {
 	TelemetryCollapse    bool      `json:"telemetry_collapse,omitempty"` // sticky until DI>0 or AD>0
 	FailureTimes         []time.Time `json:"-"`
 	TelemetryHistory     []TelemetrySample `json:"-"`
+	// LastUnknownRetryAt is when we last ran the Unknown flicker retry ladder
+	// (fast retry + optional 5s follow-up). Used to rate-limit extra Thor hits.
+	LastUnknownRetryAt time.Time `json:"-"`
 }
 
 func defaultFailoverTriggers() FailoverTriggers {
@@ -210,14 +213,14 @@ func defaultFailoverTriggers() FailoverTriggers {
 
 func defaultLightningFailoverPolicy() LightningFailoverPolicy {
 	return LightningFailoverPolicy{
-		ConsecutiveFailures:          3,
+		ConsecutiveFailures:          5,
 		FailureWindowSeconds:         0,
 		MinDwellOnFeedSeconds:        0,
 		FailbackMode:                 "prefer_primary",
-		FailbackAfterSuccesses:       2,
+		FailbackAfterSuccesses:       5,
 		FailbackProbeIntervalSeconds: 0,
 		AllowFailoverDuringRedAlert:  true,
-		AllClearReleaseMode:          "primary_only",
+		AllClearReleaseMode:          "failover_vote",
 		RequireAllClearFromSameFeed:  false,
 		PreserveConditionAcrossFail:  true,
 		OnAllFeedsFailed:             "hold_last_condition",
@@ -249,34 +252,40 @@ func defaultFeedHornInherit() map[string]FeedHornOverride {
 func defaultFeedSlots() []LightningFeedConfig {
 	return []LightningFeedConfig{
 		{
-			ID:                  "primary",
-			Label:               "Primary",
-			Enabled:             false,
-			Source:              "custom",
-			URL:                 "",
+			ID:                   "primary",
+			Label:                "Primary",
+			Enabled:              true,
+			SensorID:             "FL0115",
+			Source:               "catalog",
+			ExpectedDisplayname:  "Tradewinds Park",
+			URL:                  "https://broward.thormobile4.net/tp/FL0115.xml",
+			Announce:             FeedAnnounceConfig{InheritGlobal: true, RedAlert: true, AllClear: true},
+			AudioByCondition:     map[string]string{},
+			HornByCondition:      defaultFeedHornInherit(),
+		},
+		{
+			ID:                  "failover_1",
+			Label:               "Failover 1",
+			Enabled:             true,
+			SensorID:            "FL0110",
+			Source:              "catalog",
+			ExpectedDisplayname: "Quiet Waters",
+			URL:                 "https://broward.thormobile4.net/qwp/FL0110.xml",
 			Announce:            defaultFeedAnnounceInherit(),
 			AudioByCondition:    map[string]string{},
 			HornByCondition:     defaultFeedHornInherit(),
 		},
 		{
-			ID:               "failover_1",
-			Label:            "Failover 1",
-			Enabled:          false,
-			Source:           "custom",
-			URL:              "",
-			Announce:         defaultFeedAnnounceInherit(),
-			AudioByCondition: map[string]string{},
-			HornByCondition:  defaultFeedHornInherit(),
-		},
-		{
-			ID:               "failover_2",
-			Label:            "Failover 2",
-			Enabled:          false,
-			Source:           "custom",
-			URL:              "",
-			Announce:         defaultFeedAnnounceInherit(),
-			AudioByCondition: map[string]string{},
-			HornByCondition:  defaultFeedHornInherit(),
+			ID:                  "failover_2",
+			Label:               "Failover 2",
+			Enabled:             true,
+			SensorID:            "FL0105",
+			Source:              "catalog",
+			ExpectedDisplayname: "Forest Fern",
+			URL:                 "https://broward.thormobile4.net/ff/FL0105.xml",
+			Announce:            defaultFeedAnnounceInherit(),
+			AudioByCondition:    map[string]string{},
+			HornByCondition:     defaultFeedHornInherit(),
 		},
 	}
 }
@@ -368,6 +377,8 @@ func lookupAudioMap(m map[string]string, condition string) string {
 // resolveConditionAnnounceFile picks the spoken/announce MP3 basename for a condition.
 func resolveConditionAnnounceFile(feed *LightningFeedConfig, condition, liveDisplayname string) string {
 	key := conditionKeyNormalize(condition)
+	afterHours := currentLightningAudioWindow() == AudioWindowAfterHours
+
 	if feed != nil {
 		if f := lookupAudioMap(feed.AudioByCondition, key); f != "" {
 			return f
@@ -384,8 +395,15 @@ func resolveConditionAnnounceFile(feed *LightningFeedConfig, condition, liveDisp
 				}
 			}
 		}
-		if clip, ok := getConditionAudioClip(key); ok && strings.TrimSpace(clip.AnnounceFile) != "" {
-			return strings.TrimSpace(clip.AnnounceFile)
+		if clip, ok := getConditionAudioClip(key); ok {
+			if afterHours {
+				if ah := strings.TrimSpace(clip.AnnounceFileAfterHours); ah != "" {
+					return ah
+				}
+			}
+			if strings.TrimSpace(clip.AnnounceFile) != "" {
+				return strings.TrimSpace(clip.AnnounceFile)
+			}
 		}
 		// Legacy fallback: lightning_announcements[].audio_file
 		for i := range lightningConfig.LightningAnnouncements {
@@ -435,6 +453,11 @@ func resolveConditionHorn(feed *LightningFeedConfig, condition string) (enabled 
 	}
 
 	if clip, ok := getConditionAudioClip(key); ok {
+		if currentLightningAudioWindow() == AudioWindowAfterHours {
+			if ah := strings.TrimSpace(clip.HornFileAfterHours); ah != "" {
+				return clip.HornEnabledAfterHours, ah
+			}
+		}
 		return clip.HornEnabled, strings.TrimSpace(clip.HornFile)
 	}
 	return false, ""

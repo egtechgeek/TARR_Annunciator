@@ -46,14 +46,44 @@ type TimeSyncConfig struct {
 	NTPServers     []string `json:"ntp_servers"`
 }
 
-type OperatingHoursConfig struct {
-	Enabled   bool                `json:"enabled"`
-	Timezone  string              `json:"timezone"`
-	OpenTime  string              `json:"open_time"`
-	CloseTime string              `json:"close_time"`
-	Days      map[string]DayHours `json:"days"`
-	TimeSync  TimeSyncConfig      `json:"time_sync"`
+// QuietHoursConfig mutes all PA during the window (overnight wrap supported).
+type QuietHoursConfig struct {
+	Enabled bool   `json:"enabled"`
+	Start   string `json:"start"`
+	End     string `json:"end"`
 }
+
+// CalendarRule restricts which calendar days count as public operating days.
+// Types: nth_weekday | date_range | dates. Mode: open | closed.
+type CalendarRule struct {
+	ID       string   `json:"id"`
+	Enabled  bool     `json:"enabled"`
+	Mode     string   `json:"mode"` // open | closed
+	Type     string   `json:"type"` // nth_weekday | date_range | dates
+	Nth      int      `json:"nth,omitempty"`
+	Weekdays []string `json:"weekdays,omitempty"`
+	From     string   `json:"from,omitempty"` // YYYY-MM-DD
+	To       string   `json:"to,omitempty"`
+	Dates    []string `json:"dates,omitempty"`
+}
+
+type OperatingHoursConfig struct {
+	Enabled       bool                `json:"enabled"`
+	Timezone      string              `json:"timezone"`
+	OpenTime      string              `json:"open_time"`
+	CloseTime     string              `json:"close_time"`
+	Days          map[string]DayHours `json:"days"`
+	CalendarRules []CalendarRule      `json:"calendar_rules,omitempty"`
+	QuietHours    QuietHoursConfig    `json:"quiet_hours"`
+	TimeSync      TimeSyncConfig      `json:"time_sync"`
+}
+
+// Audio window labels for lightning clip selection / status.
+const (
+	AudioWindowOperating  = "operating"
+	AudioWindowAfterHours = "after_hours"
+	AudioWindowQuiet      = "quiet"
+)
 
 type timeStatus struct {
 	AppTime            string `json:"app_time"`
@@ -79,19 +109,42 @@ var (
 	schedulerWithinHours  = true
 	hoursMonitorStarted   bool
 	lastLoggedHoursOpen   *bool
+	lastLoggedQuietActive *bool
 )
+
+func defaultQuietHours() QuietHoursConfig {
+	return QuietHoursConfig{
+		Enabled: true,
+		Start:   "20:00",
+		End:     "07:00",
+	}
+}
+
+func defaultCalendarRules() []CalendarRule {
+	return []CalendarRule{{
+		ID:       "third_weekend",
+		Enabled:  true,
+		Mode:     "open",
+		Type:     "nth_weekday",
+		Nth:      3,
+		Weekdays: []string{"saturday", "sunday"},
+	}}
+}
 
 func defaultOperatingHours() OperatingHoursConfig {
 	days := map[string]DayHours{}
 	for _, day := range weekdayKeys() {
-		days[day] = DayHours{Enabled: true, Open: "09:00", Close: "16:00"}
+		enabled := day == "saturday" || day == "sunday"
+		days[day] = DayHours{Enabled: enabled, Open: "09:30", Close: "16:00"}
 	}
 	return OperatingHoursConfig{
-		Enabled:   false,
-		Timezone:  defaultOperatingTZ,
-		OpenTime:  "09:00",
-		CloseTime: "16:00",
-		Days:      days,
+		Enabled:       true,
+		Timezone:      defaultOperatingTZ,
+		OpenTime:      "09:30",
+		CloseTime:     "16:00",
+		Days:          days,
+		CalendarRules: defaultCalendarRules(),
+		QuietHours:    defaultQuietHours(),
 		TimeSync: TimeSyncConfig{
 			Enabled:        true,
 			SyncOnStartup:  true,
@@ -130,7 +183,7 @@ func normalizeOperatingHours(cfg OperatingHoursConfig) OperatingHoursConfig {
 		cfg.Timezone = defaultOperatingTZ
 	}
 	if strings.TrimSpace(cfg.OpenTime) == "" {
-		cfg.OpenTime = "09:00"
+		cfg.OpenTime = "09:30"
 	}
 	if strings.TrimSpace(cfg.CloseTime) == "" {
 		cfg.CloseTime = "16:00"
@@ -151,6 +204,26 @@ func normalizeOperatingHours(cfg OperatingHoursConfig) OperatingHoursConfig {
 			entry.Close = cfg.CloseTime
 		}
 		cfg.Days[day] = entry
+	}
+	if cfg.CalendarRules == nil {
+		cfg.CalendarRules = []CalendarRule{}
+	}
+	for i := range cfg.CalendarRules {
+		rule := &cfg.CalendarRules[i]
+		rule.Mode = strings.ToLower(strings.TrimSpace(rule.Mode))
+		if rule.Mode == "" {
+			rule.Mode = "open"
+		}
+		rule.Type = strings.ToLower(strings.TrimSpace(rule.Type))
+		for j := range rule.Weekdays {
+			rule.Weekdays[j] = strings.ToLower(strings.TrimSpace(rule.Weekdays[j]))
+		}
+	}
+	if strings.TrimSpace(cfg.QuietHours.Start) == "" {
+		cfg.QuietHours.Start = "20:00"
+	}
+	if strings.TrimSpace(cfg.QuietHours.End) == "" {
+		cfg.QuietHours.End = "07:00"
 	}
 	if len(cfg.TimeSync.NTPServers) == 0 {
 		cfg.TimeSync.NTPServers = append([]string{}, defaultNTPServers...)
@@ -223,37 +296,199 @@ func startOperatingHoursMonitor() {
 
 func applySchedulerHoursState(forceLog bool) {
 	cfg := loadOperatingHours()
-	within := !cfg.Enabled || isWithinOperatingHours(cfg, appNow())
+	now := appNow()
+	within := !cfg.Enabled || isWithinOperatingHours(cfg, now)
+	quiet := isQuietHours(cfg, now)
 
 	hoursStateMu.Lock()
-	changed := lastLoggedHoursOpen == nil || *lastLoggedHoursOpen != within
+	changedHours := lastLoggedHoursOpen == nil || *lastLoggedHoursOpen != within
+	changedQuiet := lastLoggedQuietActive == nil || *lastLoggedQuietActive != quiet
+	enteredQuiet := quiet && (lastLoggedQuietActive == nil || !*lastLoggedQuietActive)
 	schedulerWithinHours = within
 	state := within
 	lastLoggedHoursOpen = &state
+	qState := quiet
+	lastLoggedQuietActive = &qState
 	hoursStateMu.Unlock()
 
-	if !forceLog && !changed {
+	if enteredQuiet {
+		if announcementManager != nil {
+			announcementManager.CancelForQuietHours()
+		}
+		log.Printf("Quiet hours ACTIVE (%s %s–%s) — PA muted, announcement queue cancelled",
+			cfg.Timezone, cfg.QuietHours.Start, cfg.QuietHours.End)
+	} else if changedQuiet && !quiet {
+		log.Printf("Quiet hours ended (%s) — PA allowed again (queue was not deferred)", cfg.Timezone)
+	}
+
+	if !forceLog && !changedHours {
 		return
 	}
 	if !cfg.Enabled {
-		log.Printf("Operating hours disabled — scheduler runs 24/7")
+		log.Printf("Operating hours disabled — scheduler runs whenever not in quiet hours")
 		return
 	}
+	window := lightningAudioWindow(cfg, now)
 	if within {
-		log.Printf("Operating hours OPEN (%s %s–%s) — scheduled announcements enabled",
-			cfg.Timezone, cfg.OpenTime, cfg.CloseTime)
+		log.Printf("Operating hours OPEN (%s) — scheduled announcements enabled (window=%s)",
+			cfg.Timezone, window)
 		return
 	}
-	log.Printf("Operating hours CLOSED (%s) — scheduled announcements paused", cfg.Timezone)
+	log.Printf("Operating hours CLOSED (%s) — scheduled announcements paused (window=%s)", cfg.Timezone, window)
 }
 
 func scheduledJobsAllowed() bool {
+	if quietHoursBlocksPA() {
+		return false
+	}
 	hoursStateMu.RLock()
 	defer hoursStateMu.RUnlock()
 	return schedulerWithinHours
 }
 
+func quietHoursBlocksPA() bool {
+	cfg := loadOperatingHours()
+	return isQuietHours(cfg, appNow())
+}
+
+func currentLightningAudioWindow() string {
+	return lightningAudioWindow(loadOperatingHours(), appNow())
+}
+
+// isCalendarOpenDay returns whether the local date is a public operating calendar day.
+// If no enabled calendar rules exist → legacy (all days allowed).
+// Otherwise: match ≥1 enabled open rule and no enabled closed blackout.
+func isCalendarOpenDay(cfg OperatingHoursConfig, now time.Time) bool {
+	loc := loadHoursLocation(cfg.Timezone)
+	local := now.In(loc)
+	rules := cfg.CalendarRules
+	hasEnabled := false
+	for _, r := range rules {
+		if r.Enabled {
+			hasEnabled = true
+			break
+		}
+	}
+	if !hasEnabled {
+		return true
+	}
+
+	closed := false
+	open := false
+	for _, rule := range rules {
+		if !rule.Enabled {
+			continue
+		}
+		if !calendarRuleMatchesDate(rule, local) {
+			continue
+		}
+		mode := strings.ToLower(strings.TrimSpace(rule.Mode))
+		if mode == "closed" {
+			closed = true
+		} else {
+			open = true
+		}
+	}
+	if closed {
+		return false
+	}
+	return open
+}
+
+func calendarRuleMatchesDate(rule CalendarRule, local time.Time) bool {
+	switch strings.ToLower(strings.TrimSpace(rule.Type)) {
+	case "nth_weekday":
+		dayKey := strings.ToLower(local.Weekday().String())
+		wanted := false
+		for _, w := range rule.Weekdays {
+			if strings.EqualFold(strings.TrimSpace(w), dayKey) {
+				wanted = true
+				break
+			}
+		}
+		if !wanted {
+			return false
+		}
+		nth := rule.Nth
+		if nth < 1 {
+			nth = 1
+		}
+		return nthWeekdayOccurrence(local) == nth
+	case "date_range":
+		from, fromOK := parseYYYYMMDD(rule.From)
+		to, toOK := parseYYYYMMDD(rule.To)
+		if !fromOK || !toOK {
+			return false
+		}
+		d := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, time.UTC)
+		return !d.Before(from) && !d.After(to)
+	case "dates":
+		stamp := local.Format("2006-01-02")
+		for _, raw := range rule.Dates {
+			if strings.TrimSpace(raw) == stamp {
+				return true
+			}
+		}
+		return false
+	default:
+		return false
+	}
+}
+
+// nthWeekdayOccurrence returns 1 for the first that weekday in the month, 2 for the second, etc.
+func nthWeekdayOccurrence(local time.Time) int {
+	return ((local.Day() - 1) / 7) + 1
+}
+
+func parseYYYYMMDD(value string) (time.Time, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, false
+	}
+	t, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return t, true
+}
+
+func isQuietHours(cfg OperatingHoursConfig, now time.Time) bool {
+	if !cfg.QuietHours.Enabled {
+		return false
+	}
+	loc := loadHoursLocation(cfg.Timezone)
+	local := now.In(loc)
+	startMins, startOK := parseHHMM(cfg.QuietHours.Start)
+	endMins, endOK := parseHHMM(cfg.QuietHours.End)
+	if !startOK || !endOK {
+		return false
+	}
+	nowMins := local.Hour()*60 + local.Minute()
+	if startMins == endMins {
+		return true // 24h quiet if start==end while enabled
+	}
+	if startMins < endMins {
+		return nowMins >= startMins && nowMins < endMins
+	}
+	// Overnight wrap, e.g. 22:00–06:00
+	return nowMins >= startMins || nowMins < endMins
+}
+
+// lightningAudioWindow returns operating | after_hours | quiet.
+func lightningAudioWindow(cfg OperatingHoursConfig, now time.Time) string {
+	if isQuietHours(cfg, now) {
+		return AudioWindowQuiet
+	}
+	if !cfg.Enabled || isWithinOperatingHours(cfg, now) {
+		return AudioWindowOperating
+	}
+	return AudioWindowAfterHours
+}
+
 func isWithinOperatingHours(cfg OperatingHoursConfig, now time.Time) bool {
+	if !isCalendarOpenDay(cfg, now) {
+		return false
+	}
 	loc := loadHoursLocation(cfg.Timezone)
 	local := now.In(loc)
 	dayKey := strings.ToLower(local.Weekday().String())
@@ -463,6 +698,9 @@ func getSchedulerHoursStatus() map[string]interface{} {
 	cfg := loadOperatingHours()
 	now := appNow()
 	within := !cfg.Enabled || isWithinOperatingHours(cfg, now)
+	quiet := isQuietHours(cfg, now)
+	calendarOpen := isCalendarOpenDay(cfg, now)
+	window := lightningAudioWindow(cfg, now)
 	loc := loadHoursLocation(cfg.Timezone)
 	local := now.In(loc)
 	dayKey := strings.ToLower(local.Weekday().String())
@@ -473,24 +711,33 @@ func getSchedulerHoursStatus() map[string]interface{} {
 	hoursStateMu.RUnlock()
 
 	label := "Running (24/7)"
-	if cfg.Enabled && within {
+	if quiet {
+		label = "Quiet hours — PA muted"
+	} else if cfg.Enabled && within {
 		label = "Running (within operating hours)"
 	} else if cfg.Enabled {
 		label = "Paused (outside operating hours)"
 	}
 
 	return map[string]interface{}{
-		"hours_enabled":     cfg.Enabled,
-		"within_hours":      within,
-		"scheduler_active":  active,
-		"label":             label,
-		"timezone":          cfg.Timezone,
-		"local_time":        local.Format("2006-01-02 15:04:05 MST"),
-		"today":             dayKey,
-		"today_enabled":     day.Enabled,
-		"today_open":        day.Open,
-		"today_close":       day.Close,
-		"manual_exceptions": "Lightning, emergency, and manual announcements still run",
+		"hours_enabled":        cfg.Enabled,
+		"within_hours":         within,
+		"scheduler_active":     active && !quiet,
+		"label":                label,
+		"timezone":             cfg.Timezone,
+		"local_time":           local.Format("2006-01-02 15:04:05 MST"),
+		"today":                dayKey,
+		"today_enabled":        day.Enabled,
+		"today_open":           day.Open,
+		"today_close":          day.Close,
+		"audio_window":         window,
+		"quiet_hours_active":   quiet,
+		"quiet_hours_enabled":  cfg.QuietHours.Enabled,
+		"quiet_hours_start":    cfg.QuietHours.Start,
+		"quiet_hours_end":      cfg.QuietHours.End,
+		"calendar_open_today":  calendarOpen,
+		"calendar_rules_count": len(cfg.CalendarRules),
+		"manual_exceptions":    "Lightning lock still engages during quiet; speakers stay silent until quiet ends",
 	}
 }
 

@@ -15,6 +15,9 @@ func apiQueueHTTPStatus(err error) int {
 	if errors.Is(err, ErrRedAlertSuppressed) {
 		return http.StatusConflict
 	}
+	if errors.Is(err, ErrQuietHoursMuted) {
+		return http.StatusConflict
+	}
 	return http.StatusInternalServerError
 }
 

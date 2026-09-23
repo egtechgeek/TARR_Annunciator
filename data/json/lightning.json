@@ -2,7 +2,7 @@
     "monitor": {
         "enabled": true,
         "url": "https://broward.thormobile4.net/tp/FL0115.xml",
-        "fetch_interval": 60,
+        "fetch_interval": 45,
         "timeout": 30,
         "failover": {
             "consecutive_failures": 5,
@@ -25,7 +25,7 @@
                 "displayname_mismatch": false,
                 "uniqueid_mismatch": false,
                 "stale_localtime": true,
-                "telemetry_collapse": false
+                "telemetry_collapse": true
             },
             "telemetry_collapse": {
                 "history_samples": 3,
@@ -180,21 +180,61 @@
                 "id": "cra_1790042047126",
                 "enabled": true,
                 "label": "Both failovers Warning → Red Alert",
-                "require_feed_ids": [
-                    "failover_1",
-                    "failover_2"
-                ],
-                "require_condition": "Warning"
+                "requirements": [
+                    {
+                        "feed_id": "failover_1",
+                        "condition": "Warning"
+                    },
+                    {
+                        "feed_id": "failover_2",
+                        "condition": "Warning"
+                    }
+                ]
             },
             {
                 "id": "cra_1790042065346",
                 "enabled": true,
                 "label": "Both failovers Red Alert → Red Alert",
-                "require_feed_ids": [
-                    "failover_1",
-                    "failover_2"
-                ],
-                "require_condition": "RedAlert"
+                "requirements": [
+                    {
+                        "feed_id": "failover_1",
+                        "condition": "RedAlert"
+                    },
+                    {
+                        "feed_id": "failover_2",
+                        "condition": "RedAlert"
+                    }
+                ]
+            },
+            {
+                "id": "cra_1790119940339",
+                "enabled": true,
+                "label": "F1 Warning + F2 RedAlert → Red Alert",
+                "requirements": [
+                    {
+                        "feed_id": "failover_1",
+                        "condition": "Warning"
+                    },
+                    {
+                        "feed_id": "failover_2",
+                        "condition": "RedAlert"
+                    }
+                ]
+            },
+            {
+                "id": "cra_1790119947078",
+                "enabled": true,
+                "label": "F1 RedAlert + F2 Warning → Red Alert",
+                "requirements": [
+                    {
+                        "feed_id": "failover_1",
+                        "condition": "RedAlert"
+                    },
+                    {
+                        "feed_id": "failover_2",
+                        "condition": "Warning"
+                    }
+                ]
             }
         ]
     },
@@ -256,34 +296,51 @@
         "reminder_enabled": true,
         "reminder_interval_minutes": 5,
         "reminder_audio_file": "Voice_RedAlert_Reminder.mp3",
+        "reminder_audio_file_after_hours": "Voice_RedAlert_Reminder.mp3",
         "reminder_include_horn": false,
-        "horn_audio_file": "Horn_RedAlert.mp3"
+        "horn_audio_file": "Horn_RedAlert.mp3",
+        "horn_audio_file_after_hours": "Horn_RedAlert.mp3"
     },
     "condition_audio": {
         "RedAlert": {
             "horn_enabled": true,
             "horn_file": "Horn_RedAlert.mp3",
-            "announce_file": "Voice_RedAlert.mp3"
+            "announce_file": "Voice_RedAlert.mp3",
+            "horn_enabled_after_hours": true,
+            "horn_file_after_hours": "Horn_RedAlert.mp3",
+            "announce_file_after_hours": "Voice_RedAlert_AfterHours.mp3"
         },
         "AllClear": {
             "horn_enabled": true,
             "horn_file": "Horn_AllClear.mp3",
-            "announce_file": "Voice_AllClear.mp3"
+            "announce_file": "Voice_AllClear.mp3",
+            "horn_enabled_after_hours": true,
+            "horn_file_after_hours": "Horn_AllClear.mp3",
+            "announce_file_after_hours": "Voice_AllClear_AfterHours.mp3"
         },
         "Warning": {
             "horn_enabled": false,
             "horn_file": "",
-            "announce_file": "Voice_Warning.mp3"
+            "announce_file": "Voice_Warning.mp3",
+            "horn_enabled_after_hours": false,
+            "horn_file_after_hours": "",
+            "announce_file_after_hours": ""
         },
         "Caution": {
             "horn_enabled": false,
             "horn_file": "",
-            "announce_file": "Voice_Caution.mp3"
+            "announce_file": "Voice_Caution.mp3",
+            "horn_enabled_after_hours": false,
+            "horn_file_after_hours": "",
+            "announce_file_after_hours": ""
         },
         "Unknown": {
             "horn_enabled": false,
             "horn_file": "",
-            "announce_file": "Voice_Unknown.mp3"
+            "announce_file": "Voice_Unknown.mp3",
+            "horn_enabled_after_hours": false,
+            "horn_file_after_hours": "",
+            "announce_file_after_hours": ""
         }
     },
     "announce_timing": {

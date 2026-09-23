@@ -7,7 +7,7 @@
             "role": "admin",
             "enabled": true,
             "created_at": "2024-08-25T11:55:00Z",
-            "last_login": "2026-09-21T22:13:33-04:00",
+            "last_login": "2026-09-22T20:31:38-04:00",
             "permissions": [
                 "system_config",
                 "user_management",
@@ -42,7 +42,7 @@
     "security": {
         "session_timeout_minutes": 60,
         "require_admin_login": true,
-        "show_default_credentials": false,
+        "show_default_credentials": true,
         "session_secret": "tarr-session-secret-change-this",
         "password_policy": {
             "min_length": 8,
@@ -57,7 +57,7 @@
     },
     "metadata": {
         "created_at": "2024-08-25T11:55:00Z",
-        "last_modified": "2026-09-21T22:13:33-04:00",
+        "last_modified": "2026-09-22T20:31:38-04:00",
         "version": "2.0",
         "schema_version": "multi-user"
     }

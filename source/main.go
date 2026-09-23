@@ -299,6 +299,11 @@ func main() {
 	InitializeAnnouncementManager()
 	log.Println("✓ Announcement queue system initialized")
 
+	// If we booted already inside quiet hours, cancel any early/queued PA now that the manager exists
+	if quietHoursBlocksPA() && announcementManager != nil {
+		announcementManager.CancelForQuietHours()
+	}
+
 	// Initialize lightning trigger system
 	if err := initializeLightningTrigger(); err != nil {
 		log.Printf("Warning: Lightning trigger initialization failed: %v", err)
@@ -360,8 +365,12 @@ func audioStatus() string {
 func setupRouter(adminConfig *AdminConfig) {
 	// Set Gin to release mode
 	gin.SetMode(gin.ReleaseMode)
-
-	app.Router = gin.Default()
+	if logWriter != nil {
+		gin.DefaultWriter = logWriter
+		gin.DefaultErrorWriter = logWriter
+	}
+	app.Router = gin.New()
+	app.Router.Use(ginLoggerWithConsoleSkip(), gin.Recovery())
 
 	// Session store - use session secret from admin config
 	sessionSecret := adminConfig.Security.SessionSecret
@@ -432,6 +441,8 @@ func setupWebRoutes() {
 
 	// System Control Routes (Authenticated)
 	app.Router.GET("/admin/system/info", requireAuth(), getSystemInfoHandler)
+	app.Router.GET("/admin/console/recent", requireAuth(), getConsoleRecentHandler)
+	app.Router.GET("/admin/console/stream", requireAuth(), getConsoleStreamHandler)
 	app.Router.POST("/admin/system/restart", requireAuth(), restartApplicationHandler)
 	app.Router.POST("/admin/system/shutdown", requireAuth(), shutdownApplicationHandler)
 
@@ -943,11 +954,11 @@ func saveAdminConfig(configPath string, config *AdminConfig) error {
 func getDefaultAdminConfig() *AdminConfig {
 	config := &AdminConfig{}
 
-	// Create default admin user
+	// Create default admin user (factory credentials — must be changed after install)
 	defaultUser := AdminUser{
 		ID:          "admin-001",
-		Username:    "admin",
-		Password:    "tarr2025",
+		Username:    factoryAdminUsername,
+		Password:    factoryAdminPassword,
 		Role:        "admin",
 		Enabled:     true,
 		CreatedAt:   time.Now().Format(time.RFC3339),
@@ -956,11 +967,11 @@ func getDefaultAdminConfig() *AdminConfig {
 	}
 	config.AdminUsers = []AdminUser{defaultUser}
 
-	// Create default API key
+	// Create default API key (factory — should be rotated for production)
 	defaultAPIKey := APIKey{
 		ID:          "api-001",
 		Name:        "Default API Key",
-		Key:         "tarr-api-2025",
+		Key:         factoryDefaultAPIKey,
 		Enabled:     true,
 		Permanent:   false,
 		ExpiresAt:   "",
@@ -976,7 +987,7 @@ func getDefaultAdminConfig() *AdminConfig {
 	// Security settings
 	config.Security.SessionTimeoutMinutes = 60
 	config.Security.RequireAdminLogin = true
-	config.Security.ShowDefaultCredentials = false
+	config.Security.ShowDefaultCredentials = true // remind operators until factory password is changed
 	config.Security.SessionSecret = "tarr-session-secret-change-this"
 	config.Security.PasswordPolicy.MinLength = 8
 	config.Security.PasswordPolicy.RequireSpecialChars = true
@@ -994,14 +1005,87 @@ func getDefaultAdminConfig() *AdminConfig {
 	return config
 }
 
+// Factory credentials shipped for first boot / recovery. Never leave these on a live station.
+const (
+	factoryAdminUsername = "admin"
+	factoryAdminPassword = "tarr2025"
+	factoryDefaultAPIKey = "tarr-api-2025"
+)
+
+func isFactoryAdminPassword(password string) bool {
+	return strings.TrimSpace(password) == factoryAdminPassword
+}
+
+func isFactoryAPIKey(key string) bool {
+	return strings.TrimSpace(key) == factoryDefaultAPIKey
+}
+
+// usingDefaultAdminCredentials reports whether any enabled admin still uses the factory password.
+func usingDefaultAdminCredentials(config *AdminConfig) bool {
+	if config == nil {
+		return true
+	}
+	for _, u := range config.AdminUsers {
+		if u.Enabled && isFactoryAdminPassword(u.Password) {
+			return true
+		}
+	}
+	return len(config.AdminUsers) == 0
+}
+
+func usingDefaultAPIKey(config *AdminConfig) bool {
+	if config == nil {
+		return false
+	}
+	for _, k := range config.APIKeys {
+		if k.Enabled && isFactoryAPIKey(k.Key) {
+			return true
+		}
+	}
+	return false
+}
+
+func securityCredentialStatus(config *AdminConfig) gin.H {
+	adminDefault := usingDefaultAdminCredentials(config)
+	apiDefault := usingDefaultAPIKey(config)
+	return gin.H{
+		"using_default_admin_password": adminDefault,
+		"using_default_api_key":        apiDefault,
+		"must_change_default_password": adminDefault,
+		"reminder":                     adminDefault || apiDefault,
+		"message":                      defaultCredentialsReminderMessage(adminDefault, apiDefault),
+	}
+}
+
+func defaultCredentialsReminderMessage(adminDefault, apiDefault bool) string {
+	switch {
+	case adminDefault && apiDefault:
+		return "Change the factory admin password and rotate the default API key before production use (User & API Management)."
+	case adminDefault:
+		return "Change the factory admin password before production use (User & API Management → Admin Users)."
+	case apiDefault:
+		return "Rotate the factory API key before production use (User & API Management → API Keys)."
+	default:
+		return ""
+	}
+}
+
+func refreshDefaultCredentialsFlag(config *AdminConfig) {
+	if config == nil {
+		return
+	}
+	// Keep show_default_credentials true while factory admin password remains.
+	config.Security.ShowDefaultCredentials = usingDefaultAdminCredentials(config)
+}
+
 func getFirstAdminUser(config *AdminConfig) AdminUser {
 	if len(config.AdminUsers) > 0 {
 		return config.AdminUsers[0]
 	}
 	// Return default if no users
 	return AdminUser{
-		Username: "admin",
-		Password: "tarr2025",
+		Username: factoryAdminUsername,
+		Password: factoryAdminPassword,
 		Role:     "admin",
 		Enabled:  true,
 	}
@@ -1013,7 +1097,7 @@ func getFirstAPIKey(config *AdminConfig) APIKey {
 	}
 	// Return default if no API keys
 	return APIKey{
-		Key:     "tarr-api-2025",
+		Key:     factoryDefaultAPIKey,
 		Enabled: true,
 	}
 }
@@ -1105,6 +1189,7 @@ func getCredentialsHandler(c *gin.Context) {
 		"failed_login_attempts": adminConfig.Security.FailedLoginAttempts,
 		"last_modified":         adminConfig.Metadata.LastModified,
 		"schema_version":        adminConfig.Metadata.SchemaVersion,
+		"security_reminder":     securityCredentialStatus(adminConfig),
 	})
 }
 
@@ -1248,6 +1333,9 @@ func updateUserHandler(c *gin.Context) {
 	}
 	user.Enabled = updateData.Enabled
 
+	refreshDefaultCredentialsFlag(adminConfig)
+	adminConfig.Metadata.LastModified = time.Now().Format(time.RFC3339)
+
 	// Save config
 	if err := saveAdminConfig(configPath, adminConfig); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
@@ -1255,8 +1343,9 @@ func updateUserHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "User updated successfully",
+		"success":           true,
+		"message":           "User updated successfully",
+		"security_reminder": securityCredentialStatus(adminConfig),
 	})
 }
 
@@ -1429,6 +1518,9 @@ func updateAPIKeyHandler(c *gin.Context) {
 	}
 	key.RateLimit.Enabled = updateData.RateLimit.Enabled
 
+	refreshDefaultCredentialsFlag(adminConfig)
+	adminConfig.Metadata.LastModified = time.Now().Format(time.RFC3339)
+
 	// Save config
 	if err := saveAdminConfig(configPath, adminConfig); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save admin config"})
@@ -1436,8 +1528,9 @@ func updateAPIKeyHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "API key updated successfully",
+		"success":           true,
+		"message":           "API key updated successfully",
+		"security_reminder": securityCredentialStatus(adminConfig),
 	})
 }
 
@@ -1498,9 +1591,14 @@ func initializeLogging(logDir string) error {
 		return err
 	}
 
+	hub := newConsoleHub(consoleBufferMaxLines)
+	appConsoleHub = hub
+
 	logFile = file
-	logWriter = io.MultiWriter(os.Stdout, file)
+	logWriter = io.MultiWriter(os.Stdout, file, hub)
 	log.SetOutput(logWriter)
+	gin.DefaultWriter = logWriter
+	gin.DefaultErrorWriter = logWriter
 
 	log.Printf("=== TARR Annunciator Started ===")
 	log.Printf("Version: %s (installed record: %s)", AppVersion, getInstalledVersion())

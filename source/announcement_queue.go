@@ -14,6 +14,9 @@ import (
 // because a THOR Guard Red Alert is active.
 var ErrRedAlertSuppressed = errors.New("announcement suppressed: THOR Guard Red Alert is active until All Clear")
 
+// ErrQuietHoursMuted is returned when PA is refused during quiet hours.
+var ErrQuietHoursMuted = errors.New("announcement muted: quiet hours active")
+
 // AnnouncementPriority defines the priority levels for announcements
 type AnnouncementPriority int
 
@@ -150,6 +153,10 @@ func (am *AnnouncementManager) generateID() string {
 
 // QueueAnnouncement adds a new announcement to the queue
 func (am *AnnouncementManager) QueueAnnouncement(announcementType AnnouncementType, priority AnnouncementPriority, parameters map[string]interface{}, scheduledAt time.Time) (*Announcement, error) {
+	if quietHoursBlocksPA() {
+		log.Printf("Blocked %s announcement — quiet hours active (speakers muted)", announcementType)
+		return nil, ErrQuietHoursMuted
+	}
 	if isRedAlertSuppressionActive() && !isAllowedDuringRedAlert(announcementType) {
 		log.Printf("Blocked %s announcement — THOR Guard Red Alert is active until All Clear", announcementType)
 		return nil, ErrRedAlertSuppressed
@@ -338,6 +345,16 @@ func (am *AnnouncementManager) processNextAnnouncement() {
 	// Get the next announcement (highest priority, earliest scheduled time)
 	next := heap.Pop(am.queue).(*Announcement)
 
+	if quietHoursBlocksPA() {
+		next.Status = StatusCancelled
+		next.Error = "muted: quiet hours active"
+		now := time.Now()
+		next.CompletedAt = &now
+		am.addToHistory(next)
+		log.Printf("Cancelled queued %s announcement %s — quiet hours active", next.Type, next.ID)
+		return
+	}
+
 	if isRedAlertSuppressionActive() && !isAllowedDuringRedAlert(next.Type) {
 		next.Status = StatusCancelled
 		next.Error = "suppressed: THOR Guard Red Alert is active"
@@ -518,6 +535,40 @@ func (am *AnnouncementManager) PreemptForRedAlert() {
 	}
 
 	log.Printf("THOR Guard Red Alert preempted %d announcement(s)", cancelled)
+}
+
+// CancelForQuietHours clears the queue and stops current playback when quiet hours begin.
+// Announcements are dropped (not deferred) so quiet ending does not dump a backlog.
+func (am *AnnouncementManager) CancelForQuietHours() {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+
+	cancelled := 0
+	for am.queue.Len() > 0 {
+		item := heap.Pop(am.queue).(*Announcement)
+		item.Status = StatusCancelled
+		item.Error = "cancelled: quiet hours"
+		now := time.Now()
+		item.CompletedAt = &now
+		am.addToHistory(item)
+		cancelled++
+	}
+
+	if am.playing != nil {
+		select {
+		case am.cancelChan <- true:
+		default:
+		}
+		am.playing.Status = StatusCancelled
+		am.playing.Error = "cancelled: quiet hours"
+		now := time.Now()
+		am.playing.CompletedAt = &now
+		am.addToHistory(am.playing)
+		am.playing = nil
+		cancelled++
+	}
+
+	log.Printf("Quiet hours cancelled %d announcement(s)", cancelled)
 }
 
 // GetHistory returns the announcement history

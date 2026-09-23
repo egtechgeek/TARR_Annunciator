@@ -305,6 +305,26 @@
             border-top: 1px solid var(--tarr-border);
         }
         .lightning-inline-msg { font-size: 0.9rem; }
+        .web-console-output {
+            background: #0d1117;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px 14px;
+            min-height: 420px;
+            max-height: calc(100vh - 220px);
+            overflow: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .web-console-output .wc-line { display: block; }
+        .web-console-output .wc-ok { color: #3fb950; }
+        .web-console-output .wc-warn { color: #d29922; }
+        .web-console-output .wc-err { color: #f85149; }
+        .web-console-output .wc-gin { color: #8b949e; }
         .lightning-jump {
             display: flex;
             flex-wrap: wrap;
@@ -417,6 +437,9 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="lightning-trigger-tab" data-bs-toggle="tab" data-bs-target="#lightning-trigger-panel" type="button" role="tab">⚡ Lightning Alerts</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="web-console-tab" data-bs-toggle="tab" data-bs-target="#web-console-panel" type="button" role="tab">🖥️ Web Console</button>
+            </li>
         </ul>
 
         <!-- Tab Content -->
@@ -433,6 +456,11 @@
                     <p><strong>Clock:</strong> <span id="system-clock">Loading...</span></p>
                     <p><strong>Scheduler:</strong> <span id="scheduler-hours-status" class="status-ok">Loading...</span></p>
                     <p><strong>Web Interface:</strong> <a href="/" target="_blank">http://localhost:8080</a></p>
+                </div>
+                <div id="security-credentials-banner" class="alert alert-danger d-none" role="alert">
+                    <strong>Change default credentials</strong>
+                    <p class="mb-2" id="security-credentials-message">Factory admin password and/or API key are still in use.</p>
+                    <a class="btn btn-sm btn-light" href="#user-api-management-panel" id="security-credentials-cta">Go to User &amp; API Management</a>
                 </div>
                 
                 <!-- Updates Section -->
@@ -675,7 +703,7 @@
                                     <div class="row mb-3">
                                         <div class="col">
                                             <label class="form-label" for="hours-open">Default open</label>
-                                            <input type="time" class="form-control" id="hours-open" value="09:00">
+                                            <input type="time" class="form-control" id="hours-open" value="09:30">
                                         </div>
                                         <div class="col">
                                             <label class="form-label" for="hours-close">Default close</label>
@@ -684,7 +712,32 @@
                                     </div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="apply-default-hours-btn">Apply default hours to all days</button>
                                     <div id="hours-days"></div>
-                                    <p class="text-muted small mb-3">Lightning, emergency, and manual announcements still run when the scheduler is paused.</p>
+                                    <hr class="my-3">
+                                    <h6 class="mb-2">Public calendar rules</h6>
+                                    <p class="text-muted small">Optional. When <strong>any</strong> rule is enabled, scheduled PA only runs on matching <em>open</em> days (and that day's open–close). <em>closed</em> rules black out dates. With no enabled rules, every enabled weekday is allowed (legacy). Non-open days are after-hours for lightning audio.</p>
+                                    <div id="calendar-rules-list" class="mb-2"></div>
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="add-calendar-rule-btn">+ Add calendar rule</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="add-third-weekend-preset-btn" title="Convenience preset — editable after add">Add preset: 3rd Sat + Sun</button>
+                                    </div>
+                                    <div id="hours-window-badge" class="alert alert-secondary py-2 small mb-3">Window: —</div>
+                                    <h6 class="mb-2">Quiet hours</h6>
+                                    <p class="text-muted small">Mutes all speakers and cancels the queue (no dump when quiet ends). Red Alert lock can still engage.</p>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="quiet-hours-enabled" checked>
+                                        <label class="form-check-label" for="quiet-hours-enabled">Enable quiet hours</label>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label class="form-label" for="quiet-hours-start">Quiet start</label>
+                                            <input type="time" class="form-control" id="quiet-hours-start" value="20:00">
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label" for="quiet-hours-end">Quiet end</label>
+                                            <input type="time" class="form-control" id="quiet-hours-end" value="07:00">
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small mb-3">Lightning lock still engages during quiet; speakers stay silent until quiet ends.</p>
                                     <button type="button" class="btn btn-primary" id="save-operating-hours-btn">💾 Save Hours & Time Settings</button>
                                     <div id="hours-message" class="mt-2"></div>
                                 </div>
@@ -1070,7 +1123,7 @@
                             <div class="row">
                                 <div class="col-md-4 mb-2">
                                     <label for="lightning-interval" class="form-label">Fetch Interval (seconds)</label>
-                                    <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="60">
+                                    <input type="number" class="form-control" id="lightning-interval" min="30" max="3600" value="45">
                                 </div>
                                 <div class="col-md-4 mb-2">
                                     <label for="lightning-timeout" class="form-label">Request Timeout (seconds)</label>
@@ -1157,11 +1210,13 @@
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-empty_body" checked><label class="form-check-label" for="trig-empty_body">empty_body</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-encoding_error" checked><label class="form-check-label" for="trig-encoding_error">encoding_error</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-missing_lightningalert" checked><label class="form-check-label" for="trig-missing_lightningalert">missing_lightningalert</label></div></div>
-                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-unknown_condition" disabled><label class="form-check-label" for="trig-unknown_condition">unknown_condition (ignored — Thor flickers Unknown between updates; never fails over)</label></div></div>
+                                <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-unknown_condition" disabled><label class="form-check-label" for="trig-unknown_condition">unknown_condition (never fails over — Thor Unknown soft status; at most 1×250ms + 1×5s retry per feed, then 3‑min cooldown)</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-displayname_mismatch"><label class="form-check-label" for="trig-displayname_mismatch">displayname_mismatch</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-uniqueid_mismatch"><label class="form-check-label" for="trig-uniqueid_mismatch">uniqueid_mismatch</label></div></div>
                                 <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-stale_localtime" checked><label class="form-check-label" for="trig-stale_localtime">stale_localtime (XML date &gt;24h behind)</label></div></div>
-                                <div class="col-md-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-telemetry_collapse" checked><label class="form-check-label" for="trig-telemetry_collapse">telemetry_collapse (all of LHL+DI+AD elevated → floor cliff; sticky until DI&gt;0 or AD&gt;0 → switch feeds). Unlock denial always stays on.</label></div></div>
+                                <div class="col-md-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="trig-telemetry_collapse" checked><label class="form-check-label" for="trig-telemetry_collapse"><strong>telemetry_collapse</strong> — Layer B feed switch when all of LHL+DI+AD were elevated then cliff to floor; sticky until DI&gt;0 or AD&gt;0</label></div>
+                                    <p class="small text-muted ms-4 mb-0">Detects Thor “silent death” (valid XML that looks like All Clear but metrics collapsed). While sticky, that feed cannot drive conditions. <strong>Unlock denial always stays on</strong> (Layer A) even if you uncheck this; the checkbox only controls whether collapse counts toward consecutive failures / switching feeds.</p>
+                                </div>
                             </div>
                             <h6 class="mt-3">During Red Alert</h6>
                             <div class="form-check">
@@ -1221,15 +1276,25 @@
                                     <label for="red-alert-reminder-interval" class="form-label">Reminder interval (minutes)</label>
                                     <input type="number" class="form-control" id="red-alert-reminder-interval" min="1" max="120" value="5">
                                 </div>
-                                <div class="col-md-8 mb-3">
-                                    <label for="red-alert-reminder-file" class="form-label">Reminder MP3</label>
+                                <div class="col-md-4 mb-3">
+                                    <label for="red-alert-reminder-file" class="form-label">Reminder MP3 (operating)</label>
                                     <select class="form-select lightning-mp3-select" id="red-alert-reminder-file" data-allow-empty="0" data-mp3-kind="voice"></select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="red-alert-reminder-file-ah" class="form-label">Reminder MP3 (after-hours)</label>
+                                    <select class="form-select lightning-mp3-select" id="red-alert-reminder-file-ah" data-allow-empty="1" data-mp3-kind="voice"></select>
                                 </div>
                             </div>
                             <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="red-alert-reminder-horn"><label class="form-check-label" for="red-alert-reminder-horn">Play horn before each reminder</label></div>
-                            <div class="mb-2">
-                                <label for="red-alert-reminder-horn-file" class="form-label">Reminder horn MP3</label>
-                                <select class="form-select lightning-mp3-select" id="red-alert-reminder-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select>
+                            <div class="row mb-2">
+                                <div class="col-md-6 mb-2">
+                                    <label for="red-alert-reminder-horn-file" class="form-label">Reminder horn MP3 (operating)</label>
+                                    <select class="form-select lightning-mp3-select" id="red-alert-reminder-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label for="red-alert-reminder-horn-file-ah" class="form-label">Reminder horn MP3 (after-hours)</label>
+                                    <select class="form-select lightning-mp3-select" id="red-alert-reminder-horn-file-ah" data-allow-empty="1" data-mp3-kind="horn"></select>
+                                </div>
                             </div>
                             <button type="button" class="btn btn-outline-danger btn-sm" id="test-red-alert-reminder">🔔 Play Reminder Now</button>
                             <div class="lightning-section-save">
@@ -1263,18 +1328,29 @@
                             <p class="text-muted small mb-3">Play sequence: optional horn MP3, then announce MP3.</p>
                             <div class="border rounded p-3 mb-3">
                                 <h6>Red Alert</h6>
-                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-redalert-horn-enabled" checked><label class="form-check-label" for="ca-redalert-horn-enabled">Play horn before announce</label></div>
+                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-redalert-horn-enabled" checked><label class="form-check-label" for="ca-redalert-horn-enabled">Play horn before announce (operating hours)</label></div>
                                 <div class="row">
-                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-horn-file">Horn MP3</label><select class="form-select lightning-mp3-select" id="ca-redalert-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select></div>
-                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-announce-file">Announce MP3</label><select class="form-select lightning-mp3-select" id="ca-redalert-announce-file" data-allow-empty="0" data-mp3-kind="voice"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-horn-file">Horn MP3 (operating)</label><select class="form-select lightning-mp3-select" id="ca-redalert-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-announce-file">Announce MP3 (operating)</label><select class="form-select lightning-mp3-select" id="ca-redalert-announce-file" data-allow-empty="0" data-mp3-kind="voice"></select></div>
                                 </div>
+                                <div class="form-check mb-2 mt-2"><input class="form-check-input" type="checkbox" id="ca-redalert-horn-enabled-ah"><label class="form-check-label" for="ca-redalert-horn-enabled-ah">Play horn before announce (after-hours)</label></div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-horn-file-ah">Horn MP3 (after-hours)</label><select class="form-select lightning-mp3-select" id="ca-redalert-horn-file-ah" data-allow-empty="1" data-mp3-kind="horn"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-redalert-announce-file-ah">Announce MP3 (after-hours)</label><select class="form-select lightning-mp3-select" id="ca-redalert-announce-file-ah" data-allow-empty="1" data-mp3-kind="voice"></select></div>
+                                </div>
+                                <p class="text-muted small mb-0">Empty after-hours announce falls back to the operating file. Used when not in quiet hours and outside public open times.</p>
                             </div>
                             <div class="border rounded p-3 mb-3">
                                 <h6>All Clear</h6>
-                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-allclear-horn-enabled" checked><label class="form-check-label" for="ca-allclear-horn-enabled">Play horn before announce</label></div>
+                                <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="ca-allclear-horn-enabled" checked><label class="form-check-label" for="ca-allclear-horn-enabled">Play horn before announce (operating hours)</label></div>
                                 <div class="row">
-                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-horn-file">Horn MP3</label><select class="form-select lightning-mp3-select" id="ca-allclear-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select></div>
-                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-announce-file">Announce MP3</label><select class="form-select lightning-mp3-select" id="ca-allclear-announce-file" data-allow-empty="0" data-mp3-kind="voice"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-horn-file">Horn MP3 (operating)</label><select class="form-select lightning-mp3-select" id="ca-allclear-horn-file" data-allow-empty="1" data-mp3-kind="horn"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-announce-file">Announce MP3 (operating)</label><select class="form-select lightning-mp3-select" id="ca-allclear-announce-file" data-allow-empty="0" data-mp3-kind="voice"></select></div>
+                                </div>
+                                <div class="form-check mb-2 mt-2"><input class="form-check-input" type="checkbox" id="ca-allclear-horn-enabled-ah"><label class="form-check-label" for="ca-allclear-horn-enabled-ah">Play horn before announce (after-hours)</label></div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-horn-file-ah">Horn MP3 (after-hours)</label><select class="form-select lightning-mp3-select" id="ca-allclear-horn-file-ah" data-allow-empty="1" data-mp3-kind="horn"></select></div>
+                                    <div class="col-md-6 mb-2"><label class="form-label" for="ca-allclear-announce-file-ah">Announce MP3 (after-hours)</label><select class="form-select lightning-mp3-select" id="ca-allclear-announce-file-ah" data-allow-empty="1" data-mp3-kind="voice"></select></div>
                                 </div>
                             </div>
                             <div class="row">
@@ -1296,6 +1372,32 @@
                         <button type="button" class="btn btn-primary save-condition-audio">💾 Save Condition Audio</button>
                         <div id="lightning-config-message" class="msg"></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Web Console Tab -->
+            <div class="tab-pane fade" id="web-console-panel" role="tabpanel">
+                <div class="section">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <div>
+                            <h3 class="mb-1">🖥️ Web Console</h3>
+                            <p class="text-muted small mb-0">Live stream of the same diagnostic output written to the process console / log file.</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <span id="web-console-status" class="badge bg-secondary">Disconnected</span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="web-console-autoscroll" checked>
+                                <label class="form-check-label small" for="web-console-autoscroll">Auto-scroll</label>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="web-console-paused">
+                                <label class="form-check-label small" for="web-console-paused">Pause</label>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="web-console-clear-btn">Clear view</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="web-console-reconnect-btn">Reconnect</button>
+                        </div>
+                    </div>
+                    <pre id="web-console-output" class="web-console-output mb-0" aria-live="polite"></pre>
                 </div>
             </div>
 
@@ -1520,6 +1622,12 @@
                 open_time: document.getElementById('hours-open').value,
                 close_time: document.getElementById('hours-close').value,
                 days: days,
+                calendar_rules: collectCalendarRulesFromForm(),
+                quiet_hours: {
+                    enabled: document.getElementById('quiet-hours-enabled').checked,
+                    start: document.getElementById('quiet-hours-start').value || '20:00',
+                    end: document.getElementById('quiet-hours-end').value || '07:00'
+                },
                 time_sync: {
                     enabled: document.getElementById('time-sync-enabled').checked,
                     sync_on_startup: true,
@@ -1527,6 +1635,106 @@
                     ntp_servers: (operatingHoursConfig && operatingHoursConfig.time_sync && operatingHoursConfig.time_sync.ntp_servers) || ['pool.ntp.org', 'time.google.com', 'time.cloudflare.com']
                 }
             };
+        }
+
+        let calendarRulesDraft = [];
+
+        function newCalendarRuleId() {
+            return 'rule_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1000);
+        }
+
+        function collectCalendarRulesFromForm() {
+            const rows = document.querySelectorAll('#calendar-rules-list .calendar-rule-row');
+            const rules = [];
+            rows.forEach(function(row, idx) {
+                const type = (row.querySelector('.cal-type') || {}).value || 'nth_weekday';
+                const mode = (row.querySelector('.cal-mode') || {}).value || 'open';
+                const enabled = !!(row.querySelector('.cal-enabled') || {}).checked;
+                const idEl = row.querySelector('.cal-id');
+                const id = (idEl && idEl.value.trim()) || ('rule_' + (idx + 1));
+                const rule = { id: id, enabled: enabled, mode: mode, type: type };
+                if (type === 'nth_weekday') {
+                    rule.nth = parseInt((row.querySelector('.cal-nth') || {}).value, 10) || 1;
+                    const days = [];
+                    row.querySelectorAll('.cal-weekday:checked').forEach(function(cb) { days.push(cb.value); });
+                    rule.weekdays = days.length ? days : ['saturday'];
+                } else if (type === 'date_range') {
+                    rule.from = (row.querySelector('.cal-from') || {}).value || '';
+                    rule.to = (row.querySelector('.cal-to') || {}).value || '';
+                } else if (type === 'dates') {
+                    const raw = (row.querySelector('.cal-dates') || {}).value || '';
+                    rule.dates = raw.split(/[\s,]+/).map(function(s) { return s.trim(); }).filter(Boolean);
+                }
+                rules.push(rule);
+            });
+            calendarRulesDraft = rules;
+            return rules;
+        }
+
+        function renderCalendarRules(rules) {
+            calendarRulesDraft = Array.isArray(rules) ? rules.slice() : [];
+            const host = document.getElementById('calendar-rules-list');
+            if (!host) return;
+            if (!calendarRulesDraft.length) {
+                host.innerHTML = '<p class="text-muted small mb-0">No calendar rules — every enabled weekday is treated as a public day when operating hours are on.</p>';
+                return;
+            }
+            host.innerHTML = calendarRulesDraft.map(function(rule, idx) {
+                const type = rule.type || 'nth_weekday';
+                const mode = rule.mode || 'open';
+                const nth = rule.nth || 3;
+                const weekdays = rule.weekdays || [];
+                const dayChecks = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'].map(function(d) {
+                    const checked = weekdays.indexOf(d) >= 0 ? ' checked' : '';
+                    return '<label class="me-2 small"><input type="checkbox" class="form-check-input cal-weekday" value="' + d + '"' + checked + '> ' + d.slice(0,3) + '</label>';
+                }).join('');
+                return '<div class="border rounded p-2 mb-2 calendar-rule-row" data-idx="' + idx + '">' +
+                    '<div class="row g-2 align-items-center mb-2">' +
+                    '<div class="col-auto"><div class="form-check form-switch mb-0"><input class="form-check-input cal-enabled" type="checkbox"' + (rule.enabled !== false ? ' checked' : '') + '><label class="form-check-label small">On</label></div></div>' +
+                    '<div class="col-md-2"><input type="text" class="form-control form-control-sm cal-id" placeholder="id" value="' + (rule.id || '') + '"></div>' +
+                    '<div class="col-md-2"><select class="form-select form-select-sm cal-mode"><option value="open"' + (mode === 'open' ? ' selected' : '') + '>open</option><option value="closed"' + (mode === 'closed' ? ' selected' : '') + '>closed</option></select></div>' +
+                    '<div class="col-md-3"><select class="form-select form-select-sm cal-type">' +
+                    '<option value="nth_weekday"' + (type === 'nth_weekday' ? ' selected' : '') + '>nth weekday</option>' +
+                    '<option value="date_range"' + (type === 'date_range' ? ' selected' : '') + '>date range</option>' +
+                    '<option value="dates"' + (type === 'dates' ? ' selected' : '') + '>specific dates</option>' +
+                    '</select></div>' +
+                    '<div class="col-auto"><button type="button" class="btn btn-outline-danger btn-sm cal-remove">Remove</button></div>' +
+                    '</div>' +
+                    '<div class="cal-fields-nth"' + (type === 'nth_weekday' ? '' : ' style="display:none"') + '>' +
+                    '<div class="d-flex flex-wrap align-items-center gap-2">' +
+                    '<label class="small mb-0">Nth <input type="number" class="form-control form-control-sm cal-nth d-inline-block" style="width:4.5rem" min="1" max="5" value="' + nth + '"></label>' +
+                    '<span class="small text-muted">weekdays:</span> ' + dayChecks +
+                    '</div></div>' +
+                    '<div class="cal-fields-range row g-2"' + (type === 'date_range' ? '' : ' style="display:none"') + '>' +
+                    '<div class="col-md-4"><label class="form-label small mb-0">From</label><input type="date" class="form-control form-control-sm cal-from" value="' + (rule.from || '') + '"></div>' +
+                    '<div class="col-md-4"><label class="form-label small mb-0">To</label><input type="date" class="form-control form-control-sm cal-to" value="' + (rule.to || '') + '"></div>' +
+                    '</div>' +
+                    '<div class="cal-fields-dates"' + (type === 'dates' ? '' : ' style="display:none"') + '>' +
+                    '<label class="form-label small mb-0">Dates (YYYY-MM-DD, comma or space separated)</label>' +
+                    '<input type="text" class="form-control form-control-sm cal-dates" value="' + ((rule.dates || []).join(', ')) + '">' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+
+            host.querySelectorAll('.cal-type').forEach(function(sel) {
+                sel.addEventListener('change', function() {
+                    const row = sel.closest('.calendar-rule-row');
+                    if (!row) return;
+                    const t = sel.value;
+                    row.querySelector('.cal-fields-nth').style.display = t === 'nth_weekday' ? '' : 'none';
+                    row.querySelector('.cal-fields-range').style.display = t === 'date_range' ? '' : 'none';
+                    row.querySelector('.cal-fields-dates').style.display = t === 'dates' ? '' : 'none';
+                });
+            });
+            host.querySelectorAll('.cal-remove').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const rules = collectCalendarRulesFromForm();
+                    const row = btn.closest('.calendar-rule-row');
+                    const idx = row ? parseInt(row.getAttribute('data-idx'), 10) : -1;
+                    if (idx >= 0) rules.splice(idx, 1);
+                    renderCalendarRules(rules);
+                });
+            });
         }
 
         function updateClockDisplays(data) {
@@ -1549,6 +1757,20 @@
                     ? `${time.last_sync}${time.last_server ? ' via ' + time.last_server : ''}`
                     : 'Never';
             }
+            const badge = document.getElementById('hours-window-badge');
+            if (badge) {
+                const win = hours.audio_window || '—';
+                let label = 'Window: ' + win;
+                if (hours.quiet_hours_active) label = 'Window: Quiet (PA muted)';
+                else if (win === 'operating') label = 'Window: Operating (public open)';
+                else if (win === 'after_hours') label = 'Window: After-hours (distinct RA/AC MP3s)';
+                badge.textContent = label + (hours.calendar_open_today ? ' · calendar open today' : ' · not a public calendar day');
+                badge.className = 'alert py-2 small mb-3 ' + (
+                    hours.quiet_hours_active ? 'alert-dark' :
+                    win === 'operating' ? 'alert-success' :
+                    win === 'after_hours' ? 'alert-warning' : 'alert-secondary'
+                );
+            }
         }
 
         function loadOperatingHours() {
@@ -1558,10 +1780,15 @@
                     if (!data.success) return;
                     operatingHoursConfig = data.config;
                     document.getElementById('hours-enabled').checked = !!operatingHoursConfig.enabled;
-                    document.getElementById('hours-open').value = operatingHoursConfig.open_time || '09:00';
+                    document.getElementById('hours-open').value = operatingHoursConfig.open_time || '09:30';
                     document.getElementById('hours-close').value = operatingHoursConfig.close_time || '16:00';
                     document.getElementById('time-sync-enabled').checked = !!(operatingHoursConfig.time_sync && operatingHoursConfig.time_sync.enabled);
                     document.getElementById('time-sync-set-system').checked = !!(operatingHoursConfig.time_sync && operatingHoursConfig.time_sync.set_system_clock);
+                    const quiet = operatingHoursConfig.quiet_hours || {};
+                    document.getElementById('quiet-hours-enabled').checked = quiet.enabled !== false;
+                    document.getElementById('quiet-hours-start').value = quiet.start || '20:00';
+                    document.getElementById('quiet-hours-end').value = quiet.end || '07:00';
+                    renderCalendarRules(operatingHoursConfig.calendar_rules || []);
                     ensureTimezoneOption(operatingHoursConfig.timezone);
                     renderHoursDays(operatingHoursConfig);
                     updateClockDisplays(data);
@@ -1590,6 +1817,7 @@
                 .then(data => {
                     if (data.success) {
                         operatingHoursConfig = data.config;
+                        renderCalendarRules((data.config && data.config.calendar_rules) || []);
                         updateClockDisplays(data);
                         showHoursMessage('Operating hours and time settings saved', 'success');
                     } else {
@@ -1632,6 +1860,40 @@
                     if (openEl) openEl.value = open;
                     if (closeEl) closeEl.value = close;
                 });
+            });
+        }
+
+        const addCalRuleBtn = document.getElementById('add-calendar-rule-btn');
+        if (addCalRuleBtn) {
+            addCalRuleBtn.addEventListener('click', function() {
+                const rules = collectCalendarRulesFromForm();
+                rules.push({
+                    id: newCalendarRuleId(),
+                    enabled: true,
+                    mode: 'open',
+                    type: 'nth_weekday',
+                    nth: 1,
+                    weekdays: ['saturday']
+                });
+                renderCalendarRules(rules);
+            });
+        }
+        const addThirdWeekendBtn = document.getElementById('add-third-weekend-preset-btn');
+        if (addThirdWeekendBtn) {
+            addThirdWeekendBtn.addEventListener('click', function() {
+                const rules = collectCalendarRulesFromForm();
+                const exists = rules.some(function(r) { return r && r.id === 'third_weekend'; });
+                if (!exists) {
+                    rules.push({
+                        id: 'third_weekend',
+                        enabled: true,
+                        mode: 'open',
+                        type: 'nth_weekday',
+                        nth: 3,
+                        weekdays: ['saturday', 'sunday']
+                    });
+                }
+                renderCalendarRules(rules);
             });
         }
 
@@ -1952,6 +2214,31 @@
         let currentUsers = [];
         let currentAPIKeys = [];
 
+        function updateSecurityCredentialsBanner(reminder) {
+            const banner = document.getElementById('security-credentials-banner');
+            const msg = document.getElementById('security-credentials-message');
+            if (!banner) return;
+            if (reminder && reminder.reminder) {
+                banner.classList.remove('d-none');
+                if (msg) msg.textContent = reminder.message || 'Change factory admin password and/or API key before production use.';
+            } else {
+                banner.classList.add('d-none');
+            }
+        }
+
+        const securityCta = document.getElementById('security-credentials-cta');
+        if (securityCta) {
+            securityCta.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabBtn = document.getElementById('user-api-management-tab');
+                if (tabBtn && window.bootstrap) {
+                    bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+                } else if (tabBtn) {
+                    tabBtn.click();
+                }
+            });
+        }
+
         function loadManagementData() {
             fetch('/admin/credentials', {
                 credentials: 'same-origin'
@@ -1970,6 +2257,7 @@
                 loadUsersTable();
                 loadAPIKeysTable();
                 updateSystemStatus(data);
+                updateSecurityCredentialsBanner(data.security_reminder);
                 
                 // Update settings
                 document.getElementById('session-timeout').value = data.session_timeout || 60;
@@ -3428,7 +3716,7 @@
         }
 
         function applyLightningFormFromStatus(status) {
-            setValue('lightning-interval', status.fetch_interval || 60);
+            setValue('lightning-interval', status.fetch_interval || 45);
             setValue('lightning-timeout', status.timeout || 30);
             setChecked('lightning-enabled', !!status.enabled);
 
@@ -3472,18 +3760,26 @@
             setChecked('red-alert-reminder-enabled', policy.reminder_enabled !== false);
             setValue('red-alert-reminder-interval', policy.reminder_interval_minutes || 5);
             setValue('red-alert-reminder-file', policy.reminder_audio_file || 'Voice_RedAlert_Reminder.mp3');
-            setChecked('red-alert-reminder-horn', !!policy.reminder_include_horn);
-            setValue('red-alert-reminder-horn-file', policy.horn_audio_file || 'Horn_RedAlert.mp3');
+			setValue('red-alert-reminder-file-ah', policy.reminder_audio_file_after_hours || 'Voice_RedAlert_Reminder.mp3');
+			setChecked('red-alert-reminder-horn', !!policy.reminder_include_horn);
+			setValue('red-alert-reminder-horn-file', policy.horn_audio_file || 'Horn_RedAlert.mp3');
+			setValue('red-alert-reminder-horn-file-ah', policy.horn_audio_file_after_hours || '');
 
-            const ca = status.condition_audio || {};
-            const ra = ca.RedAlert || {};
-            const ac = ca.AllClear || {};
-            setChecked('ca-redalert-horn-enabled', ra.horn_enabled !== false);
-            setValue('ca-redalert-horn-file', ra.horn_file || 'Horn_RedAlert.mp3');
-            setValue('ca-redalert-announce-file', ra.announce_file || 'Voice_RedAlert.mp3');
-            setChecked('ca-allclear-horn-enabled', ac.horn_enabled !== false);
-            setValue('ca-allclear-horn-file', ac.horn_file || 'Horn_AllClear.mp3');
-            setValue('ca-allclear-announce-file', ac.announce_file || 'Voice_AllClear.mp3');
+			const ca = status.condition_audio || {};
+			const ra = ca.RedAlert || {};
+			const ac = ca.AllClear || {};
+			setChecked('ca-redalert-horn-enabled', ra.horn_enabled !== false);
+			setValue('ca-redalert-horn-file', ra.horn_file || 'Horn_RedAlert.mp3');
+			setValue('ca-redalert-announce-file', ra.announce_file || 'Voice_RedAlert.mp3');
+			setChecked('ca-redalert-horn-enabled-ah', !!ra.horn_enabled_after_hours);
+			setValue('ca-redalert-horn-file-ah', ra.horn_file_after_hours || '');
+			setValue('ca-redalert-announce-file-ah', ra.announce_file_after_hours || 'Voice_RedAlert_AfterHours.mp3');
+			setChecked('ca-allclear-horn-enabled', ac.horn_enabled !== false);
+			setValue('ca-allclear-horn-file', ac.horn_file || 'Horn_AllClear.mp3');
+			setValue('ca-allclear-announce-file', ac.announce_file || 'Voice_AllClear.mp3');
+			setChecked('ca-allclear-horn-enabled-ah', !!ac.horn_enabled_after_hours);
+			setValue('ca-allclear-horn-file-ah', ac.horn_file_after_hours || '');
+			setValue('ca-allclear-announce-file-ah', ac.announce_file_after_hours || 'Voice_AllClear_AfterHours.mp3');
             setValue('ca-warning-announce-file', (ca.Warning && ca.Warning.announce_file) || 'Voice_Warning.mp3');
             setValue('ca-caution-announce-file', (ca.Caution && ca.Caution.announce_file) || 'Voice_Caution.mp3');
             setValue('ca-unknown-announce-file', (ca.Unknown && ca.Unknown.announce_file) || 'Voice_Unknown.mp3');
@@ -3492,11 +3788,17 @@
             lightningHornFiles = status.available_horn_files || [];
             refreshAllLightningMp3Selects({
                 'red-alert-reminder-file': policy.reminder_audio_file || 'Voice_RedAlert_Reminder.mp3',
+                'red-alert-reminder-file-ah': policy.reminder_audio_file_after_hours || 'Voice_RedAlert_Reminder.mp3',
                 'red-alert-reminder-horn-file': policy.horn_audio_file || '',
+                'red-alert-reminder-horn-file-ah': policy.horn_audio_file_after_hours || '',
                 'ca-redalert-horn-file': ra.horn_file || 'Horn_RedAlert.mp3',
                 'ca-redalert-announce-file': ra.announce_file || 'Voice_RedAlert.mp3',
+                'ca-redalert-horn-file-ah': ra.horn_file_after_hours || '',
+                'ca-redalert-announce-file-ah': ra.announce_file_after_hours || 'Voice_RedAlert_AfterHours.mp3',
                 'ca-allclear-horn-file': ac.horn_file || 'Horn_AllClear.mp3',
                 'ca-allclear-announce-file': ac.announce_file || 'Voice_AllClear.mp3',
+                'ca-allclear-horn-file-ah': ac.horn_file_after_hours || '',
+                'ca-allclear-announce-file-ah': ac.announce_file_after_hours || 'Voice_AllClear_AfterHours.mp3',
                 'ca-warning-announce-file': (ca.Warning && ca.Warning.announce_file) || 'Voice_Warning.mp3',
                 'ca-caution-announce-file': (ca.Caution && ca.Caution.announce_file) || 'Voice_Caution.mp3',
                 'ca-unknown-announce-file': (ca.Unknown && ca.Unknown.announce_file) || 'Voice_Unknown.mp3'
@@ -3842,8 +4144,10 @@
                 reminder_enabled: document.getElementById('red-alert-reminder-enabled').checked,
                 reminder_interval_minutes: parseInt(document.getElementById('red-alert-reminder-interval').value, 10) || 5,
                 reminder_audio_file: (document.getElementById('red-alert-reminder-file').value || 'Voice_RedAlert_Reminder.mp3').trim(),
+                reminder_audio_file_after_hours: (document.getElementById('red-alert-reminder-file-ah').value || '').trim(),
                 reminder_include_horn: document.getElementById('red-alert-reminder-horn').checked,
-                horn_audio_file: (document.getElementById('red-alert-reminder-horn-file').value || '').trim()
+                horn_audio_file: (document.getElementById('red-alert-reminder-horn-file').value || '').trim(),
+                horn_audio_file_after_hours: (document.getElementById('red-alert-reminder-horn-file-ah').value || '').trim()
             };
         }
 
@@ -3852,12 +4156,18 @@
                 RedAlert: {
                     horn_enabled: document.getElementById('ca-redalert-horn-enabled').checked,
                     horn_file: (document.getElementById('ca-redalert-horn-file').value || '').trim(),
-                    announce_file: (document.getElementById('ca-redalert-announce-file').value || '').trim()
+                    announce_file: (document.getElementById('ca-redalert-announce-file').value || '').trim(),
+                    horn_enabled_after_hours: document.getElementById('ca-redalert-horn-enabled-ah').checked,
+                    horn_file_after_hours: (document.getElementById('ca-redalert-horn-file-ah').value || '').trim(),
+                    announce_file_after_hours: (document.getElementById('ca-redalert-announce-file-ah').value || '').trim()
                 },
                 AllClear: {
                     horn_enabled: document.getElementById('ca-allclear-horn-enabled').checked,
                     horn_file: (document.getElementById('ca-allclear-horn-file').value || '').trim(),
-                    announce_file: (document.getElementById('ca-allclear-announce-file').value || '').trim()
+                    announce_file: (document.getElementById('ca-allclear-announce-file').value || '').trim(),
+                    horn_enabled_after_hours: document.getElementById('ca-allclear-horn-enabled-ah').checked,
+                    horn_file_after_hours: (document.getElementById('ca-allclear-horn-file-ah').value || '').trim(),
+                    announce_file_after_hours: (document.getElementById('ca-allclear-announce-file-ah').value || '').trim()
                 },
                 Warning: {
                     horn_enabled: false,
@@ -4101,6 +4411,124 @@
         document.getElementById('apply-audio-system-btn').addEventListener('click', applyAudioSystemOverride);
         document.getElementById('scan-bluetooth-btn').addEventListener('click', scanForBluetoothDevices);
         document.getElementById('stop-scan-btn').addEventListener('click', stopBluetoothScan);
+
+        (function initWebConsole() {
+            const MAX_LINES = 2000;
+            const output = document.getElementById('web-console-output');
+            const statusEl = document.getElementById('web-console-status');
+            const autoScrollEl = document.getElementById('web-console-autoscroll');
+            const pausedEl = document.getElementById('web-console-paused');
+            const clearBtn = document.getElementById('web-console-clear-btn');
+            const reconnectBtn = document.getElementById('web-console-reconnect-btn');
+            const tabBtn = document.getElementById('web-console-tab');
+            if (!output || !statusEl) return;
+
+            let es = null;
+            let lineCount = 0;
+            let wanted = false;
+            const pending = [];
+
+            function setStatus(text, cls) {
+                statusEl.textContent = text;
+                statusEl.className = 'badge ' + (cls || 'bg-secondary');
+            }
+
+            function lineClass(text) {
+                const t = String(text || '');
+                if (/\[GIN\]/.test(t)) return 'wc-gin';
+                if (/\b(error|failed|fatal|panic)\b/i.test(t) || /❌/.test(t)) return 'wc-err';
+                if (/\b(warning|warn)\b/i.test(t) || /⚠/.test(t)) return 'wc-warn';
+                if (/✓|✅/.test(t) || /\bsuccessfully\b/i.test(t)) return 'wc-ok';
+                return '';
+            }
+
+            function appendLine(text) {
+                if (pausedEl && pausedEl.checked) {
+                    pending.push(text);
+                    if (pending.length > MAX_LINES) pending.splice(0, pending.length - MAX_LINES);
+                    return;
+                }
+                const span = document.createElement('span');
+                span.className = 'wc-line ' + lineClass(text);
+                span.textContent = text + '\n';
+                output.appendChild(span);
+                lineCount++;
+                while (lineCount > MAX_LINES && output.firstChild) {
+                    output.removeChild(output.firstChild);
+                    lineCount--;
+                }
+                if (!autoScrollEl || autoScrollEl.checked) {
+                    output.scrollTop = output.scrollHeight;
+                }
+            }
+
+            function flushPending() {
+                if (!pending.length) return;
+                const batch = pending.splice(0, pending.length);
+                batch.forEach(appendLine);
+            }
+
+            function disconnect() {
+                if (es) {
+                    es.close();
+                    es = null;
+                }
+            }
+
+            function connect() {
+                disconnect();
+                if (!wanted) return;
+                setStatus('Connecting…', 'bg-warning text-dark');
+                es = new EventSource('/admin/console/stream');
+                es.addEventListener('log', function(ev) {
+                    try {
+                        appendLine(JSON.parse(ev.data));
+                    } catch (e) {
+                        appendLine(ev.data);
+                    }
+                });
+                es.onopen = function() {
+                    setStatus('Live', 'bg-success');
+                };
+                es.onerror = function() {
+                    setStatus('Reconnecting…', 'bg-warning text-dark');
+                };
+            }
+
+            function start() {
+                wanted = true;
+                connect();
+            }
+
+            function stop() {
+                wanted = false;
+                disconnect();
+                setStatus('Disconnected', 'bg-secondary');
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    output.textContent = '';
+                    lineCount = 0;
+                    pending.length = 0;
+                });
+            }
+            if (reconnectBtn) {
+                reconnectBtn.addEventListener('click', function() {
+                    wanted = true;
+                    connect();
+                });
+            }
+            if (pausedEl) {
+                pausedEl.addEventListener('change', function() {
+                    if (!pausedEl.checked) flushPending();
+                });
+            }
+            if (tabBtn) {
+                tabBtn.addEventListener('shown.bs.tab', start);
+                tabBtn.addEventListener('hide.bs.tab', stop);
+            }
+        })();
 
         // Load queue data on page load and refresh every 5 seconds
         document.addEventListener('DOMContentLoaded', function() {

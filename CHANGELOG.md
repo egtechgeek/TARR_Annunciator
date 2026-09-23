@@ -5,7 +5,37 @@ All notable changes to TARR Annunciator are documented here.
 Product versions match `AppVersion` in `source/version.go` and GitHub Release tags (`vX.Y.Z`).
 Target platform going forward: **Raspberry Pi OS 64-bit (`linux/arm64`)**.
 
-Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** → **`1.1.3`** → **`1.1.4`** → **`1.1.5`** (current).
+Versioning note: older internal milestones were labeled “2.0” / “2.1” in prior docs. Those features shipped on live Pi units **before** in-app GitHub Releases updates existed and are treated as the **`1.0.0` baseline**. Formal semver: **`1.0.0`** → **`1.1.0`** → **`1.1.1`** → **`1.1.2`** → **`1.1.3`** → **`1.1.4`** → **`1.1.5`** → **`1.1.6`** (current).
+
+---
+
+## [1.1.6] - 2026-09-22
+
+Quiet hours, public calendar schedule (3rd weekend), and distinct after-hours Red Alert / All Clear / Reminder MP3s. Installable from a live **v1.1.4** Pi via Admin **Check for Updates** (same package contract).
+
+### Added
+
+- **Quiet hours** (default 22:00–06:00): mute all PA, cancel queue on enter (no deferred dump when quiet ends). Red Alert **lock** still engages; speakers stay silent
+- **Calendar rules** on operating hours: default **3rd Sat + 3rd Sun** each month; scheduled station/promo/safety only on public open days within open–close
+- **After-hours lightning audio:** separate Admin MP3 selects for Red Alert, All Clear, and Red Alert Reminder (optional after-hours horns). Empty after-hours path falls back to operating clips
+- Status fields: `audio_window` (`operating` | `after_hours` | `quiet`), `quiet_hours_active`, `calendar_open_today`
+- **Admin Web Console** tab: live SSE stream of the same diagnostic console/log output (`/admin/console/stream`), with pause / auto-scroll / reconnect; Gin access logs for the console endpoints are skipped so the view is not flooded by its own traffic
+
+### Changed
+
+- `AppVersion` **1.1.6**
+- Seed `operating_hours.json`: Sat/Sun **09:30–16:00**, calendar + quiet defaults (calendar fully Admin-editable; 3rd weekend is only a convenience preset)
+- Default lightning monitor fetch interval **45s**
+- Unknown flicker: at most **1×250ms + 1×5s** follow-up per feed, then **3‑minute cooldown** (still never a failover trigger; avoids hammering Thor)
+- Additive migrate only — live operator hours/audio picks are not overwritten
+- Admin **Change default credentials** reminder (login note + System Status banner until factory admin password / API key are rotated)
+- Go code defaults aligned with current `data/json` operating hours + lightning monitor/failover values
+- Package via `scripts/package_pi_release.sh 1.1.6` → `TARR_Annunciator_Pi_arm64_v1.1.6.tar.gz` (v1.1.4 updater compatible)
+
+### Safety
+
+- Quiet cancels queued/playing audio; does not skip `enterRedAlert` / `exitRedAlert`
+- Non-public calendar days are after-hours (RA/AC allowed with after-hours MP3s), not silent all day
 
 ---
 
